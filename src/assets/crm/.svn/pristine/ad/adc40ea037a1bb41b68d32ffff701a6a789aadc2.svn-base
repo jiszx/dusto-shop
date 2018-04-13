@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.report.mapper.InvoiceReportMapper" >
+  <resultMap id="reportItemsResultMap" type="com.hhnz.report.dto.OmInvoiceItemDTO" >
+    <result column="ID" property="id" jdbcType="DECIMAL" />
+    <result column="ORDER_ID" property="orderId" jdbcType="DECIMAL" />
+    <result column="ORDER_ITEM_ID" property="orderItemId" jdbcType="DECIMAL" />
+    <result column="INVOICE_NO" property="invoiceNo" jdbcType="VARCHAR" />
+    <result column="MATERIAL_ID" property="materialId" jdbcType="VARCHAR" />
+    <result column="CODE" property="code" jdbcType="VARCHAR" />
+    <result column="UNIT" property="unit" jdbcType="VARCHAR" />
+    <result column="NUM" property="num" jdbcType="DECIMAL" />
+    <result column="PRICE" property="price" jdbcType="DECIMAL" />
+    <result column="AMT" property="amt" jdbcType="DECIMAL" />
+    <result column="TAX_RATE" property="taxRate" jdbcType="DECIMAL" />
+    <result column="TAX" property="tax" jdbcType="DECIMAL" />
+    <result column="HEADER_ID" property="headerId" jdbcType="DECIMAL" />
+    <result column="SKU" property="sku" jdbcType="VARCHAR" />
+    <result column="name" property="name" jdbcType="VARCHAR"/>
+    <result column="customer_id" property="customerId" jdbcType="VARCHAR"/>
+  </resultMap>
+  <select id="selectItemList" resultMap="reportItemsResultMap" parameterType="java.util.Map" >
+    <include refid="OracleDialectPrefix" />
+   SELECT oii."ID",
+       oii."ORDER_ID",
+       oii."ORDER_ITEM_ID",
+       oii."INVOICE_NO",
+       oii."MATERIAL_ID",
+       oii."UNIT"          code,
+       tmu.unit,
+       oii."NUM",
+       oii."PRICE",
+       oii."AMT",
+       oii."TAX_RATE",
+       oii."TAX",
+       ooha.id             header_id,
+       tmb.sku,
+       cmcb.name,
+       oi.customer_id
+  FROM om_invoice_item      oii,
+       om_order_headers_all ooha,
+       t_material_base      tmb,
+       t_material_unit      tmu,
+       om_invoice           oi,
+       c_merch_cust_base    cmcb
+ where oii.order_id = ooha.sap_order_id(+)
+   and oii.invoice_no = oi.invoice_no
+   and oi.customer_id = cmcb.sap_customer_id(+)
+   and oii.unit = tmu.code(+)
+   and oii.material_id = tmb.sap_id(+)
+   order by oi.invoice_no desc
+    <include refid="OracleDialectSuffix" />
+  </select>
+  <select id="countItem" parameterType="java.util.Map" resultType="java.lang.Integer" >
+   SELECT count(1)
+  FROM om_invoice_item      oii,
+       om_order_headers_all ooha,
+       t_material_base      tmb,
+       t_material_unit      tmu,
+       om_invoice           oi,
+       c_merch_cust_base    cmcb
+ where oii.order_id = ooha.sap_order_id(+)
+   and oii.invoice_no = oi.invoice_no
+   and oi.customer_id = cmcb.sap_customer_id(+)
+   and oii.unit = tmu.code(+)
+   and oii.material_id = tmb.sap_id(+)
+  </select>
+  
+  <resultMap id="InvoiceResultMap" type="com.hhnz.account.model.OmInvoiceV" >
+    <result column="ID" property="id" jdbcType="DECIMAL" />
+    <result column="CUSTOMER_ID" property="customerId" jdbcType="DECIMAL" />
+    <result column="INVOICE_NO" property="invoiceNo" jdbcType="VARCHAR" />
+    <result column="TOTAL_PRICE" property="totalPrice" jdbcType="DECIMAL" />
+    <result column="TOTAL_TAX" property="totalTax" jdbcType="DECIMAL" />
+    <result column="PERIOD" property="period" jdbcType="VARCHAR" />
+    <result column="DRAW_DATE" property="drawDate" jdbcType="TIMESTAMP" />
+    <result column="MEMO" property="memo" jdbcType="VARCHAR" />
+    <result column="WRITEOFF_INVOICE" property="writeoffInvoice" jdbcType="VARCHAR" />
+    <result column="NAME" property="name" jdbcType="VARCHAR" />
+    <result column="ORGNAME" property="orgname" jdbcType="VARCHAR" />
+    <result column="VERIFIE_AMT" property="verifieAmt" jdbcType="DECIMAL" />
+    <result column="TYPE" property="type" jdbcType="CHAR" />
+    <result column="MERCH_CUST_ID" property="merchCustId" jdbcType="DECIMAL"/>
+  </resultMap>
+  <select id="selectInvoiceList" parameterType="java.util.Map" resultMap="InvoiceResultMap">
+  	 <include refid="OracleDialectPrefix" />
+  	SELECT oi.*,
+       cmcb.name,
+       cmcb.id merch_cust_id,
+       (SELECT cso.name
+          FROM crm_sales_organization cso
+         where cso.id = cmcb.organization_id) orgname,
+       nvl((SELECT sum(VERIFIE_AMT) / 100
+             FROM c_merch_receive_verifie cmrv
+            where cmrv.invoice_no = oi.invoice_no
+              and cmrv.INVOICE_ID = oi.id
+              and cmrv.MERCH_CUST_ID = cmcb.id),
+           0) verifie_amt
+  FROM om_invoice oi, c_merch_cust_base cmcb
+ where oi.customer_id = cmcb.sap_customer_id(+)
+  order by oi.invoice_no desc
+   <include refid="OracleDialectSuffix" />
+  </select>
+  <select id="countInvoice" parameterType="java.util.Map" resultType="int">
+  	SELECT count(1)
+  FROM om_invoice oi, c_merch_cust_base cmcb
+ where oi.customer_id = cmcb.sap_customer_id(+)
+  </select>
+  <sql id="OracleDialectPrefix" >
+      select * from ( select row_.*, rownum rownum_ from ( 
+  </sql>
+  <sql id="OracleDialectSuffix" >
+      <![CDATA[ ) row_ ) where rownum_ > #{begin} and rownum_ <= #{end} ]]>
+  </sql>
+</mapper>

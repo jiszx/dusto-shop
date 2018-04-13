@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.order.mapper.ApiOrderMapper">
+	<resultMap type="com.hhnz.order.model.OrderSearchModel" id="OrderSearchResultMap">
+		<result column="orgname" property="orgname" jdbcType="VARCHAR" />
+		<result column="organization_id" property="orgid" jdbcType="VARCHAR" />
+		<result column="merch_cust_id" property="merchCustId" jdbcType="DECIMAL" />
+		<result column="custname" property="merchname"	jdbcType="VARCHAR" />
+		<result column="sap_customer_id" property="sapCustomerId" jdbcType="VARCHAR" />
+		<result column="create_ts" property="createTs" jdbcType="TIMESTAMP" />
+		<result column="salesman" property="salesman" jdbcType="VARCHAR" />
+		<result column="salesrep_id" property="salesrepId" jdbcType="DECIMAL" />
+		<result column="states" property="states" jdbcType="VARCHAR" />
+		<result column="order_amt" property="orderAmt" jdbcType="VARCHAR" />
+		<result column="station_id" property="stationId" jdbcType="DECIMAL" />
+		<result column="id" property="orderHeaderId" jdbcType="DECIMAL" />
+		<result column="stationname" property="stationname" jdbcType="VARCHAR" />
+		<result column="Sap_Order_Id" property="saporderid" jdbcType="VARCHAR" />
+		<result column="regionname" property="regionname" jdbcType="VARCHAR" />
+		<result column="region_id" property="regionid" jdbcType="VARCHAR" />
+		<result column="provname" property="provname" jdbcType="VARCHAR" />
+		<result column="provi_id" property="provid" jdbcType="VARCHAR" />
+		<result column="shipto" property="shipto" jdbcType="VARCHAR"/>
+	</resultMap>
+	<sql id="OracleDialectPrefix" >
+	  <if test="begin !=null">
+          select * from ( select row_.*, rownum rownum_ from ( 
+      </if>
+  	</sql>
+  	<sql id="OracleDialectSuffix" >
+  	   <if test="begin !=null">
+       		<![CDATA[ ) row_ ) where rownum_ > #{begin} and rownum_ <= #{end} ]]>
+       </if>
+    </sql>
+	<select id="findCustOrderList" resultMap="OrderSearchResultMap" parameterType="java.util.Map">
+		<include refid="OracleDialectPrefix" />
+					SELECT							
+						ooh.MERCH_CUST_ID AS MERCH_CUST_ID,
+						MAX(OOH.STATES) AS STATES,
+						MAX(NAME) AS orgname
+					FROM
+						c_merch_cust_base cmcb  LEFT JOIN
+						om_order_headers_all ooh ON  CMCB.ID =  OOH.MERCH_CUST_ID
+					WHERE
+						cmcb.PID = #{custPID}
+						<if test="states != null and states != ''">
+						  AND ooh.states in 
+						  <foreach item="item" index="index" collection="states" open="(" separator="," close=")">  
+	 		 				#{item}  
+	 	   				  </foreach>
+						</if>
+						<if test="name != null">
+							AND cmcb.NAME LIKE ${name}
+						</if>	
+					GROUP BY 	MERCH_CUST_ID
+		<include refid="OracleDialectSuffix" />			
+	</select>
+   <resultMap id="RetailersResultMap" type="com.hhnz.order.model.OmOrderHeadersAll" >
+     <id column="ID" property="id" jdbcType="DECIMAL" />
+     <result column="ORGANIZATION_ID" property="organizationId" jdbcType="VARCHAR" />
+     <result column="MERCH_CUST_ID" property="merchCustId" jdbcType="DECIMAL" />
+     <result column="SHIP_ID" property="shipId" jdbcType="DECIMAL" />
+     <result column="CREATE_TS" property="createTs" jdbcType="TIMESTAMP" />
+     <result column="CREATE_OID" property="createOid" jdbcType="DECIMAL" />
+     <result column="UPDATE_TS" property="updateTs" jdbcType="TIMESTAMP" />
+     <result column="UPDATE_OID" property="updateOid" jdbcType="DECIMAL" />
+     <result column="STATES" property="states" jdbcType="VARCHAR" />
+     <result column="INVOICE_NUMBER" property="invoiceNumber" jdbcType="VARCHAR" />
+     <result column="REGION_ID" property="regionId" jdbcType="VARCHAR" />
+     <result column="PROVI_ID" property="proviId" jdbcType="VARCHAR" />
+     <result column="ORDER_AMT" property="orderAmt" jdbcType="DECIMAL" />
+     <result column="DISCOUNT_AMT" property="discountAmt" jdbcType="DECIMAL" />
+     <result column="AMT" property="amt" jdbcType="DECIMAL" />
+     <result column="STATION_ID" property="stationId" jdbcType="DECIMAL" />
+     <result column="BILL_TO" property="billTo" jdbcType="DECIMAL" />
+     <result column="ATTRIBUTE1" property="attribute1" jdbcType="VARCHAR" />
+     <result column="ATTRIBUTE2" property="attribute2" jdbcType="VARCHAR" />
+     <result column="ATTRIBUTE3" property="attribute3" jdbcType="VARCHAR" />
+     <result column="ATTRIBUTE4" property="attribute4" jdbcType="VARCHAR" />
+     <result column="ATTRIBUTE5" property="attribute5" jdbcType="VARCHAR" />
+     <result column="SALESREP_ID" property="salesrepId" jdbcType="DECIMAL" />
+     <result column="SAP_ORDER_ID" property="sapOrderId" jdbcType="VARCHAR" />
+     <result column="REMARK" property="remark" jdbcType="VARCHAR" />
+     <result column="HB_AMT" property="hbAmt" jdbcType="DECIMAL" />
+     <result column="CASH_AMT" property="cashAmt" jdbcType="DECIMAL" />
+     <result column="CREDIT_AMT" property="creditAmt" jdbcType="DECIMAL" />
+     <result column="IS_REBATE" property="isRebate" jdbcType="VARCHAR" />
+     <result column="ATTRIBUTE6" property="attribute6" jdbcType="VARCHAR" />
+     <result column="ATTRIBUTE7" property="attribute7" jdbcType="VARCHAR" />
+     <result column="ATTRIBUTE8" property="attribute8" jdbcType="VARCHAR" />
+     <result column="ATTRIBUTE9" property="attribute9" jdbcType="VARCHAR" />
+     <result column="ATTRIBUTE10" property="attribute10" jdbcType="VARCHAR" />
+     <result column="ATTRIBUTE11" property="attribute11" jdbcType="VARCHAR" />
+     <result column="ATTRIBUTE12" property="attribute12" jdbcType="VARCHAR" />
+     <result column="ATTRIBUTE13" property="attribute13" jdbcType="VARCHAR" />
+     <result column="RETURN_HB_AMT" property="returnHbAmt" jdbcType="DECIMAL" />
+     <result column="RETURN_CASH_AMT" property="returnCashAmt" jdbcType="DECIMAL" />
+     <result column="RETURN_CREDIT_AMT" property="returnCreditAmt" jdbcType="DECIMAL" />
+  </resultMap>
+	
+	<select id="findRetailersOrderList" resultMap="RetailersResultMap" parameterType="java.util.Map">
+		<include refid="OracleDialectPrefix" />
+			SELECT
+				DISTINCT  ooh.ID,
+				ooh.ORGANIZATION_ID,
+				ooh.MERCH_CUST_ID,
+				ooh.SHIP_ID,
+				ooh.CREATE_TS,
+				ooh.CREATE_OID,
+				ooh.UPDATE_TS,
+				ooh.UPDATE_OID,
+				ooh.STATES,
+				ooh.INVOICE_NUMBER,
+				ooh.REGION_ID,
+				ooh.PROVI_ID,
+				ooh.ORDER_AMT,
+				ooh.DISCOUNT_AMT,
+				ooh.AMT,
+				ooh.STATION_ID,
+				ooh.BILL_TO,
+				ooh.ATTRIBUTE1,
+				ooh.ATTRIBUTE2,
+				ooh.ATTRIBUTE3,
+				ooh.ATTRIBUTE4,
+				ooh.ATTRIBUTE5,
+				ooh.SALESREP_ID,
+				ooh.SAP_ORDER_ID,
+				ooh.REMARK,
+				ooh.HB_AMT,
+				ooh.CASH_AMT,
+				ooh.CREDIT_AMT,
+				ooh.IS_REBATE,
+				ooh.ATTRIBUTE6,
+				ooh.ATTRIBUTE7,
+				ooh.ATTRIBUTE8,
+				ooh.ATTRIBUTE9,
+				ooh.ATTRIBUTE10,
+				ooh.ATTRIBUTE11,
+				ooh.ATTRIBUTE12,
+				ooh.ATTRIBUTE13,
+				ooh.RETURN_HB_AMT,
+				ooh.RETURN_CASH_AMT,
+				ooh.RETURN_CREDIT_AMT
+			FROM
+				OM_ORDER_HEADERS_ALL ooh LEFT JOIN
+				OM_ORDER_LINES_ALL oola  ON  OOH.id = OOLA.header_id   LEFT JOIN
+				T_MATERIAL_BASE tmb ON  oola.material_ID = tmb.sap_id
+			WHERE
+				OOH.MERCH_CUST_ID =  #{custID}
+				<if test="states != null and states != ''">
+					 AND ooh.states in 
+					<foreach item="item" index="index" collection="states" open="(" separator="," close=")">  
+	 		 			#{item}  
+	 	   			</foreach>
+				</if>
+				<if test="bdate !=null and bdate !=''">
+   					AND ooh.create_ts >= to_date(#{bdate,jdbcType=VARCHAR},'yyyy-MM-dd')
+  				 </if>	
+   				<if test="edate !=null and edate !=''" >
+   					AND ooh.create_ts &lt;=  to_date(#{edate,jdbcType=VARCHAR},'yyyy-MM-dd')+0.99999
+   				</if>
+   				<if test="name!=null and name != ''">
+   					AND  tmb.material_name LIKE ${name}
+   				</if>
+   			ORDER BY OOH.create_ts  DESC
+								
+		<include refid="OracleDialectSuffix" />			
+	</select>
+	
+	<resultMap id="OrderLineResultMap" type="com.hhnz.order.model.OmOrderLinesAll" >
+    	<id column="ID" property="id" jdbcType="DECIMAL" />
+    	<result column="HEADER_ID" property="headerId" jdbcType="DECIMAL" />
+    	<result column="MATERIAL_ID" property="materialId" jdbcType="VARCHAR" />
+    	<result column="PRICE" property="price" jdbcType="DECIMAL" />
+    	<result column="NUM" property="num" jdbcType="DECIMAL" />
+    	<result column="POLICY_HEADER_ID" property="policyHeaderId" jdbcType="DECIMAL" />
+    	<result column="HB_NUM" property="hbNum" jdbcType="DECIMAL" />
+    	<result column="AMT" property="amt" jdbcType="DECIMAL" />
+    	<result column="DISCOUNT_AMT" property="discountAmt" jdbcType="DECIMAL" />
+    	<result column="ORDER_AMT" property="orderAmt" jdbcType="DECIMAL" />
+    	<result column="STATES" property="states" jdbcType="VARCHAR" />
+    	<result column="POLICY_LINE_ID" property="policyLineId" jdbcType="DECIMAL" />
+    	<result column="HB_AMT" property="hbAmt" jdbcType="DECIMAL" />
+    	<result column="HIGH_PRICE" property="highPrice" jdbcType="DECIMAL" />
+    	<result column="TRANSPORT_PRICE" property="transportPrice" jdbcType="DECIMAL" />
+    	<result column="DELIVERED_NUM" property="deliveredNum" jdbcType="DECIMAL" />
+    	<result column="ATTRIBUTE2" property="attribute2" jdbcType="VARCHAR" />
+    	<result column="ATTRIBUTE3" property="attribute3" jdbcType="VARCHAR" />
+    	<result column="ATTRIBUTE4" property="attribute4" jdbcType="VARCHAR" />
+    	<result column="ATTRIBUTE5" property="attribute5" jdbcType="VARCHAR" />
+    	<result column="ATTRIBUTE1" property="attribute1" jdbcType="VARCHAR" />
+    	<result column="CREATE_TS" property="createTs" jdbcType="TIMESTAMP" />
+    	<result column="CREATE_OID" property="createOid" jdbcType="DECIMAL" />
+    	<result column="UPDATE_TS" property="updateTs" jdbcType="TIMESTAMP" />
+    	<result column="UPDATE_OID" property="updateOid" jdbcType="DECIMAL" />
+    	<result column="POLICY_DISCOUNT" property="policyDiscount" jdbcType="VARCHAR" />
+    	<result column="POLICY_DISCOUNT_INTENSITY" property="policyDiscountIntensity" jdbcType="VARCHAR" />
+    	<result column="POLICY_VERFICATION" property="policyVerfication" jdbcType="VARCHAR" />
+    	<result column="ORDER_PRICE" property="orderPrice" jdbcType="DECIMAL" />
+    	<result column="UNIT" property="unit" jdbcType="VARCHAR" />
+    	<result column="ATTRIBUTE6" property="attribute6" jdbcType="VARCHAR" />
+    	<result column="ATTRIBUTE7" property="attribute7" jdbcType="VARCHAR" />
+    	<result column="ATTRIBUTE8" property="attribute8" jdbcType="VARCHAR" />
+    	<result column="ATTRIBUTE9" property="attribute9" jdbcType="VARCHAR" />
+   		<result column="ATTRIBUTE10" property="attribute10" jdbcType="VARCHAR" />
+    	<result column="ATTRIBUTE11" property="attribute11" jdbcType="VARCHAR" />
+    	<result column="ATTRIBUTE12" property="attribute12" jdbcType="VARCHAR" />
+    	<result column="RETURN_NUM" property="returnNum" jdbcType="DECIMAL" />
+    	<result column="RETRUN_HB_NUM" property="retrunHbNum" jdbcType="DECIMAL" />
+    	<result column="RETURN_POLICY_NUM" property="returnPolicyNum" jdbcType="DECIMAL" />
+  </resultMap>
+	<select id="findOrderLineList" resultMap="OrderLineResultMap" parameterType="java.util.Map">
+			SELECT
+				*
+			FROM
+				OM_ORDER_LINES_ALL oola
+			WHERE
+				OOLA.header_id = #{headerId}							
+	</select>
+	<update id="issueInvoice" parameterType="java.util.Map">
+			UPDATE  
+				OM_ORDER_HEADERS_ALL
+			SET  
+				ATTRIBUTE7 = 1
+			WHERE
+				<if test="orderHeaderIdList != null and orderHeaderIdList != ''">
+					OM_ORDER_HEADERS_ALL.ID  in
+					<foreach item="item" index="index" collection="orderHeaderIdList" open="(" separator="," close=")">  
+	 		 				#{item}  
+	 	   			</foreach>
+				</if>
+	</update>
+	
+</mapper>

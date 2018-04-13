@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.crm.mapper.TMaterialPriceAdjustRecordMapper" >
+  <resultMap id="BaseResultMap" type="com.hhnz.crm.model.TMaterialPriceAdjustRecord" >
+    <id column="ID" property="id" jdbcType="DECIMAL" />
+    <result column="MATERIAL_ID" property="materialId" jdbcType="VARCHAR" />
+    <result column="CREATE_TS" property="createTs" jdbcType="TIMESTAMP" />
+    <result column="ORGANIZATION_ID" property="organizationId" jdbcType="VARCHAR" />
+    <result column="PRICE" property="price" jdbcType="DECIMAL" />
+    <result column="OPT" property="opt" jdbcType="VARCHAR" />
+    <result column="BDATE" property="bdate" jdbcType="TIMESTAMP" />
+    <result column="EDATE" property="edate" jdbcType="TIMESTAMP" />
+    <result column="CHANNEL" property="channel" jdbcType="VARCHAR" />
+    <result column="O_PRICE" property="oprice" jdbcType="DECIMAL" />
+    <result column="O_ADJUST_PRICE" property="oadjustPrice" jdbcType="DECIMAL" />
+    <result column="O_BDATE" property="obdate" jdbcType="TIMESTAMP" />
+    <result column="O_EDATE" property="oedate" jdbcType="TIMESTAMP" />
+    <result column="C_PRICE" property="cprice" jdbcType="DECIMAL" />
+    <result column="C_ADJUST_PRICE" property="cadjustPrice" jdbcType="DECIMAL" />
+    <result column="C_BDATE" property="cbdate" jdbcType="TIMESTAMP" />
+    <result column="C_EDATE" property="cedate" jdbcType="TIMESTAMP" />
+  </resultMap>
+  <sql id="Example_Where_Clause" >
+    <where >
+      <foreach collection="oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause" >
+    <where >
+      <foreach collection="example.oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List" >
+    ID, MATERIAL_ID, CREATE_TS, ORGANIZATION_ID, PRICE, OPT, BDATE, EDATE, CHANNEL, 
+    ADJUST_ID, O_PRICE, O_ADJUST_PRICE, O_BDATE, O_EDATE
+  </sql>
+  <sql id="Column_List_With_Source" >
+    T.ID, T.MATERIAL_ID, T.CREATE_TS, T.ORGANIZATION_ID, T.PRICE, T.OPT, T.BDATE, T.EDATE, T.CHANNEL, 
+    T.ADJUST_ID, T.O_PRICE, T.O_ADJUST_PRICE, T.O_BDATE, T.O_EDATE, O.PRICE AS C_PRICE, O.ADJUST_PRICE AS C_ADJUST_PRICE, O.BDATE AS C_BDATE, O.EDATE AS C_EDATE
+  </sql>
+  <select id="selectByExample" resultMap="BaseResultMap" parameterType="com.hhnz.crm.model.TMaterialPriceAdjustRecordExample" >
+    <include refid="OracleDialectPrefix" />
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Column_List_With_Source" />
+    from T_MATERIAL_PRICE_ADJUST_RECORD T INNER JOIN T_MATERIAL_PRICE O 
+    	ON T.MATERIAL_ID=O.MATERIAL_ID AND 
+    		T.CHANNEL = O.CHANNEL AND 
+    		T.ORGANIZATION_ID=O.ORGANIZATION_ID AND 
+    		O.BDATE <![CDATA[<=]]> to_date(to_char(T.CREATE_TS,'yyyy-MM-dd'),'yyyy-MM-dd') AND
+    		O.EDATE <![CDATA[>=]]> to_date(to_char(T.CREATE_TS,'yyyy-MM-dd'),'yyyy-MM-dd')
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    AND O.CREATE_TS = (SELECT MAX(P.CREATE_TS)
+	FROM  T_MATERIAL_PRICE P  WHERE  p.organization_id=o.organization_id AND p.material_id=o.material_id AND p.channel= o.channel AND 
+        P.BDATE <![CDATA[<=]]> to_date(to_char(T.CREATE_TS,'yyyy-MM-dd'),'yyyy-MM-dd') AND
+    		P.EDATE <![CDATA[>=]]> to_date(to_char(T.CREATE_TS,'yyyy-MM-dd'),'yyyy-MM-dd')) 
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+    <include refid="OracleDialectSuffix" />
+  </select>
+  <!-- <select id="selectByExample" resultMap="BaseResultMap" parameterType="com.hhnz.crm.model.TMaterialPriceAdjustRecordExample" >
+    <include refid="OracleDialectPrefix" />
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from T_MATERIAL_PRICE_ADJUST_RECORD 
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+    <include refid="OracleDialectSuffix" />
+  </select> -->
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Long" >
+    select 
+    <include refid="Base_Column_List" />
+    from T_MATERIAL_PRICE_ADJUST_RECORD
+    where ID = #{id,jdbcType=DECIMAL}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long" >
+    delete from T_MATERIAL_PRICE_ADJUST_RECORD
+    where ID = #{id,jdbcType=DECIMAL}
+  </delete>
+  <delete id="deleteByExample" parameterType="com.hhnz.crm.model.TMaterialPriceAdjustRecordExample" >
+    delete from T_MATERIAL_PRICE_ADJUST_RECORD
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="com.hhnz.crm.model.TMaterialPriceAdjustRecord" >
+    <selectKey resultType="java.lang.Long" keyProperty="id" order="BEFORE" >
+      select SEQ_MATERIAL_PRICE_ADJUST_REC.nextval from dual
+    </selectKey>
+    insert into T_MATERIAL_PRICE_ADJUST_RECORD (ID, MATERIAL_ID, CREATE_TS, 
+      ORGANIZATION_ID, PRICE, OPT, 
+      BDATE, EDATE, CHANNEL, 
+      ADJUST_ID, O_PRICE, O_ADJUST_PRICE, O_BDATE, O_EDATE)
+    values (#{id,jdbcType=DECIMAL}, #{materialId,jdbcType=VARCHAR}, #{createTs,jdbcType=TIMESTAMP}, 
+      #{organizationId,jdbcType=VARCHAR}, #{price,jdbcType=DECIMAL}, #{opt,jdbcType=VARCHAR}, 
+      #{bdate,jdbcType=TIMESTAMP}, #{edate,jdbcType=TIMESTAMP}, #{channel,jdbcType=VARCHAR}, 
+      #{adjustId,jdbcType=DECIMAL}, #{oprice,jdbcType=DECIMAL},#{oadjustPrice,jdbcType=DECIMAL},
+      #{obdate,jdbcType=TIMESTAMP}, #{oedate,jdbcType=TIMESTAMP})
+  </insert>
+  <insert id="insertBatch" parameterType="java.util.List">
+      BEGIN
+      <foreach collection="list" item="item" index="index" separator=";" >
+      insert into T_MATERIAL_PRICE_ADJUST_RECORD (ID, MATERIAL_ID, CREATE_TS, 
+      ORGANIZATION_ID, PRICE, OPT, 
+      BDATE, EDATE, CHANNEL, 
+      ADJUST_ID, O_PRICE, O_ADJUST_PRICE, O_BDATE, O_EDATE) VALUES
+      ( SEQ_MATERIAL_PRICE_ADJUST_REC.nextval, #{item.materialId,jdbcType=VARCHAR}, #{item.createTs,jdbcType=TIMESTAMP}, 
+      #{item.organizationId,jdbcType=VARCHAR}, #{item.price,jdbcType=DECIMAL}, #{item.opt,jdbcType=VARCHAR}, 
+      #{item.bdate,jdbcType=TIMESTAMP}, #{item.edate,jdbcType=TIMESTAMP}, #{item.channel,jdbcType=VARCHAR}, 
+      #{item.adjustId,jdbcType=DECIMAL}, #{item.oprice,jdbcType=DECIMAL},#{item.oadjustPrice,jdbcType=DECIMAL},
+      #{item.obdate,jdbcType=TIMESTAMP}, #{item.oedate,jdbcType=TIMESTAMP} )
+      </foreach>
+      ;END ;
+  </insert>
+  
+  
+  <!-- <insert id="insertBatch" parameterType="java.util.List">
+      insert into T_MATERIAL_PRICE_ADJUST_RECORD (ID, MATERIAL_ID, CREATE_TS, 
+      ORGANIZATION_ID, PRICE, OPT, 
+      BDATE, EDATE, CHANNEL, 
+      ADJUST_ID, O_PRICE, O_ADJUST_PRICE, O_BDATE, O_EDATE)
+  SELECT SEQ_MATERIAL_PRICE_ADJUST_REC.nextval, A.*
+  FROM(
+  <foreach collection="list" item="item" index="index" separator="UNION ALL">
+	 SELECT 
+      #{item.materialId,jdbcType=VARCHAR} MATERIAL_ID, 
+      #{item.createTs,jdbcType=TIMESTAMP} CREATE_TS, 
+      #{item.organizationId,jdbcType=VARCHAR} ORGANIZATION_ID, 
+      #{item.price,jdbcType=DECIMAL} PRICE, 
+      #{item.opt,jdbcType=VARCHAR} OPT, 
+      #{item.bdate,jdbcType=TIMESTAMP} BDATE, 
+      #{item.edate,jdbcType=TIMESTAMP} EDATE, 
+      #{item.channel,jdbcType=VARCHAR} CHANNEL, 
+      #{item.adjustId,jdbcType=DECIMAL} ADJUST_ID, 
+      #{item.oprice,jdbcType=DECIMAL} O_PRICE,
+      #{item.oadjustPrice,jdbcType=DECIMAL} O_ADJUST_PRICE,
+      #{item.obdate,jdbcType=TIMESTAMP} O_BDATE, 
+      #{item.oedate,jdbcType=TIMESTAMP} O_EDATE
+     FROM dual
+   </foreach>
+   )A
+  </insert> -->
+  
+  <insert id="insertSelective" parameterType="com.hhnz.crm.model.TMaterialPriceAdjustRecord" >
+    <selectKey resultType="java.lang.Long" keyProperty="id" order="BEFORE" >
+      select SEQ_MATERIAL_PRICE_ADJUST_REC.nextval from dual
+    </selectKey>
+    insert into T_MATERIAL_PRICE_ADJUST_RECORD
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      ID,
+      <if test="materialId != null" >
+        MATERIAL_ID,
+      </if>
+      <if test="createTs != null" >
+        CREATE_TS,
+      </if>
+      <if test="organizationId != null" >
+        ORGANIZATION_ID,
+      </if>
+      <if test="price != null" >
+        PRICE,
+      </if>
+      <if test="opt != null" >
+        OPT,
+      </if>
+      <if test="bdate != null" >
+        BDATE,
+      </if>
+      <if test="edate != null" >
+        EDATE,
+      </if>
+      <if test="channel != null" >
+        CHANNEL,
+      </if>
+      <if test="adjustId != null" >
+        ADJUST_ID,
+      </if>
+      <if test="oprice != null" >
+        O_PRICE,
+      </if>
+      <if test="oadjustPrice != null" >
+        O_ADJUST_PRICE,
+      </if>
+      <if test="obdate != null" >
+        O_BDATE,
+      </if>
+      <if test="oedate != null" >
+        O_EDATE,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      #{id,jdbcType=DECIMAL},
+      <if test="materialId != null" >
+        #{materialId,jdbcType=VARCHAR},
+      </if>
+      <if test="createTs != null" >
+        #{createTs,jdbcType=TIMESTAMP},
+      </if>
+      <if test="organizationId != null" >
+        #{organizationId,jdbcType=VARCHAR},
+      </if>
+      <if test="price != null" >
+        #{price,jdbcType=DECIMAL},
+      </if>
+      <if test="opt != null" >
+        #{opt,jdbcType=VARCHAR},
+      </if>
+      <if test="bdate != null" >
+        #{bdate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="edate != null" >
+        #{edate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="channel != null" >
+        #{channel,jdbcType=VARCHAR},
+      </if>
+      <if test="adjustId != null" >
+        #{adjustId,jdbcType=DECIMAL},
+      </if>
+      <if test="oprice != null" >
+        #{oprice,jdbcType=DECIMAL},
+      </if>
+      <if test="oadjustPrice != null" >
+        #{oadjustPrice,jdbcType=DECIMAL},
+      </if>
+      <if test="obdate != null" >
+        #{obdate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="oedate != null" >
+        #{oedate,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="com.hhnz.crm.model.TMaterialPriceAdjustRecordExample" resultType="java.lang.Integer" >
+    select count(*) from T_MATERIAL_PRICE_ADJUST_RECORD
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map" >
+    update T_MATERIAL_PRICE_ADJUST_RECORD
+    <set >
+      <if test="record.id != null" >
+        ID = #{record.id,jdbcType=DECIMAL},
+      </if>
+      <if test="record.materialId != null" >
+        MATERIAL_ID = #{record.materialId,jdbcType=VARCHAR},
+      </if>
+      <if test="record.createTs != null" >
+        CREATE_TS = #{record.createTs,jdbcType=TIMESTAMP},
+      </if>
+      <if test="record.organizationId != null" >
+        ORGANIZATION_ID = #{record.organizationId,jdbcType=VARCHAR},
+      </if>
+      <if test="record.price != null" >
+        PRICE = #{record.price,jdbcType=DECIMAL},
+      </if>
+      <if test="record.opt != null" >
+        OPT = #{record.opt,jdbcType=VARCHAR},
+      </if>
+      <if test="record.bdate != null" >
+        BDATE = #{record.bdate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="record.edate != null" >
+        EDATE = #{record.edate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="record.channel != null" >
+        CHANNEL = #{record.channel,jdbcType=VARCHAR},
+      </if>
+      <if test="record.adjustId != null" >
+        ADJUST_ID = #{record.adjustId,jdbcType=DECIMAL},
+      </if>
+    </set>
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map" >
+    update T_MATERIAL_PRICE_ADJUST_RECORD
+    set ID = #{record.id,jdbcType=DECIMAL},
+      MATERIAL_ID = #{record.materialId,jdbcType=VARCHAR},
+      CREATE_TS = #{record.createTs,jdbcType=TIMESTAMP},
+      ORGANIZATION_ID = #{record.organizationId,jdbcType=VARCHAR},
+      PRICE = #{record.price,jdbcType=DECIMAL},
+      OPT = #{record.opt,jdbcType=VARCHAR},
+      BDATE = #{record.bdate,jdbcType=TIMESTAMP},
+      EDATE = #{record.edate,jdbcType=TIMESTAMP},
+      CHANNEL = #{record.channel,jdbcType=VARCHAR},
+      ADJUST_ID = #{record.adjustId,jdbcType=DECIMAL}
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="com.hhnz.crm.model.TMaterialPriceAdjustRecord" >
+    update T_MATERIAL_PRICE_ADJUST_RECORD
+    <set >
+      <if test="materialId != null" >
+        MATERIAL_ID = #{materialId,jdbcType=VARCHAR},
+      </if>
+      <if test="createTs != null" >
+        CREATE_TS = #{createTs,jdbcType=TIMESTAMP},
+      </if>
+      <if test="organizationId != null" >
+        ORGANIZATION_ID = #{organizationId,jdbcType=VARCHAR},
+      </if>
+      <if test="price != null" >
+        PRICE = #{price,jdbcType=DECIMAL},
+      </if>
+      <if test="opt != null" >
+        OPT = #{opt,jdbcType=VARCHAR},
+      </if>
+      <if test="bdate != null" >
+        BDATE = #{bdate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="edate != null" >
+        EDATE = #{edate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="channel != null" >
+        CHANNEL = #{channel,jdbcType=VARCHAR},
+      </if>
+      <if test="adjustId != null" >
+        ADJUST_ID = #{adjustId,jdbcType=DECIMAL},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=DECIMAL}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.hhnz.crm.model.TMaterialPriceAdjustRecord" >
+    update T_MATERIAL_PRICE_ADJUST_RECORD
+    set MATERIAL_ID = #{materialId,jdbcType=VARCHAR},
+      CREATE_TS = #{createTs,jdbcType=TIMESTAMP},
+      ORGANIZATION_ID = #{organizationId,jdbcType=VARCHAR},
+      PRICE = #{price,jdbcType=DECIMAL},
+      OPT = #{opt,jdbcType=VARCHAR},
+      BDATE = #{bdate,jdbcType=TIMESTAMP},
+      EDATE = #{edate,jdbcType=TIMESTAMP},
+      CHANNEL = #{channel,jdbcType=VARCHAR},
+      ADJUST_ID = #{adjustId,jdbcType=DECIMAL}
+    where ID = #{id,jdbcType=DECIMAL}
+  </update>
+  <sql id="OracleDialectPrefix" >
+    <if test="page != null" >
+      select * from ( select row_.*, rownum rownum_ from ( 
+    </if>
+  </sql>
+  <sql id="OracleDialectSuffix" >
+    <if test="page != null" >
+      <![CDATA[ ) row_ ) where rownum_ > #{page.begin} and rownum_ <= #{page.end} ]]>
+    </if>
+  </sql>
+</mapper>

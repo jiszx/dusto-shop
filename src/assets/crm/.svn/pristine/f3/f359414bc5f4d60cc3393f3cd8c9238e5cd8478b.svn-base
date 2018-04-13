@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.receivable.mapper.ArOverdueMapper" >
+
+	<resultMap type="com.hhnz.receivable.dto.ArOverdueDTO" id="arOverdueResultMap">
+		<result column="merchId" property="merchId" jdbcType="DECIMAL"/>
+		<result column="custname" property="custname" jdbcType="VARCHAR"/>
+		<result column="sap_customer_id" property="sapCustomerId" jdbcType="VARCHAR"/>
+		<result column="organization_id" property="orgid" jdbcType="VARCHAR"/>
+		<result column="orgname" property="orgname" jdbcType="VARCHAR"/>
+		<result column="cust_type" property="custType" jdbcType="VARCHAR"/>
+		<result column="arPeriod" property="arPeriod" jdbcType="VARCHAR"/>
+		<result column="aramt" property="aramt" jdbcType="DECIMAL"/>
+		<result column="overdue1" property="overdue1" jdbcType="DECIMAL"/>
+		<result column="overdue2" property="overdue2" jdbcType="DECIMAL"/>
+		<result column="overdue3" property="overdue3" jdbcType="DECIMAL"/>
+		<result column="overdue4" property="overdue4" jdbcType="DECIMAL"/>
+		<result column="overdue5" property="overdue5" jdbcType="DECIMAL"/>
+		<result column="overdue6" property="overdue6" jdbcType="DECIMAL"/>
+		<result column="overdue7" property="overdue7" jdbcType="DECIMAL"/>
+	</resultMap>
+	<select id="selectArOverdueList" resultMap="arOverdueResultMap" parameterType="java.util.Map">
+	<include refid="OracleDialectPrefix"/>
+	<![CDATA[ 
+	 SELECT sum(nvl(case
+                 when ar.datenum < = 0 then
+                  nvl(ar.amt, 0)
+               end,
+               0)) overdue1,
+       sum(nvl(case
+                 when ar.datenum > 0 and ar.datenum <= 30 then
+                  nvl(ar.amt, 0)
+               end,
+               0)) overdue2,
+       sum(nvl(case
+                 when ar.datenum > 30 and ar.datenum < = 60 then
+                  nvl(ar.amt, 0)
+               end,
+               0)) overdue3,
+       sum(nvl(case
+                 when ar.datenum > 60 and ar.datenum <= 90 then
+                  nvl(ar.amt, 0)
+               end,
+               0)) overdue4,
+       sum(nvl(case
+                 when ar.datenum > 90 and ar.datenum <= 120 then
+                  nvl(ar.amt, 0)
+               end,
+               0)) overdue5,
+       sum(nvl(case
+                 when ar.datenum > 120 and ar.datenum < 180 then
+                  nvl(ar.amt, 0)
+               end,
+               0)) overdue6,
+       sum(nvl(case
+                 when ar.datenum > 180 then
+                  nvl(ar.amt, 0)
+               end,
+               0)) overdue7,
+       sum(ar.amt) aramt,
+       ar.id merchId,
+       ar.name custname,
+       ar.sap_customer_id,
+       ar.cust_type,
+       ar.organization_id,
+       ar.orgname,
+       ar.show_text  arPeriod
+   ]]>
+  FROM (SELECT cmcb.id,
+               cmcb.name,
+               cmcb.sap_customer_id,
+               td.show_text,
+               rec.aramt + rec.tax -rec.receive_amt amt,
+               rec.draw_date,
+               cmcb.cust_type,
+               cmcb.organization_id,
+               cso.name orgname,
+               round(sysdate - rec.draw_date) - to_number(td.show_text) datenum
+          FROM (SELECT oi.total_price + nvl(oi2.total_price, 2) aramt,
+                       oi.total_tax + nvl(oi2.total_tax, 0) tax,
+                       oi.customer_id,
+                       oi.draw_date,
+                       nvl((select nvl(sum(nvl(cmrv.verifie_amt, 0)), 0)
+  							from c_merch_receive_verifie cmrv
+  						where 1=1
+  							and cmrv.invoice_no=oi.invoice_no),0) receive_amt
+                  FROM om_invoice oi, om_invoice oi2
+                 where 1 = 1
+                   and oi.invoice_no = oi2.writeoff_invoice(+)
+                   <if test="sapCustomerId !=null and sapCustomerId !=''">
+                   	and oi.customer_id =#{sapCustomerId,jdbcType=VARCHAR}
+                   </if>
+                   ) rec,
+               c_merch_cust_base cmcb,
+               t_dict td,
+               c_merch_cust_contract cmcc,
+               crm_sales_organization cso
+         where 1 = 1
+           and cmcb.sap_customer_id = rec.customer_id
+           and cmcc.merch_cust_id = cmcb.id
+           and cmcb.organization_id= cso.id
+           and cmcc.settle_type = '2'
+           and cmcc.a_period = td.choose_val
+           and td.col_name = 'MERCH_CONTRACT_ACCOUNT_PERIOD'
+           <if test="sapCustomerId !=null and sapCustomerId !=''">
+           and cmcb.sap_customer_id =#{sapCustomerId,jdbcType=VARCHAR}
+           </if>
+           <if test="custname !=null and custname !=''">
+           	and cmcb.name like #{custname,jdbcType=VARCHAR}||'%'
+           </if>
+           <if test="orgid !=null and orgid !=''">
+            and cmcb.organization_id =#{orgid,jdbcType=VARCHAR}
+           </if>
+           <if test="custType !=null and custType !=''">
+           	and cmcb.cust_type =#{custType,jdbcType=VARCHAR}
+           </if>
+           <if test="stationids !=null and stationids.size() >0">
+           	and exists (select 1 from c_merch_cust_station cmcs
+           			where 1=1
+           			and cmcs.merch_cust_id= cmcb.id
+           			and cmcs.station_id in
+           			<foreach item="item" index="index" collection="stationids" open="(" separator="," close=")">  
+ 		 				#{item}  
+ 					</foreach> 
+           			)
+           </if>
+           and rec.aramt > 0
+           ) ar
+ 	group by ar.id,
+          ar.name,
+          ar.sap_customer_id,
+          ar.cust_type,
+          ar.organization_id,
+          ar.orgname,
+          ar.show_text
+     <include refid="OracleDialectSuffix"/>
+	</select>
+	
+	<select id="countArOverdue" resultType="int" parameterType="java.util.Map">
+		<![CDATA[ 
+	select count(1) from ( SELECT 
+       sum(ar.amt) aramt,
+       ar.id merchId,
+       ar.name custname,
+       ar.sap_customer_id,
+       ar.cust_type,
+       ar.organization_id,
+       ar.orgname,
+       ar.show_text  
+   ]]>
+  FROM (SELECT cmcb.id,
+               cmcb.name,
+               cmcb.sap_customer_id,
+               td.show_text,
+               rec.aramt + rec.tax amt,
+               rec.draw_date,
+               cmcb.cust_type,
+               cmcb.organization_id,
+               cso.name orgname,
+               round(sysdate - rec.draw_date) - to_number(td.show_text) datenum
+          FROM (SELECT oi.total_price + nvl(oi2.total_price, 2) aramt,
+                       oi.total_tax + nvl(oi2.total_tax, 0) tax,
+                       oi.customer_id,
+                       oi.draw_date
+                  FROM om_invoice oi, om_invoice oi2
+                 where 1 = 1
+                   and oi.invoice_no = oi2.writeoff_invoice(+)
+                   <if test="sapCustomerId !=null and sapCustomerId !=''">
+                   	and oi.customer_id =#{sapCustomerId,jdbcType=VARCHAR}
+                   </if>
+                   ) rec,
+               c_merch_cust_base cmcb,
+               t_dict td,
+               c_merch_cust_contract cmcc,
+               crm_sales_organization cso
+         where 1 = 1
+           and cmcb.sap_customer_id = rec.customer_id
+           and cmcc.merch_cust_id = cmcb.id
+           and cmcb.organization_id= cso.id
+           and cmcc.settle_type = '2'
+           and cmcc.a_period = td.choose_val
+           and td.col_name = 'MERCH_CONTRACT_ACCOUNT_PERIOD'
+           <if test="sapCustomerId !=null and sapCustomerId !=''">
+           and cmcb.sap_customer_id =#{sapCustomerId,jdbcType=VARCHAR}
+           </if>
+           <if test="custname !=null and custname !=''">
+           	and cmcb.name like #{custname,jdbcType=VARCHAR}||'%'
+           </if>
+           <if test="orgid !=null and orgid !=''">
+            and cmcb.organization_id =#{orgid,jdbcType=VARCHAR}
+           </if>
+           <if test="custType !=null and custType !=''">
+           	and cmcb.cust_type =#{custType,jdbcType=VARCHAR}
+           </if>
+           <if test="stationids !=null and stationids.size() >0">
+           	and exists (select 1 from c_merch_cust_station cmcs
+           			where 1=1
+           			and cmcs.merch_cust_id= cmcb.id
+           			and cmcs.station_id in
+           			<foreach item="item" index="index" collection="stationids" open="(" separator="," close=")">  
+ 		 				#{item}  
+ 					</foreach> 
+           			)
+           </if>
+           and rec.aramt > 0 ) ar
+ 	group by ar.id,
+          ar.name,
+          ar.sap_customer_id,
+          ar.cust_type,
+          ar.organization_id,
+          ar.orgname,
+          ar.show_text)
+	</select>
+	<resultMap type="com.hhnz.receivable.dto.ArOverdueDetailsDTO" id="arOverdueDetailsReusltMap">
+		<result column="invoice_no" property="invoiceNo" jdbcType="VARCHAR"/>
+		<result column="draw_date" property="drawDate" jdbcType="VARCHAR"/>
+		<result column="amt" property="amt" jdbcType="DECIMAL"/>
+		<result column="tax" property="tax" jdbcType="DECIMAL"/>
+		<result column="overdueNum" property="overdueNum" jdbcType="VARCHAR"/>
+		<result column="material_id" property="materialId" jdbcType="VARCHAR"/>
+		<result column="sku" property="sku" jdbcType="VARCHAR"/>
+		<result column="num" property="num" jdbcType="DECIMAL"/>
+		<result column="weight" property="weight" jdbcType="DECIMAL"/>
+		<result column="price" property="price" jdbcType="DECIMAL"/>
+	</resultMap>
+	<select id="selectArOverdueDetials" resultMap="arOverdueDetailsReusltMap" parameterType="java.util.Map">
+		<include refid="OracleDialectPrefix"/>
+		SELECT oi.invoice_no,
+       oi.draw_date,
+       oii.material_id,
+       tmb.unit,
+       tmb.sku,
+       case
+         when oii.unit = 'TO' then
+          oii.price
+         else
+          oii.price * nvl(tmb.attribute6, 1)
+       end price,
+       oii.amt,
+       oii.tax,
+       case
+         when oii.unit = 'TO' then
+          oii.num
+         else
+          oii.num / nvl(tmb.attribute6, 1)
+       end num,
+       case
+         when tmb.unit = 'TO' then
+          oii.num
+         else
+          oii.num * tmb.specifications / 1000000
+       end weight,
+       round(sysdate-oi.draw_date)-#{arPeriod,jdbcType=DECIMAL} overdueNum
+  FROM om_invoice oi, 
+  	   om_invoice_item oii, 
+  	   t_material_base tmb,
+  	   c_merch_cust_base cmcb
+ where 1 = 1
+   	and oi.invoice_no = oii.invoice_no
+   	and oii.material_id = tmb.sap_id
+	and cmcb.sap_customer_id= oi.customer_id
+	and cmcb.id =#{merchId,jdbcType=DECIMAL}
+	<include refid="OracleDialectSuffix"/>
+	</select>
+ <select id="countArOverdueDetails" resultType="int" parameterType="java.util.Map">
+		SELECT COUNT(1)
+  FROM om_invoice oi, 
+  	   om_invoice_item oii, 
+  	   t_material_base tmb,
+  	   c_merch_cust_base cmcb
+ where 1 = 1
+   	and oi.invoice_no = oii.invoice_no
+   	and oii.material_id = tmb.sap_id
+	and cmcb.sap_customer_id= oi.customer_id
+	and cmcb.id =#{merchId,jdbcType=DECIMAL}
+	</select>
+	<sql id="OracleDialectPrefix" >
+      select * from ( select row_.*, rownum rownum_ from ( 
+  </sql>
+  <sql id="OracleDialectSuffix" >
+      <![CDATA[ ) row_ ) where rownum_ > #{begin} and rownum_ <= #{end} ]]>
+  </sql>
+</mapper>

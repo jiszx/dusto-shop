@@ -1,0 +1,18 @@
+{
+  "data": [{
+    "salesID": 1,
+    "salesGroup": "新都化工哈哈农庄销售1处",
+    "customerName": "美乐乐超市",
+    "cash": "13000.00"
+  },{
+    "salesID": 2,
+    "salesGroup": "新都化工哈哈农庄销售2处",
+    "customerName": "加勒比海盗超市第二农贸超市化肥销售处",
+    "cash": "2775.50"
+  },{
+    "salesID": 3,
+    "salesGroup": "新都化工哈哈农庄销售3处",
+    "customerName": "永辉超市",
+    "cash": "2775.50"
+  }]
+}

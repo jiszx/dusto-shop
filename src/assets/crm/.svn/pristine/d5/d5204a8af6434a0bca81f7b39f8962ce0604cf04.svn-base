@@ -1,0 +1,1775 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.order.mapper.OrderUtilMapper">
+	<resultMap id="CustomerInfo" type="com.hhnz.order.model.OrderCustomer">
+		
+		<result column="custname" property="custname" jdbcType="VARCHAR" />
+		<result column="id" property="id" jdbcType="DECIMAL" />
+		<result column="station_id" property="stationid" jdbcType="VARCHAR" />
+		<result column="organization_id" property="organizationId" jdbcType="VARCHAR" />
+		<result column="hbratio" property="hbratio" jdbcType="DECIMAL"/>
+		<result column="cust_type" property="custType" jdbcType="VARCHAR"/>
+		<result column="sap_customer_id" property="sapCustomerId" jdbcType="VARCHAR"/>
+		<result column="rdcCode" property="rdcCode" jdbcType="VARCHAR"/>
+	</resultMap>
+	<select id="getUserCustomerInfo" resultMap="CustomerInfo"
+		parameterType="java.util.Map">
+		<include refid="OracleDialectPrefix" />
+		SELECT cmcb.id,
+       cmcb.name as custname,
+       cso.name as orgname,
+       cmcb.contact_name contactname,
+       cmcb.contact_tel contacttel,
+       cmcs.station_id,
+       cmcb.organization_id,
+      <!--  substr(cso.id, 0, 5) as organization_id, -->
+       cso.attribute1 as hbratio,
+       cmcb.cust_type,
+       nvl(cmcb.sap_customer_id,0) sap_customer_id,
+       nvl(cmcc.virtual_warehouse,'') rdcCode
+  FROM c_merch_cust_base      cmcb,
+       c_merch_cust_station   cmcs,
+       crm_station            cs,
+       crm_sales_organization cso,
+       c_merch_cust_contract cmcc
+ where cmcb.id = cmcs.merch_cust_id
+   and cmcs.station_id = cs.id
+   and cs.organization_id = cso.id
+   and cmcc.merch_cust_id= cmcb.id
+   and cmcc.organization_id= cmcb.organization_id
+   and cmcc.states='4'
+   <!-- and ((cmcb.cust_type ='70') or(cmcb.cust_type !='70' and cmcb.pid is null)) -->
+   <if test="all != 1">
+   and cmcb.cust_type !='2'
+   </if>
+   and cmcb.states = '3'
+	<if test="type ==1">
+		<if test="stationid != null and stationid.size()>0">
+    	and cmcs.station_id in
+		<foreach item="item" index="index" collection="stationid"
+			open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		</if>
+	</if>
+	<if test="name != null  and  name != ''">
+		and cmcb.name like ${name}
+	</if>
+	<if test="areaList !=null">
+		and (
+		cmcb.PROV_ID in
+		<foreach item="item" index="index" collection="areaList" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		or
+		cmcb.CITY_ID in
+		<foreach item="item" index="index" collection="areaList" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		or
+		cmcb.COUNTY_ID in
+		<foreach item="item" index="index" collection="areaList" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+
+		)
+	</if>
+	<if test="custTypeList != null">
+		and CMCB.CUST_TYPE in
+		<foreach item="item" index="index" collection="custTypeList"
+			open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</if>
+	<if test=" statusList != null ">
+		and CMCB.STATES in
+		<foreach item="item" index="index" collection="statusList"
+			open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</if>
+	<if test="org!=null">
+		and cmcb.ORGANIZATION_ID like #{org} || '%'
+	</if>
+    <include refid="OracleDialectSuffix" />
+	</select>
+    <select id="customerByOrgid" resultMap="CustomerInfo" parameterType="java.lang.String">
+    	SELECT cmcb.id,
+       cmcb.name as custname,
+       '' as orgname,
+       cmcb.contact_name contactname,
+       cmcb.contact_tel contacttel,
+       cmcs.station_id,
+       '' as organization_id,
+       '' as hbratio
+  FROM c_merch_cust_station cmcs, c_merch_cust_base cmcb
+ where cmcb.id = cmcs.merch_cust_id
+   and cmcs.station_id =#{id,jdbcType=DECIMAL}
+   and cmcb.states='3'
+    </select>
+	<select id="selectBillCustomer" resultMap="CustomerInfo" parameterType="java.lang.Long">
+		SELECT cmcb.name custname,cmcb.id,cmcb.sap_customer_id
+  			FROM c_merch_cust_base cmcb,
+       (SELECT nvl(cmp.payer, cmcb.id) merchid
+          FROM c_merch_cust_base cmcb, c_merch_payer cmp
+         where cmcb.id = cmp.merchid(+)
+         and cmcb.id=#{merchId,jdbcType=DECIMAL}) rec
+ where cmcb.id = rec.merchid
+	</select>
+	<resultMap id="CustomerMaterialResultMap" type="com.hhnz.order.model.OrderMaterial">
+		<result column="merch_cust_id" property="merchCustId" jdbcType="DECIMAL" />
+		<result column="organization_id" property="organizationId"
+			jdbcType="VARCHAR" />
+		<result column="material_id" property="materialId" jdbcType="VARCHAR" />
+		<result column="sku" property="sku" jdbcType="VARCHAR" />
+		<result column="material_name" property="materialName"
+			jdbcType="VARCHAR" />
+		<result column="price" property="price" jdbcType="DECIMAL" />
+		<result column="h_price" property="hPrice" jdbcType="DECIMAL" />
+		<result column="base_price" property="basePrice" jdbcType="DECIMAL" />
+		<result column="unitprice" property="unitprice" jdbcType="DECIMAL" />
+		<result column="cif_price" property="cifPrice" jdbcType="DECIMAL"/>
+		<result column="unit" property="unit" jdbcType="DECIMAL" />
+		<result column="sap_id" property="sapId" jdbcType="VARCHAR" />
+		<result column="invnum" property="invnum" jdbcType="VARCHAR" />
+		<result column="amounts" property="amounts" jdbcType="VARCHAR"/>
+		<result column="specifications" property="specifications" jdbcType="VARCHAR"/>
+		<result column="materialType" property="materialType" jdbcType="VARCHAR"/>
+	</resultMap>
+	<select id="selectKaProduct" resultMap="CustomerMaterialResultMap" parameterType="java.util.Map">
+			SELECT * FROM ( SELECT cmcp.merch_cust_id,
+       cmcb.organization_id,
+       cmcp.material_id,
+       tmb.sap_id,
+       tmb.sku,
+       tmb.material_name,
+       tmb.category,
+       tmb.brand,
+       tmb.series,
+       tmb.i_package iPackage,
+       nvl(tmb.attribute6, 1) amounts,
+       tmb.specifications,
+       tmu.unit,
+       cmcp.price,
+       nvl(cmcp.h_price, 0) / 100 h_price,
+       ROUND(nvl((SELECT max(tmp.price + nvl(tmp.adjust_price, 0)) keep(dense_rank first order by tmp.create_ts desc) 
+                   					FROM T_MATERIAL_PRICE tmp
+                   				 where tmp.edate >= trunc(SYSDATE)
+                     				and tmp.bdate &lt;= trunc(SYSDATE)
+                     				and tmp.material_id = cmcp.material_id
+                  					and tmp.organization_id = cso.sap_id
+                  					and tmp.channel='10'
+                           ),0)/100, 4) AS base_price,
+        nvl(cmcp.cif_price,0)/100 cif_price,
+       <!-- round((nvl((SELECT max(tmp.price) keep(dense_rank first order by tmp.bdate desc)
+                    FROM T_MATERIAL_PRICE tmp
+                   where 1 = 1
+                     and tmp.edate + 0.99999 > sysdate
+                     and tmp.bdate + 0.00001 &lt; sysdate
+                     and tmp.channel='10'
+                     and tmp.material_id = cmcp.material_id),
+                  0) + nvl(cmcp.price, 0) + nvl(cmcp.h_price, 0)) / 100,
+             4) unitprice, -->
+       tmb.invlimit,
+       (SELECT COUNT(1)
+          FROM om_policy_cust    opm,
+               om_policy_lines   opl,
+               om_policy_headers oph,
+               om_policy_type    opt
+         WHERE opm.header_id = oph.ID
+           AND opl.header_id = oph.ID
+           AND oph.policy_type = opt.ID
+           AND opm.merch_cust_id =#{merchid,jdbcType=DECIMAL}
+           AND oph.organization_id = #{orgid,jdbcType=VARCHAR}
+           AND opl.material_id = cmcp.material_id
+           and oph.states = '3') policynum,
+       cmcpi.inv_num invnum,
+       '0' materialType
+  FROM c_merch_cust_product     cmcp,
+       c_merch_cust_base        cmcb,
+       t_material_base          tmb,
+       t_material_unit          tmu,
+       c_merch_cust_proudct_inv cmcpi
+ where 1 = 1
+   and cmcp.material_id = tmb.sap_id
+   and cmcp.material_id = cmcpi.material_id
+   and cmcb.id = cmcp.merch_cust_id
+   and tmb.unit = tmu.code(+)
+   and cmcb.pid = cmcpi.merch_cust_id
+   and cmcb.id =#{merchid,jdbcType=DECIMAL}
+   and cmcb.organization_id =#{orgid,jdbcType=VARCHAR}
+   and cmcp.states='4'
+   and cmcpi.inv_num > 0) where base_price+cif_price+h_price>0
+	</select>
+	<select id="selectRetailProduct" resultMap="CustomerMaterialResultMap" parameterType="java.util.Map">
+		select * from ( SELECT distinct cmcp.merch_cust_id,
+				cmcp.organization_id,
+				cmcp.material_id,
+				tmb.sap_id,
+				tmb.sku,
+				tmb.material_name,
+				tmb.category,
+				tmb.attribute1 brand,
+				tmb.series,
+				tmb.i_package iPackage,
+				CASE WHEN TMB.UNIT='TO' then '1'
+				ELSE nvl(tmb.attribute6, 1) end as amounts,
+				tmb.specifications,
+				null price,
+				nvl(cmcp.h_price, 0)/100 h_price,
+				ROUND(nvl((SELECT tmp.price
+             				FROM (SELECT *
+                   					FROM T_MATERIAL_PRICE
+                   				 where edate + 0.99999 > SYSDATE
+                     				and BDATE + 0.00001 &lt; SYSDATE
+                     				order by bdate desc) tmp
+              				where 1 = 1
+                  				and tmp.material_id = cmcp.material_id
+                  				and tmp.organization_id = cso.sap_id
+                  				and tmp.channel='10'
+                  			and rownum = 1),
+                           0)/100, 4) AS base_price,
+                tmu.unit,
+                round(((nvl((SELECT tmp.price
+
+             					FROM (SELECT *
+                   						FROM T_MATERIAL_PRICE
+                   					where edate + 0.99999 > SYSDATE
+                     					and BDATE + 0.00001 &lt; SYSDATE
+                     					order by bdate desc) tmp
+              				where 1 = 1
+                  				and tmp.material_id = cmcp.material_id
+                  				and tmp.organization_id = cso.sap_id
+                  				and tmp.channel='10'
+                  				and rownum = 1), 0) + nvl(cmcp.price, 0) + nvl(cmcp.h_price, 0)) / 100),
+                      4) as unitprice,
+				tmb.invlimit,
+				(
+					SELECT
+						COUNT (1)
+					FROM
+						om_policy_cust opm,
+						om_policy_lines opl,
+						om_policy_headers oph,
+						om_policy_type opt
+					WHERE
+						opm.header_id = oph. ID
+						AND opl.header_id = oph. ID
+						AND oph.policy_type = opt. ID
+						AND opm.merch_cust_id = #{merchid}
+						AND oph.organization_id = #{orgid}
+						AND opl.material_id = cmcp.material_id
+						and oph.states='3'
+				) policynum,
+				nvl((SELECT sum(cmcpi.inv_num) FROM c_merch_cust_proudct_inv cmcpi
+								where 1=1
+							and cmcpi.merch_cust_id= cmcp.merch_cust_id
+							and cmcpi.material_id= cmcp.material_id
+								 ),0) as invnum,
+					'0' materialType
+				FROM c_merch_cust_product cmcp,
+				     t_material_base tmb, 
+				     t_material_unit tmu, 
+					 c_merch_cust_contract cmcc,
+					 crm_sales_organization cso
+				where cmcp.material_id = tmb.sap_id
+				and cmcp.merch_cust_id=cmcc.merch_cust_id
+				and cmcc.organization_id= cmcp.organization_id
+				and cmcp.contract_id= cmcc.id
+				and tmb.unit = tmu.code(+)
+				and tmb.active='1'
+				and cso.id= cmcc.organization_id
+				and ((tmb.IODINE is null) or ( tmb.IODINE is not null
+				and exists (select 1 from  c_merch_cust_base cmcb,
+					 t_material_iodine_standard tmis
+			  where 1=1
+			    and cmcb.prov_id= tmis.area_id
+				and tmis.code = tmb.iodine
+				and cmcb.id=#{merchid,jdbcType=DECIMAL}))) 
+				and cmcp.merch_cust_id =nvl(#{merchid,jdbcType=DECIMAL},cmcp.merch_cust_id)
+				and cmcp.organization_id=nvl(#{orgid,jdbcType=VARCHAR},cmcp.organization_id)
+				and cmcc.merch_cust_id=nvl(#{merchid,jdbcType=DECIMAL},cmcp.merch_cust_id)
+				and cmcc.states='4'
+				and cmcp.states='4'
+				and exists (SELECT 1 FROM c_merch_cust_proudct_inv cmcpi
+								where 1=1
+							and cmcpi.merch_cust_id= cmcp.merch_cust_id
+							and cmcpi.material_id= cmcp.material_id
+							and cmcpi.inv_num >0
+					)
+				) where unitprice>0
+	</select>
+	<select id="getCustomerMaterial" resultMap="CustomerMaterialResultMap"
+		parameterType="java.util.Map">
+		<include refid="OracleDialectPrefix" />		
+		select * from ( SELECT distinct cmcp.merch_cust_id,
+				cmcp.organization_id,
+				cmcp.material_id,
+				tmb.sap_id,
+				tmb.sku,
+				tmb.material_name,
+				tmb.category,
+				tmb.attribute1 brand,
+				tmb.series,
+				tmb.i_package iPackage,
+				CASE WHEN TMB.UNIT='TO' then '1'
+				ELSE nvl(tmb.attribute6, 1) end as amounts,
+				tmb.specifications,
+				null price,
+				nvl(cmcp.h_price, 0)/100 h_price,
+				<!-- SAP修改了价格逻辑，不存在同时生效的两个价格数据 -->
+				<!-- ROUND(nvl((SELECT tmp.price
+             				FROM (SELECT *
+                   					FROM T_MATERIAL_PRICE
+                   				 where edate >= trunc(SYSDATE)
+                     				and bdate &lt;= turnc(SYSDATE)
+                     				order by bdate desc ) tmp
+              				where 1 = 1
+                  				and tmp.material_id = cmcp.material_id
+                  				and tmp.organization_id = cso.sap_id
+                  			and rownum = 1),
+                           0)/100, 4) AS base_price, -->
+                ROUND(nvl((SELECT max(tmp.price + nvl(tmp.adjust_price, 0)) keep(dense_rank first order by tmp.create_ts desc) 
+                   					FROM T_MATERIAL_PRICE tmp
+                   				 where tmp.edate >= trunc(SYSDATE)
+                     				and tmp.bdate &lt;= trunc(SYSDATE)
+                     				and tmp.material_id = cmcp.material_id
+                  					and tmp.organization_id = cso.sap_id
+                  					and tmp.channel='10'
+                           ),0)/100, 4) AS base_price,
+                tmu.unit,
+                <!-- round((nvl((SELECT tmp.price
+                   					FROM T_MATERIAL_PRICE tmp
+                   				 where tmp.edate >= trunc(SYSDATE)
+                     				and tmp.bdate &lt;= trunc(SYSDATE)
+                     				and tmp.material_id = cmcp.material_id
+                  					and tmp.organization_id = cso.sap_id
+                  					and tmp.channel='10'
+                           ),0) + nvl(cmcp.price, 0) + nvl(cmcp.h_price, 0)) / 100,
+                      4) as unitprice, -->
+                nvl(cmcp.cif_price,0)/100 cif_price,
+				tmb.invlimit,
+				(
+					SELECT
+						COUNT (1)
+					FROM
+						om_policy_cust opm,
+						om_policy_lines opl,
+						om_policy_headers oph,
+						om_policy_type opt
+					WHERE
+						opm.header_id = oph. ID
+						AND opl.header_id = oph. ID
+						AND oph.policy_type = opt. ID
+						AND opm.merch_cust_id = #{merchid}
+						AND oph.organization_id = #{orgid}
+						AND opl.material_id = cmcp.material_id
+						and oph.states='3'
+				) policynum,
+				nvl((select sum(nvl(cvw.amt, 0)) from crm_virtual_warehouse cvw
+								 where 1=1
+								 	and cvw.MATERIAL_ID = tmb.sap_id
+								 	and cmcc.factory_id = cvw.factory_code
+								 	and cmcc.virtual_warehouse = cvw.cust_type
+								 ),0) as invnum,
+					'0' materialType
+				FROM c_merch_cust_product cmcp,
+				     t_material_base tmb, 
+				     t_material_unit tmu, 
+					 c_merch_cust_contract cmcc,
+					 crm_sales_organization cso
+				where cmcp.material_id = tmb.sap_id
+				and cmcp.merch_cust_id=cmcc.merch_cust_id
+				and cmcc.organization_id= cmcp.organization_id
+				and cmcp.contract_id= cmcc.id
+				and tmb.unit = tmu.code(+)
+				and tmb.active='1'
+				and cso.id= cmcc.organization_id
+				<if test="type !=null">
+				and ((tmb.IODINE is null) or ( tmb.IODINE is not null
+				and exists (select 1 from  c_merch_cust_base cmcb,
+					 t_material_iodine_standard tmis
+			  where 1=1
+			    and cmcb.prov_id= tmis.area_id
+				<!-- and tmis.code = substr(tmb.market_dep_code,-1) -->
+				and tmis.code = tmb.iodine
+				and cmcb.id=#{merchid,jdbcType=DECIMAL}))) 
+				</if>
+				and cmcp.material_id =nvl(#{materialId,jdbcType=VARCHAR},cmcp.material_id)
+				and cmcp.merch_cust_id =nvl(#{merchid,jdbcType=DECIMAL},cmcp.merch_cust_id)
+				and cmcp.organization_id=nvl(#{orgid,jdbcType=VARCHAR},cmcp.organization_id)
+				and cmcc.merch_cust_id=nvl(#{merchid,jdbcType=DECIMAL},cmcp.merch_cust_id)
+				and cmcc.states='4'
+				and cmcp.states='4'
+				<if test="materialid !=null">
+		  	 		and cmcp.material_id=#{materialid}
+				</if>
+				<if test="sku !=null">
+		   			and tmb.sku like #{sku}
+				</if>
+				<if test="category !=null">
+		   			and tmb.category=#{category}
+				</if>
+				<if test="brand !=null">
+		   			and tmb.attribute1=#{brand}
+				</if>
+				<if test="series !=null">
+		   			and tmb.series in
+		   			<foreach item="item" index="index" collection="series" open="(" separator="," close=")">  
+	 		 		#{item}  
+	 	   			</foreach>
+				</if>
+				<if test="ipackage !=null">
+		   			and tmb.i_package=#{ipackage}
+				</if>
+				<if test="type !=null">
+					and exists (select 1 from crm_virtual_warehouse cvw
+								 where 1=1
+								 	and cvw.MATERIAL_ID = tmb.sap_id
+								 	and cmcc.factory_id = cvw.factory_code
+								 	and cmcc.virtual_warehouse = cvw.cust_type
+								 	and cvw.amt >0
+								 )
+				</if> 
+				) where base_price+cif_price+h_price>0
+			<include refid="OracleDialectSuffix" />		
+	</select>
+	
+	
+	<select id="selectCustProductByRdc" resultMap="CustomerMaterialResultMap" parameterType="java.util.Map">
+			select * from ( SELECT distinct cmcp.merch_cust_id,
+				cmcp.organization_id,
+				cmcp.material_id,
+				tmb.sap_id,
+				tmb.sku,
+				tmb.material_name,
+				tmb.category,
+				tmb.attribute1 brand,
+				tmb.series,
+				tmb.i_package iPackage,
+				CASE WHEN TMB.UNIT='TO' then '1'
+				ELSE nvl(tmb.attribute6, 1) end as amounts,
+				tmb.specifications,
+				null price,
+				nvl(cmcp.h_price, 0)/100 h_price,
+				<!-- SAP修改了价格逻辑，不存在同时生效的两个价格数据 -->
+				<!-- ROUND(nvl((SELECT tmp.price
+             				FROM (SELECT *
+                   					FROM T_MATERIAL_PRICE
+                   				 where edate >= trunc(SYSDATE)
+                     				and bdate &lt;= turnc(SYSDATE)
+                     				order by bdate desc ) tmp
+              				where 1 = 1
+                  				and tmp.material_id = cmcp.material_id
+                  				and tmp.organization_id = cso.sap_id
+                  			and rownum = 1),
+                           0)/100, 4) AS base_price, -->
+                ROUND(nvl((SELECT max(tmp.price + nvl(tmp.adjust_price, 0)) keep(dense_rank first order by tmp.create_ts desc) 
+                   					FROM T_MATERIAL_PRICE tmp
+                   				 where tmp.edate >= trunc(SYSDATE)
+                     				and tmp.bdate &lt;= trunc(SYSDATE)
+                     				and tmp.material_id = cmcp.material_id
+                  					and tmp.organization_id = cso.sap_id
+                  					and tmp.channel='10'
+                           ),0)/100, 4) AS base_price,
+                tmu.unit,
+                <!-- round((nvl((SELECT tmp.price
+                   					FROM T_MATERIAL_PRICE tmp
+                   				 where tmp.edate >= trunc(SYSDATE)
+                     				and tmp.bdate &lt;= trunc(SYSDATE)
+                     				and tmp.material_id = cmcp.material_id
+                  					and tmp.organization_id = cso.sap_id
+                  					and tmp.channel='10'
+                           ),0) + nvl(cmcp.price, 0) + nvl(cmcp.h_price, 0)) / 100,
+                      4) as unitprice, -->
+                nvl(cmcp.cif_price,0)/100 cif_price,
+				tmb.invlimit,
+				(
+					SELECT
+						COUNT (1)
+					FROM
+						om_policy_cust opm,
+						om_policy_lines opl,
+						om_policy_headers oph,
+						om_policy_type opt
+					WHERE
+						opm.header_id = oph. ID
+						AND opl.header_id = oph. ID
+						AND oph.policy_type = opt. ID
+						AND opm.merch_cust_id = #{merchid}
+						AND oph.organization_id = #{orgid}
+						AND opl.material_id = cmcp.material_id
+						and oph.states='3'
+				) policynum,
+				nvl((select sum(nvl(cvw.amt, 0)) from crm_virtual_warehouse cvw
+								 where 1=1
+								 	and cvw.MATERIAL_ID = tmb.sap_id
+								 	and cmcc.factory_id = cvw.factory_code
+								 	and cvw.cust_type=#{rdcCode,jdbcType=VARCHAR}
+								 ),0) as invnum,
+					'0' materialType
+				FROM c_merch_cust_product cmcp,
+				     t_material_base tmb, 
+				     t_material_unit tmu, 
+					 c_merch_cust_contract cmcc,
+					 crm_sales_organization cso
+				where cmcp.material_id = tmb.sap_id
+				and cmcp.merch_cust_id=cmcc.merch_cust_id
+				and cmcc.organization_id= cmcp.organization_id
+				and cmcp.contract_id= cmcc.id
+				and tmb.unit = tmu.code(+)
+				and tmb.active='1'
+				and cso.id= cmcc.organization_id
+				<if test="type !=2">
+				and ((tmb.IODINE is null) or ( tmb.IODINE is not null
+					and exists (select 1 from  c_merch_cust_base cmcb,
+					 t_material_iodine_standard tmis
+			  		where 1=1
+			   		 and cmcb.prov_id= tmis.area_id
+					and tmis.code = tmb.iodine
+					and cmcb.id=#{merchid,jdbcType=DECIMAL}))) 
+				</if>
+				and cmcp.merch_cust_id =nvl(#{merchid,jdbcType=DECIMAL},cmcp.merch_cust_id)
+				and cmcp.organization_id=nvl(#{orgid,jdbcType=VARCHAR},cmcp.organization_id)
+				and cmcc.merch_cust_id=nvl(#{merchid,jdbcType=DECIMAL},cmcp.merch_cust_id)
+				and cmcc.states='4'
+				and cmcp.states='4'
+				and exists (select 1 from crm_virtual_warehouse cvw
+								 where 1=1
+								 	and cvw.MATERIAL_ID = tmb.sap_id
+								 	and cmcc.factory_id = cvw.factory_code
+								 	and cvw.cust_type=#{rdcCode,jdbcType=VARCHAR}
+								 	and cvw.amt >0
+								 )
+				) where base_price+cif_price+h_price>0
+	</select>
+	<select id="selectCombinationMaterial" resultMap="CustomerMaterialResultMap" parameterType="java.util.Map">
+	select * from ( SELECT cmcp.merch_cust_id,
+       cmcp.organization_id,
+       cmcp.material_id,
+       cmph.code sap_id,
+       cmph.name sku,
+       '' category,
+       '' brand,
+       '' series,
+       '' iPackage,
+       1 amounts,
+       cmph.weight specifications,
+       0 price,
+       0 h_price,
+       combination_price(cmph.id,cso.sap_id)/100 AS base_price,
+       '套餐' unit,
+       combination_price(cmph.id,cso.sap_id)/100 as unitprice,
+       0 invlimit,
+       0 policynum,
+       cmph.id,
+       (SELECT MIN(CVW.AMT / CMPL.NUM)
+          FROM crm_virtual_warehouse cvw, crm_material_package_lines cmpl
+         where cmpl.header_id = cmph.id
+           and cmpl.material_id = cvw.material_id
+           and cvw.factory_code = cmcc.factory_id
+           and cvw.cust_type = cmcc.virtual_warehouse) invnum,
+       '1' materialType
+  FROM c_merch_cust_product        cmcp,
+       crm_material_package_apply  cmpa,
+       crm_material_package_header cmph,
+       c_merch_cust_contract cmcc,
+       crm_sales_organization cso
+ where cmcp.contract_lineid = cmpa.id
+   and cmpa.package_id = cmph.id
+   and cmcc.merch_cust_id= cmcp.merch_cust_id
+   and cmcc.id= cmcp.contract_id
+   and cmcp.organization_id= cso.id
+   and cmcc.organization_id= cso.id
+   and cmcc.states='4'
+   and cmcp.organization_id =#{orgid,jdbcType=VARCHAR}
+   and cmcp.merch_cust_id = #{merchid,jdbcType=DECIMAL} ) rec
+   where 1=1
+   <if test="type !=null">
+   and rec.invnum >0
+   </if>
+   and rec.unitprice >0
+	</select>
+	<resultMap type="com.hhnz.order.model.OrderPolicy" id="OrderPolicyResultMap">
+		<result column="header_id" property="headerId" jdbcType="DECIMAL" />
+		<result column="primary" property="primary" jdbcType="VARCHAR" />
+		<result column="discount" property="discount" jdbcType="VARCHAR" />
+		<result column="limit" property="limit" jdbcType="VARCHAR" />
+		<result column="discount_intensity" property="discountIntensity"
+			jdbcType="VARCHAR" />
+		<result column="verification" property="verification" jdbcType="VARCHAR" />
+		<result column="description" property="description" jdbcType="VARCHAR" />
+		<result column="discountname" property="discountname" jdbcType="VARCHAR" />
+		<result column="lineid" property="lineid" jdbcType="DECIMAL" />
+	</resultMap>
+	
+	<sql id="OracleDialectPrefix" >
+	  <if test="begin !=null">
+          select * from ( select row_.*, rownum rownum_ from ( 
+      </if>
+  	</sql>
+  	<sql id="OracleDialectSuffix" >
+  	   <if test="begin !=null">
+       		<![CDATA[ ) row_  ) where rownum_ > #{begin} and rownum_ <= #{end} ]]>
+       </if>
+    </sql>
+    
+	<select id="getOrderPolicy" resultMap="OrderPolicyResultMap"
+		parameterType="java.util.Map">
+		<include refid="OracleDialectPrefix" />
+		
+		SELECT opl.header_id,
+		opl.id lineid,
+		opl.primary,
+		opl.discount,
+		opl.limit,
+		opl.discount_intensity,
+		opt.VERIFICATION,
+		oph.description,
+        cmb.name custname,
+        oph.B_DATE bdate,
+    	oph.e_date edate,
+		case
+		when opt.verification = '1' then
+		'搭赠' || '-' || (SELECT tmb.sku
+		FROM t_material_base tmb
+		where tmb.sap_id = opl.discount) || '-' ||
+		opl.discount_intensity ||
+		(SELECT tmu2.unit
+		FROM t_material_base tmb2, t_material_unit tmu2
+		where tmb2.sap_id = opl.discount
+		and tmb2.unit = tmu2.code)
+		when opt.verification = '4' then
+		'返货补'
+		when opt.verification = '2' then
+		'价格折扣'
+		when opt.verification = '3' then
+		'返现金'
+		when opt.verification = '5' then
+		'送促销品'
+		end as discountname
+		FROM om_policy_cust opm,
+		om_policy_lines opl,
+		om_policy_headers oph,
+		om_policy_type opt,
+        C_MERCH_CUST_BASE cmb
+		where 1 = 1
+		and opm.header_id = oph.id
+		and opl.header_id = oph.id
+		and oph.policy_type = opt.id
+        and opm.MERCH_CUST_ID=cmb.id
+        and oph.states='3'
+        and oph.e_date +0.99999>sysdate
+        <if test="merchid !=null">
+        	and opm.merch_cust_id=#{merchid,jdbcType=DECIMAL}
+        </if>
+		<if test="orgid !=null">
+        	and oph.organization_id =#{orgid,jdbcType=VARCHAR}
+        </if>
+        <if test="materialid !=null">
+        	and opl.material_id =#{materialid,jdbcType=VARCHAR}
+        </if>
+        <if test="policyid !=null">
+        	and opl.id = #{policyid}
+        </if>
+		<include refid="OracleDialectSuffix" />
+	</select>
+
+	<select id="getmaterialprice" parameterType="java.lang.String"
+		resultType="java.lang.Long">
+		select price
+		from t_material_price
+		where 1=1
+		and edate+0.99999 >sysdate
+		and material_id =#{materialid,jdbcType=VARCHAR}
+	</select>
+	
+	<resultMap type="com.hhnz.order.model.OrderSearchModel" id="OrderSearchResultMap">
+		<result column="orgname" property="orgname" jdbcType="VARCHAR" />
+		<result column="organization_id" property="orgid" jdbcType="VARCHAR" />
+		<result column="merch_cust_id" property="merchCustId" jdbcType="DECIMAL" />
+		<result column="custname" property="merchname"	jdbcType="VARCHAR" />
+		<result column="sap_customer_id" property="sapCustomerId" jdbcType="VARCHAR" />
+		<result column="create_ts" property="createTs" jdbcType="TIMESTAMP" />
+		<result column="salesman" property="salesman" jdbcType="VARCHAR" />
+		<result column="salesrep_id" property="salesrepId" jdbcType="DECIMAL" />
+		<result column="states" property="states" jdbcType="VARCHAR" />
+		<result column="order_amt" property="orderAmt" jdbcType="VARCHAR" />
+		<result column="station_id" property="stationId" jdbcType="DECIMAL" />
+		<result column="id" property="orderHeaderId" jdbcType="DECIMAL" />
+		<result column="stationname" property="stationname" jdbcType="VARCHAR" />
+		<result column="Sap_Order_Id" property="saporderid" jdbcType="VARCHAR" />
+		<result column="regionname" property="regionname" jdbcType="VARCHAR" />
+		<result column="region_id" property="regionid" jdbcType="VARCHAR" />
+		<result column="provname" property="provname" jdbcType="VARCHAR" />
+		<result column="provi_id" property="provid" jdbcType="VARCHAR" />
+		<result column="shipto" property="shipto" jdbcType="VARCHAR"/>
+		<result column="order_type" property="orderType" jdbcType="VARCHAR"/>
+		<result column="shipname" property="shipname" jdbcType="VARCHAR"/>
+		<result column="send_Amt" property="sendAmt" jdbcType="DECIMAL"/>
+		<result column="weight" property="weight" jdbcType="DECIMAL"/>
+		<result column="prov" property="prov" jdbcType="VARCHAR"/>
+		<result column="defaultRdc" property="defaultRdc" jdbcType="VARCHAR"/>
+		<result column="sendRdc" property="sendRdc" jdbcType="VARCHAR"/>
+		<result column="delivery_Type" property="deliveryType" jdbcType="VARCHAR"/>
+		<result column="freight" property="freight" jdbcType="DECIMAL"/>
+	</resultMap>
+	<select id="findOrderList" resultMap="OrderSearchResultMap" parameterType="java.util.Map">
+		<!-- <include refid="OracleDialectPrefix" /> -->
+  SELECT (select c.name from crm_sales_organization c
+  		where c.id= cso.pid)||'-'|| cso.name             as orgname,
+       ooh.custname  ,
+       ooh.sap_customer_id as sap_customer_id,
+       ooh.organization_id as organization_id,
+       ooh.merch_cust_id as merch_cust_id,
+       ooh.id as id,
+       ooh.create_ts as create_ts,
+       ooh.attribute13 as transferOrderId,
+       te.name              as salesman,
+       ta.name prov,
+       (SELECT round(sum(case
+             when tmb.unit = 'TO' then
+              oos.num
+             else
+              oos.num * tmb.specifications / 1000000
+           end),3)
+  		FROM t_material_base tmb, om_order_spilts oos
+ 		where oos.material_id = tmb.sap_id
+ 		and oos.header_id= ooh.id) weight,
+       ooh.amt order_amt,
+       ooh.attribute8 as batchnum,
+       (SELECT nvl(sum(oos.price*oodh.num),0)
+          FROM om_order_delivered_history oodh,
+               om_order_spilts            oos
+         where oodh.sap_order_id = ooh.sap_order_id
+           and ooh.id = oos.header_id
+           and ooh.merch_cust_id = oos.merch_cust_id
+           and oodh.orderitem_sap_no = oos.orderitem_sap_no) as send_Amt,
+       ooh.states as states,
+       ooh.station_id as station_id,
+       ooh.salesrep_id as salesrep_id,
+ 	   ooh.Sap_Order_Id as Sap_Order_Id,
+       ooh.region_id as region_id,
+       reg.name as regionname,
+       ooh.provi_id as provi_id,
+       prv.name as provname,
+       cs.name as stationname,
+       case when order_type='7' then
+        (SELECT name FROM c_merch_cust_distribution where id=ooh.ship_id)
+       else
+        (select nvl(sap_customer_id,'')||name from c_merch_cust_base where id =ooh.ship_id)
+       end shipname,
+       case when order_type='6' then
+		(select CUST_TYPE from c_merch_cust_base where id=OOH.ship_id)
+		else 
+		''
+		end shipType,
+		nvl((select t.show_text
+             from t_dict t
+            where 1 = 1
+              and t.col_name = 'VIRTUAL_WAREHOUSE_CODE'
+              and cmcc.virtual_warehouse = t.choose_val),
+           (SELECT t.show_text
+              FROM t_area_rdc ta, t_dict t
+             where ta.city_id = ooh.ccity_id
+               and t.col_name = 'VIRTUAL_WAREHOUSE_CODE'
+               and t.choose_val = ta.rdc_code)) defaultRdc,
+       (SELECT t.show_text
+          FROM t_dict t
+         where t.col_name = 'VIRTUAL_WAREHOUSE_CODE'
+           and t.choose_val = ooh.rdc_code) sendRdc,
+       ooh.order_type as order_type,
+       ooh.delivery_type deliveryType,
+       ooh.freight/100 freight
+  FROM (SELECT rec.*, rownum rownum_
+          FROM (SELECT a.*,
+                       cmcb.city_id ccity_id,
+                       cmcb.name custname,
+                       cmcb.prov_id cprov_id,
+                       cmcb.sap_customer_id
+                  FROM om_order_headers_all a, c_merch_cust_base cmcb
+                 where 1 = 1
+                   and a.merch_cust_id = cmcb.id
+                 <if test="custname !=null and custmae !=''">
+  	 				and cmcb.name like #{custname,jdbcType=VARCHAR}||'%'
+   				 </if>
+   				 <if test="shipname !=null and shipname !=''">
+   				 	and ( (a.order_type ='7' and exists (select 1 from c_merch_cust_distribution cmcd
+   				 	where cmcd.id= a.ship_id 
+   				 	and cmcd.name like #{shipname,jdbcType=VARCHAR}||'%'))
+   				 	or (a.order_type in ('0','4') and exists (select 1 from c_merch_cust_base cmcd
+   				 	where 1=1
+   				 	and cmcd.id= a.ship_id
+   				 	and cmcd.name like #{shipname,jdbcType=VARCHAR}||'%' ) ) )
+   				 </if>
+   				 <if test="transferOrderId !=null and transferOrderId !=''">
+  	 				and a.attribute13 like #{transferOrderId,jdbcType=VARCHAR}||'%'
+   				 </if>
+                 <if test="organization !=null and organization !=''">
+   					and a.organization_id = #{organization,jdbcType=VARCHAR}
+   				</if>
+   				 <choose>
+   					<when test="ordertypes !=null">
+   						and a.order_type in 
+   						<foreach item="item" index="index" collection="ordertypes" open="(" separator="," close=")">  
+ 		 					#{item}  
+ 						</foreach>
+   					</when>
+   					<otherwise>	<choose>
+	    			<when test="ordertype !=null and ordertype !=''">
+	      				and a.order_type = #{ordertype,jdbcType=VARCHAR}
+	    			</when>
+	    			<otherwise>
+	     			 and a.order_type in('0','4','7','9','10')
+	    			</otherwise></choose>
+   					</otherwise>
+   				</choose>
+   				<if test="shipid">
+   					and a.ship_id = #{shipid}
+   				</if>
+   				<if test="states !=null">		
+    				and a.states in 
+   					<foreach item="item" index="index" collection="states" open="(" separator="," close=")">  
+ 		 				#{item}  
+ 					</foreach>
+   				</if>
+   				<if test="bdate !=null and bdate !=''">
+   					and a.create_ts >= to_date(#{bdate,jdbcType=VARCHAR},'yyyy-MM-dd')
+   				</if>	
+   				<if test="edate !=null and edate !=''" >
+   					and a.create_ts &lt;=  to_date(#{edate,jdbcType=VARCHAR},'yyyy-MM-dd')+0.99999
+   				</if>
+   				<if test="crmorderid !=null">
+    				and a.id like #{crmorderid,jdbcType=DECIMAL}||'%'
+   				</if>
+   				<if test="saporderid !=null">
+    				and a.SAP_ORDER_ID like #{saporderid,jdbcType=DECIMAL}||'%'
+   				</if>
+   				 <if test="stations !=null and stations.size()>0">
+    				and ((a.order_type !='6' and a.station_id in
+  					 <foreach item="item" index="index" collection="stations" open="(" separator="," close=")">  
+ 		 				#{item}  
+ 					</foreach> 
+ 						)or (a.order_type='6' and exists 
+ 							(select 1 from 
+ 								c_merch_cust_base pcmcb,
+ 								c_merch_cust_station cmcs
+ 							where 1=1
+ 								and a.ship_id= pcmcb.id
+ 								and pcmcb.id=cmcs.merch_cust_id
+ 								and cmcs.station_id in
+ 						<foreach item="item" index="index" collection="stations" open="(" separator="," close=")">  
+ 		 					#{item}  
+ 						</foreach>
+ 						))
+ 				<if test="shipid!=null">
+ 					or ( a.ship_id = #{shipid} )
+ 				</if>
+ 					)
+  				 </if>   
+                 order by a.id desc) rec) ooh,
+       crm_sales_organization cso,
+       crm_sales_organization reg,
+       crm_sales_organization prv,
+       t_employee             te,
+       (select * from  c_merch_cust_contract where states='4') cmcc,
+       crm_station            cs,
+       t_area				  ta
+ where ooh.organization_id = cso.id
+   	and ooh.salesrep_id = te.id(+)
+   	and ooh.merch_cust_id = cmcc.merch_cust_id(+)
+   	and ooh.station_id = cs.id(+)
+   	and ooh.region_id=reg.id(+)
+   	and ooh.provi_id =prv.id(+)
+   	and ooh.cprov_id= ta.id(+)
+   <!-- <if test="shipname !=null">
+    and ship.name like '%'||#{shipname,jdbcType=DECIMAL}||'%'
+   </if> -->
+   <if test="saler !=null">
+    and te.name  like '%'||#{saler,jdbcType=DECIMAL}||'%'
+   </if>
+   <![CDATA[ and ooh.rownum_ > #{begin} and ooh.rownum_ <= #{end} ]]>
+    order by ooh.rownum_
+  </select>
+  <select id="countOrderList" parameterType="java.util.Map" resultType="java.lang.Integer" >
+  SELECT count(1)
+  FROM (SELECT rec.*, rownum rownum_
+          FROM (SELECT a.*,
+                       cmcb.city_id ccity_id,
+                       cmcb.name custname,
+                       cmcb.prov_id cprov_id,
+                       cmcb.sap_customer_id
+                  FROM om_order_headers_all a, c_merch_cust_base cmcb
+                 where 1 = 1
+                   and a.merch_cust_id = cmcb.id
+                 <if test="custname !=null and custmae !=''">
+  	 				and cmcb.name like #{custname,jdbcType=VARCHAR}||'%'
+   				 </if>
+   				 <if test="shipname !=null and shipname !=''">
+   				 	and ( (a.order_type ='7' and exists (select 1 from c_merch_cust_distribution cmcd
+   				 	where cmcd.id= a.ship_id 
+   				 	and cmcd.name like #{shipname,jdbcType=VARCHAR}||'%'))
+   				 	or (a.order_type in ('0','4') and exists (select 1 from c_merch_cust_base cmcd
+   				 	where 1=1
+   				 	and cmcd.id= a.ship_id
+   				 	and cmcd.name like #{shipname,jdbcType=VARCHAR}||'%' ) ) )
+   				 </if>
+   				 <if test="transferOrderId !=null and transferOrderId !=''">
+  	 				and a.attribute13 like #{transferOrderId,jdbcType=VARCHAR}||'%'
+   				 </if>
+                 <if test="organization !=null and organization !=''">
+   					and a.organization_id = #{organization,jdbcType=VARCHAR}
+   				</if>
+   				 <choose>
+   					<when test="ordertypes !=null">
+   						and a.order_type in 
+   						<foreach item="item" index="index" collection="ordertypes" open="(" separator="," close=")">  
+ 		 					#{item}  
+ 						</foreach>
+   					</when>
+   					<otherwise>	<choose>
+	    			<when test="ordertype !=null and ordertype !=''">
+	      				and a.order_type = #{ordertype,jdbcType=VARCHAR}
+	    			</when>
+	    			<otherwise>
+	     			 and a.order_type in('0','4','7','9','10')
+	    			</otherwise></choose>
+   					</otherwise>
+   				</choose>
+   				<if test="shipid">
+   					and a.ship_id = #{shipid}
+   				</if>
+   				<if test="states !=null">		
+    				and a.states in 
+   					<foreach item="item" index="index" collection="states" open="(" separator="," close=")">  
+ 		 				#{item}  
+ 					</foreach>
+   				</if>
+   				<if test="bdate !=null and bdate !=''">
+   					and a.create_ts >= to_date(#{bdate,jdbcType=VARCHAR},'yyyy-MM-dd')
+   				</if>	
+   				<if test="edate !=null and edate !=''" >
+   					and a.create_ts &lt;=  to_date(#{edate,jdbcType=VARCHAR},'yyyy-MM-dd')+0.99999
+   				</if>
+   				<if test="crmorderid !=null">
+    				and a.id like #{crmorderid,jdbcType=DECIMAL}||'%'
+   				</if>
+   				<if test="saporderid !=null">
+    				and a.SAP_ORDER_ID like #{saporderid,jdbcType=DECIMAL}||'%'
+   				</if>
+   				 <if test="stations !=null and stations.size()>0">
+    				and ((a.order_type !='6' and a.station_id in
+  					 <foreach item="item" index="index" collection="stations" open="(" separator="," close=")">  
+ 		 				#{item}  
+ 					</foreach> 
+ 						)or (a.order_type='6' and exists 
+ 							(select 1 from 
+ 								c_merch_cust_base pcmcb,
+ 								c_merch_cust_station cmcs
+ 							where 1=1
+ 								and a.ship_id= pcmcb.id
+ 								and pcmcb.id=cmcs.merch_cust_id
+ 								and cmcs.station_id in
+ 						<foreach item="item" index="index" collection="stations" open="(" separator="," close=")">  
+ 		 					#{item}  
+ 						</foreach>
+ 						))
+ 				<if test="shipid!=null">
+ 					or ( a.ship_id = #{shipid} )
+ 				</if>
+ 					)
+  				 </if>   
+                 order by a.id desc) rec) ooh,
+       crm_sales_organization cso,
+       crm_sales_organization reg,
+       crm_sales_organization prv,
+       t_employee             te,
+       (select * from  c_merch_cust_contract where states='4') cmcc,
+       crm_station            cs,
+       t_area				  ta
+ where ooh.organization_id = cso.id
+   	and ooh.salesrep_id = te.id(+)
+   	and ooh.merch_cust_id = cmcc.merch_cust_id(+)
+   	and ooh.station_id = cs.id(+)
+   	and ooh.region_id=reg.id(+)
+   	and ooh.provi_id =prv.id(+)
+   	and ooh.cprov_id= ta.id(+)
+   <!-- <if test="shipname !=null">
+    and ship.name like '%'||#{shipname,jdbcType=DECIMAL}||'%'
+   </if> -->
+   <if test="saler !=null">
+    and te.name  like '%'||#{saler,jdbcType=DECIMAL}||'%'
+   </if>
+  </select>
+  
+  <select id="getcustnameByorderId" resultType="java.lang.String" parameterType="java.lang.Long">
+  	select cmcb.name
+  	from c_merch_cust_base cmcb,
+  	om_order_headers_all ooha
+  	where cmcb.id= ooha.merch_cust_id
+  	and ooha.id =#{id,jdbcType=DECIMAL}
+  </select>
+  <select id="getOrgnameByorderId" resultType="java.lang.String" parameterType="java.lang.Long">
+  	SELECT
+		cso.name
+	FROM
+		CRM_SALES_ORGANIZATION cso,
+		OM_ORDER_HEADERS_ALL ooh
+	WHERE
+		OOH.ORGANIZATION_ID = cso.id
+		and ooh.id=#{id}
+  </select>
+  
+  <select id="getcustDisByorderId" resultType="java.lang.String" parameterType="java.lang.Long">
+  	select cmcd.name
+  	from 
+  	om_order_headers_all ooha,
+  	c_merch_cust_distribution cmcd
+  	where cmcd.merch_cust_id= ooha.merch_cust_id
+  	and ooha.ship_id = cmcd.id
+  	and ooha.id =#{id,jdbcType=DECIMAL}
+  </select>
+  
+  <select id="findDeliverys" resultType="com.hhnz.order.model.OmOrderSpilts" parameterType="java.util.Map">
+	SELECT
+		OOS.LINE_ID lineId,
+		oos.HEADER_ID headerId,
+		oos.SAP_HEADER_ID sapHeaderId,
+		oos.ORDERITEM_SAP_NO orderitemSapNo,
+		oos.MATERIAL_ID materialId,
+		OOs. TYPE,
+		OOD.NUM
+	FROM
+		OM_ORDER_SPILTS oos,
+		OM_ORDER_DELIVERED ood,
+		OM_ORDER_HEADERS_ALL ooh
+	WHERE
+		OOS.ORDERITEM_SAP_NO = OOD.ORDERITEM_SAP_NO
+	AND OOS.HEADER_ID = OOH. ID
+	AND OOH.SAP_ORDER_ID = OOD.SAP_ORDER_ID
+	and OOS.HEADER_ID=#{id}
+  </select>
+  
+  <resultMap id="LinesResultMap" type="com.hhnz.order.model.OrderLinesDetials" >
+    <result column="materialId" property="materialId" jdbcType="VARCHAR" />
+    <result column="SKU" property="sku" jdbcType="VARCHAR" />
+    <result column="ID" property="id" jdbcType="DECIMAL" />
+    <result column="ORDER_PRICE" property="orderPrice" jdbcType="VARCHAR" />
+    <result column="PRICE" property="price" jdbcType="VARCHAR" />
+    <result column="UNIT" property="unit" jdbcType="VARCHAR" />
+    <result column="NUM" property="num" jdbcType="DECIMAL" />
+    <result column="policyname" property="policyname" jdbcType="VARCHAR" />
+    <result column="policydiscountname" property="policydiscountname" jdbcType="VARCHAR" />
+    <result column="HB_NUM" property="hbNum" jdbcType="DECIMAL" />
+    <result column="HB_AMT" property="hbAmt" jdbcType="DECIMAL" />
+    <result column="AMT" property="amt" jdbcType="DECIMAL" />
+    <result column="DISCOUNT_AMT" property="discountAmt" jdbcType="DECIMAL" />
+    <result column="ORDER_AMT" property="orderAmt" jdbcType="DECIMAL" />
+    <result column="policy_header_id" property="policyHeaderId" jdbcType="DECIMAL" />
+    <result column="policy_line_id" property="policyLineId" jdbcType="DECIMAL" />
+    <result column="policy_discount" property="policyDiscount" jdbcType="DECIMAL" />
+    <result column="policy_discount_intensity" property="policyDiscountIntensity" jdbcType="DECIMAL" />
+    <result column="policy_verfication" property="policyVerfication" jdbcType="DECIMAL" />
+    <result column="policyprimary" property="policyprimary" jdbcType="DECIMAL" />
+    <result column="header_id" property="headerId" jdbcType="DECIMAL"/>
+    <result column="specifications" property="specifications" jdbcType="VARCHAR"/>
+    <result column="amounts" property="amounts" jdbcType="VARCHAR"/>
+    <result column="materialType" property="materialType" jdbcType="VARCHAR"/>
+  </resultMap>
+  <select id="getlinedata" resultMap="LinesResultMap" parameterType="java.lang.Long">
+  	SELECT decode(ool.attribute11,
+              '1',
+              (SELECT cmph.code
+                 FROM crm_material_package_header cmph
+                where cmph.code = ool.material_id),
+              tmb.sap_id) as materialId,
+       decode(ool.attribute11,
+              '1',
+              (SELECT cmph.name
+                 FROM crm_material_package_header cmph
+                where cmph.code = ool.material_id),
+              tmb.sku) sku,
+       ool.id,
+       ool.order_price,
+       ool.price,
+       ool.unit,
+       to_number(ool.num) as num,
+       oph.description as policyname,
+       td.show_text || '-' || decode(ool.policy_verfication,
+                                     '1',
+                                     (SELECT t.sku
+                                        FROM t_material_base t
+                                       where t.sap_id = ool.policy_discount),
+                                     '') || ool.policy_discount_intensity as policydiscountname,
+       nvl(to_number(ool.hb_num), 0) as hb_num,
+       nvl(to_number(ool.hb_amt), 0) as hb_amt,
+       to_number(ool.amt) as amt,
+       nvl(to_number(ool.discount_amt), 0) discount_amt,
+       to_number(ool.order_amt) order_amt,
+       ool.policy_header_id,
+       ool.policy_line_id,
+       ool.policy_discount,
+       ool.policy_discount_intensity,
+       ool.policy_verfication,
+       opl.primary policyprimary,
+       ool.attribute2,
+       ool.header_id,
+       CASE WHEN ool.attribute11='1' then '1'
+       	 WHEN TMB.UNIT='TO' then '1'
+	   	 ELSE nvl(tmb.attribute6, 1) end as amounts,
+       decode(ool.attribute11,
+              '1',
+              (SELECT cmph.weight
+                 FROM crm_material_package_header cmph
+                where cmph.code = ool.material_id),
+              tmb.specifications) specifications,
+       ool.attribute11 materialType
+  FROM om_order_lines_all ool,
+       t_material_base tmb,
+       om_policy_headers oph,
+       (SELECT t.*
+          FROM t_dict t
+         where t.col_name = 'POLICY_TYPE_VERIFICATION') td,
+       om_policy_lines opl
+ where ool.material_id = tmb.sap_id(+)
+   and ool.policy_header_id = oph.id(+)
+   and ool.policy_line_id = opl.id(+)
+   and ool.policy_verfication = td.choose_val(+)
+   and ool.header_id=#{headerid,jdbcType=DECIMAL}
+union all
+SELECT '' as  materialId,
+       '' as sku,
+       0 as id,
+       0 as price,
+       0 as order_price,
+       '合计' as unit,
+       to_number(sum(oola.num -nvl(oola.return_num,0))),
+       ''  policyname,
+       '' policydiscountname,
+       sum(nvl(to_number(oola.hb_num),0) -nvl(oola.retrun_hb_num,0) ) as hb_num ,
+       sum(nvl(to_number(oola.hb_amt),0))-sum(nvl(oola.retrun_hb_num,0)*oola.order_price) as hb_amt,
+       sum(to_number(oola.amt))-sum(nvl(oola.return_num,0)*oola.order_price)-sum(nvl(oola.retrun_hb_num,0)*oola.order_price) as amt,
+       sum(nvl(to_number(oola.discount_amt),0))-sum(nvl(oola.retrun_hb_num,0)*oola.order_price) as discount_amt,
+       sum(to_number(oola.order_amt))-sum(nvl(oola.return_num,0)*oola.order_price) as order_amt,
+       null as policy_header_id,
+       null as policy_line_id,
+       '',
+       '',
+       '',
+       '',
+       '0' as attribute2,
+       0,
+       null,
+       '',
+       ''materialType
+  FROM om_order_lines_all oola
+  where oola.header_id=#{headerid,jdbcType=DECIMAL}
+  </select>
+  <select id="orderLineDetails" resultMap="LinesResultMap" parameterType="java.lang.Long">
+   select rec.spliteid,
+       rec.id,
+       rec.header_id,
+       rec.materialId,
+       rec.sku,
+       rec.unit,
+       nvl(rec.type, '合计') type,
+       sum(rec.num) num,
+       round(sum(rec.order_price*rec.num),0) amt,
+       rec.order_price,
+       sum(rec.deliverynum) deliverynum,
+       rec.factoryname,
+       rec.factoryid,
+       rec.amounts
+  from (SELECT oos.id spliteid,
+               oos.line_id id,
+               oos.header_id,
+               oos.material_id as materialId,
+               tmb.sku,
+               CASE
+                 WHEN TMB.UNIT = 'TO' then
+                  '1'
+                 ELSE
+                  nvl(tmb.attribute6, 1)
+               end as amounts,
+               tmu.unit,
+               case
+                 when oos.type = '3' then
+                  (SELECT td.show_text
+                     FROM om_order_lines_all oola, t_dict td
+                    where oola.id = oos.line_id
+                      and oola.policy_verfication = td.choose_val
+                      and td.col_name = 'POLICY_TYPE_VERIFICATION'
+                      and oola.header_id = oos.header_id)
+                 else
+                  decode(oos.type, '1', '标准', '2', '货补')
+               end type,
+               oos.num num,
+               case when oos.type ='1' then
+               	oos.price
+               else
+               	(select oola.order_price 
+               		from om_order_lines_all oola
+               		where 1=1
+               	  and oola.header_id= oos.header_id
+               	  and oos.material_id= oola.material_id
+               	  and oos.line_id= oola.id)
+               end  order_price,
+               oos.amt amt,
+               nvl(tf.name, '') factoryname,
+               nvl(tf.id, '') factoryid,
+               case
+                 when ooha.order_type in ('5', '8') and cmcb.cust_type in('7','8') then
+                  (SELECT SUM(cvwh.change_amt)
+                     FROM crm_virtual_warehouse_history cvwh
+                    where cvwh.related_order_id = ooha.id
+                      and cvwh.material_id = oos.material_id
+                      and cvwh.cust_type like 'Z9%')
+                 when ooha.order_type in ('5', '8') and cmcb.cust_type = '70' then
+                  (SELECT sum(ood.num)
+                     FROM om_order_delivered   ood,
+                          om_order_headers_all ooha2,
+                          om_order_spilts      oos2
+                    where ooha2.attribute13 = ooha.id
+                      and ooha2.sap_order_id = ood.sap_order_id
+                      and oos2.header_id = ooha2.id
+                      and oos2.material_id = oos.material_id
+                      and oos2.orderitem_sap_no = ood.orderitem_sap_no)
+                 else
+                  (SELECT sum(ood.num)
+                     FROM om_order_delivered ood
+                    where ood.sap_order_id = ooha.sap_order_id
+                      and ood.orderitem_sap_no = oos.orderitem_sap_no)
+               end deliverynum
+          FROM om_order_spilts      oos,
+               t_material_base      tmb,
+               t_material_unit      tmu,
+               om_order_headers_all ooha,
+               t_factory            tf,
+               c_merch_cust_base    cmcb
+         where oos.material_id = tmb.sap_id
+           and oos.header_id = ooha.id
+           and tmb.unit = tmu.code(+)
+           and oos.attribute2 = tf.id(+)
+           and cmcb.id = ooha.merch_cust_id
+           and ooha.id=#{headerid,jdbcType=DECIMAL}) rec
+ group by grouping sets((),(rec.spliteid, rec.id, rec.header_id, rec.materialId, rec.sku, rec.unit, rec.type, rec.order_price, rec.factoryname, rec.factoryid, rec.amounts))
+  </select>
+ 
+  <select id="allocationDelivery" resultMap="LinesResultMap"  parameterType="java.lang.Long">
+  	SELECT oos.material_id materialId,
+       tmb.sku,
+       nvl(tmb.attribute6, 1) amounts,
+       oos.num,
+       tmb.unit,
+       oos.price/100 order_price,
+       ooha.id header_id,
+       abs(SUM(cvwh.change_amt)) deliverynum,
+       oos.line_id id
+  FROM om_order_headers_all          ooha,
+       om_order_spilts               oos,
+       crm_virtual_warehouse_history cvwh,
+       t_material_base               tmb
+ where ooha.id = oos.header_id
+   and oos.material_id = cvwh.material_id
+   and ooha.id = cvwh.related_order_id
+   and oos.material_id = tmb.sap_id
+   and cvwh.cust_type like 'Z1%'
+   and ooha.order_type in ('5','8')
+   and ooha.id=#{headerid,jdbcType=DECIMAL}
+ GROUP BY oos.material_id,
+          tmb.sku,
+          tmb.unit,
+          nvl(tmb.attribute6, 1),
+          oos.num,
+          ooha.id,
+          oos.line_id,
+          oos.price	
+  </select>
+   <resultMap id="OrderAmtResultMap" type="com.hhnz.order.model.OrderLinesDetials" >
+    <result column="HB_AMt" property="hbAmt" jdbcType="DECIMAL" />
+    <result column="ORDER_AMT" property="orderAmt" jdbcType="DECIMAL" />
+  </resultMap>
+  <select id="getOrderAmt" resultMap="OrderAmtResultMap" parameterType="java.lang.Long">
+  	SELECT nvl(sum(nvl(hb_amt, 0)),0) as hb_amt, nvl(sum(nvl(order_amt, 0)),0) as order_amt
+  	 FROM om_order_lines_all where header_id=#{id,jdbcType=DECIMAL}
+  </select>
+   
+   
+   
+  <resultMap id="OrderLinesDetialMap" type="com.hhnz.order.model.OrderLinesDetials" >
+    <result column="ID" property="id" jdbcType="DECIMAL" />
+    <result column="DELIVEREDNUM" property="deliverynum" jdbcType="DECIMAL" />
+    <result column="SKU" property="sku" jdbcType="VARCHAR" />
+  </resultMap>
+  <select id="findOrderDeliveryDetails" resultMap="OrderLinesDetialMap" parameterType="java.lang.String">
+  	 SELECT
+		OOS.LINE_ID ID,
+		TMB.SKU  SKU,
+		OOD.NUM DELIVEREDNUM
+	FROM
+		OM_ORDER_SPILTS oos,
+		OM_ORDER_DELIVERED ood,
+		T_MATERIAL_BASE tmb
+	WHERE
+		OOS.DELIVERED_NUM = OOD.DELIVERY_NO
+	AND OOS.MATERIAL_ID = TMB.SAP_ID
+	and OOS.HEADER_ID=#{id,jdbcType=VARCHAR}
+  </select>
+  
+  <select id="validateNum" resultType="java.lang.Long" parameterType="java.util.Map">
+      SELECT nvl(sum(cvw.amt),0)
+  FROM crm_virtual_warehouse cvw, c_merch_cust_contract cmcc
+ where cmcc.factory_id = cvw.factory_code
+   and cmcc.virtual_warehouse = cvw.cust_type
+   and cvw.material_id=#{materialId,jdbcType=VARCHAR}
+   and cmcc.merch_cust_id=#{merchCustId,jdbcType=DECIMAL}
+   and cmcc.organization_id=#{orgid,jdbcType=VARCHAR}
+   and cmcc.states='4'
+  </select>  
+  <select id="validateNumByRdc" resultType="java.lang.Long" parameterType="java.util.Map">
+  	SELECT nvl(sum(cvw.amt),0)
+  FROM crm_virtual_warehouse cvw, c_merch_cust_contract cmcc
+ where cmcc.factory_id = cvw.factory_code
+   and cvw.cust_type= #{rdcCode,jdbcType=VARCHAR}
+   and cvw.material_id=#{materialId,jdbcType=VARCHAR}
+   and cmcc.merch_cust_id=#{merchCustId,jdbcType=DECIMAL}
+   and cmcc.organization_id=#{orgid,jdbcType=VARCHAR}
+   and cmcc.states='4'
+  </select>
+  <select id="getSpiltOrderNo" parameterType="java.lang.Long" resultType="java.lang.Integer">
+  	SELECT nvl(max(oos.orderitem_sap_no), 0)
+  	FROM om_order_spilts oos
+ 	where oos.header_id = #{id,jdbcType=DECIMAL}
+  </select>
+  
+  <select id="orderInvoiceNumTotal" resultType="int">
+   SELECT NVL(SUM(NUM), 0) FROM OM_INVOICE_ITEMWHERE ORDER_ID=#{orderid}
+  </select>
+  
+  <select id="findOrderInvoice" resultType="com.hhnz.order.model.Invoice">
+   SELECT  tmb.sku,	oii.* FROM	OM_INVOICE_ITEM oii,  T_MATERIAL_BASE tmb WHERE	OII.MATERIAL_ID=TMB.SAP_ID(+) and ORDER_ID=#{orderid}
+  </select>
+  
+  <select id="getSunNumById" resultType="java.math.BigDecimal" parameterType="java.lang.Long">
+  	SELECT  NVL(sum(oos.num),0) 
+  FROM om_order_spilts oos
+ where oos.header_id=#{headerid,jdbcType=DECIMAL}
+  </select>
+  
+  <!-- 配送商订单查询 -->
+  <resultMap type="com.hhnz.order.dto.DistributeOrderDTO" id="distributeResultMap">
+  	<result column="lpno" property="lpno" jdbcType="VARCHAR"/>
+  	<result column="merchname" property="merchname" jdbcType="VARCHAR"/>
+  	<result column="orgname" property="orgname" jdbcType="VARCHAR"/>
+  	<result column="orgid" property="orgid" jdbcType="VARCHAR"/>
+  	<result column="merchid" property="merchid" jdbcType="DECIMAL"/>
+  	<result column="amt" property="amt" jdbcType="DECIMAL"/>
+  	<result column="states" property="states" jdbcType="VARCHAR"/>
+  	<result column="sapmerchid" property="sapmerchid" jdbcType="VARCHAR"/>
+  	<result column="isMatched" property="isMatched" jdbcType="VARCHAR"/>
+  	<result column="send_amt" property="sendAmt" jdbcType="DECIMAL"/>
+  </resultMap>
+  <select id="findDistributeOrders" resultMap="distributeResultMap" parameterType="java.util.Map">
+  <include refid="OracleDialectPrefix" />
+  SELECT sum(oola.order_amt) amt,
+       ooha.attribute8 lpno,
+       ooha.attribute9 isMatched,
+       cmcb2.name merchname,
+       ooha.organization_id orgid,
+       ooha.states,
+       cmcb2.id merchid,
+       cso.name orgname,
+       ooha.ship_id shipid,
+       cmcd.name  shipname,
+       cmcb2.sap_customer_id sapmerchid,
+       nvl(rec.send_amt,0) send_amt,
+       SUBSTR(OOHA.ATTRIBUTE8, length(OOHA.ship_id)+1) censortime
+  FROM om_order_headers_all   ooha,
+       om_order_lines_all     oola,
+       c_merch_cust_base      cmcb,
+       c_merch_cust_base      cmcb2,
+       crm_sales_organization cso,
+       c_merch_cust_base cmcd,
+       (SELECT round((nvl(sum(oos.price * oodh.num), 0))/100,2) send_amt, ooha.id
+          FROM om_order_delivered_history oodh,
+               om_order_spilts            oos,
+               om_order_headers_all       ooha
+         where oodh.sap_order_id = ooha.sap_order_id
+           and ooha.id = oos.header_id
+           and oos.orderitem_sap_no = oodh.orderitem_sap_no
+           and ooha.merch_cust_id = oos.merch_cust_id
+         group by ooha.id) rec
+ where ooha.id = oola.header_id
+   and ooha.organization_id = cmcb.organization_id
+   and ooha.merch_cust_id = cmcb.id
+   and cmcb.pid = cmcb2.id
+   and ooha.ship_id= cmcd.id
+   and cmcd.organization_id = ooha.organization_id
+   and ooha.organization_id = cmcb2.organization_id
+   and ooha.organization_id = cso.id
+   and ooha.id = rec.id(+)
+   and cmcb.cust_type = '5'
+   and ooha.order_type ='1'
+   and ooha.attribute8 is not null
+   <!-- 配送商登陆查询 -->
+   <if test="merchid !=null">
+   	 and cmcb2.id =#{merchid}
+   </if>
+   <if test="merchname !=null">
+     and cmcb2.name like '%'||#{merchname}||'%'
+   </if>
+   <if test="batchnum !=null">
+     and ooha.attribute8=#{batchnum}
+   </if>
+   <if test="merchid ==null">
+   	<if test="orgids !=null and orgids.size() >0">
+     and ooha.organization_id in
+     	<foreach item="item" index="index" collection="orgids" open="(" separator="," close=")">  
+ 		 #{item}  
+ 		</foreach>
+   	</if>
+   </if>
+ group by ooha.attribute8,
+  		  ooha.attribute9,
+          cmcb2.name,
+          ooha.organization_id,
+          ooha.states,
+          cmcb2.id,
+          ooha.ship_id,
+       	  cmcd.name,
+          cso.name,
+          rec.send_amt,
+          cmcb2.sap_customer_id
+ order by censortime desc
+       <include refid="OracleDialectSuffix" />
+  </select>
+  
+  <select id="countDistributeOrders" resultType="int" parameterType="java.util.Map">
+  SELECT count(1) from (SELECT sum(oola.order_amt) amt,
+       ooha.attribute8 lpno,
+       ooha.attribute9,
+       cmcb2.name merchname,
+       ooha.organization_id orgid,
+       ooha.states,
+       cmcb2.id merchid,
+       cso.name orgname,
+       ooha.ship_id ,
+       cmcd.name ,
+       cmcb2.sap_customer_id sapmerchid
+  FROM om_order_headers_all   ooha,
+       om_order_lines_all     oola,
+       c_merch_cust_base      cmcb,
+       c_merch_cust_base      cmcb2,
+       crm_sales_organization cso,
+       c_merch_cust_base cmcd
+ where ooha.id = oola.header_id
+   and ooha.organization_id = cmcb.organization_id
+   and ooha.merch_cust_id = cmcb.id
+   and cmcb.pid = cmcb2.id
+   and ooha.ship_id= cmcd.id
+   and cmcd.organization_id = ooha.organization_id
+   and ooha.organization_id = cmcb2.organization_id
+   and ooha.organization_id = cso.id
+   and cmcb.cust_type = '5'
+   and ooha.order_type ='1'
+   <!-- 配送商登陆查询 -->
+   <if test="merchid !=null">
+   	 and cmcb2.id =#{merchid}
+   </if>
+   <if test="merchname !=null">
+     and cmcb2.name like '%'||#{merchname}||'%'
+   </if>
+   <if test="batchnum !=null">
+     and ooha.attribute8=#{batchnum}
+   </if>
+   <if test="merchid ==null">
+   	<if test="orgids !=null and orgids.size() >0">
+     and ooha.organization_id in
+     	<foreach item="item" index="index" collection="orgids" open="(" separator="," close=")">  
+ 		 #{item}  
+ 		</foreach>
+   	</if>
+   </if>
+   group by ooha.attribute8,
+   			ooha.attribute9,
+          cmcb2.name,
+          ooha.organization_id,
+          ooha.states,
+          ooha.ship_id,
+       	  cmcd.name,
+          cmcb2.id,
+          cso.name,
+          cmcb2.sap_customer_id)
+  </select>
+  
+  <resultMap type="com.hhnz.order.dto.DistributeOrderDetailsDTO" id="ditributeDetailResultMap">
+  	<result column="orderid" property="orderid" jdbcType="DECIMAL"/>
+  	<result column="saporderid" property="saporderid" jdbcType="VARCHAR"/>
+  	<result column="merchname" property="merchname" jdbcType="VARCHAR"/>
+  	<result column="merchid" property="merchid" jdbcType="DECIMAL"/>
+  	<result column="materialId" property="materialId" jdbcType="VARCHAR"/>
+  	<result column="sku" property="sku" jdbcType="VARCHAR"/>
+  	<result column="unit" property="unit" jdbcType="VARCHAR"/>
+  	<result column="price" property="price" jdbcType="DECIMAL"/>
+  	<result column="num" property="num" jdbcType="DECIMAL"/>
+  	<result column="amt" property="amt" jdbcType="DECIMAL"/>
+  	<result column="send_amt" property="sendAmt" jdbcType="DECIMAL"/>
+  </resultMap>
+  
+  <select id="getDistributeDetailList" resultMap="ditributeDetailResultMap" parameterType="java.util.Map">
+  	<include refid="OracleDialectPrefix" />
+  	SELECT orderid,
+       saporderid,
+       merchid,
+       merchname,
+       price,
+       num,
+       delivered,
+       amt,
+       materialId,
+       sku,
+       unit,
+       amounts,
+       (SELECT round((nvl(sum(oos.price * oodh.num), 0)) / 100, 2)
+          FROM OM_ORDER_DELIVERED_HISTORY oodh,
+               om_order_spilts            oos,
+               om_order_headers_all       ooha
+         where ooha.id = orderid
+           and ooha.sap_order_id = oodh.sap_order_id
+           and ooha.id = oos.header_id
+           and oos.merch_cust_id = ooha.merch_cust_id
+           and oos.material_id = materialId
+           and oos.orderitem_sap_no = oodh.orderitem_sap_no) send_amt,
+       (SELECT nvl(sum(cvw.amt),0)
+				FROM crm_virtual_warehouse cvw, c_merch_cust_contract cmcc
+			 where cmcc.factory_id = cvw.factory_code
+				 and cmcc.virtual_warehouse = cvw.cust_type
+				 and cvw.material_id=materialId
+				 and cmcc.merch_cust_id=ship_id
+				 and cmcc.organization_id=ORGANIZATION_ID
+				 and cmcc.states='4') depo
+  FROM (SELECT ooha.id  orderid,
+       ooha.sap_order_id saporderid,
+       cmcb.id merchid,
+       cmcb.name merchname,
+       oola.order_price price,
+       sum(oola.num) num,
+       sum(oola.DELIVERED_NUM) delivered,
+       sum(oola.order_amt) amt,
+       oola.material_id materialId,
+       tmb.sku
+       ,oola.unit,OOHA.SHIP_ID,
+		OOHA.ORGANIZATION_ID,
+		CASE WHEN TMB.UNIT='TO' then '1'
+		ELSE nvl(tmb.attribute6, 1) end as amounts
+  	FROM om_order_headers_all ooha,
+       om_order_lines_all   oola,
+       c_merch_cust_base    cmcb,
+       t_material_base tmb
+	where ooha.id= oola.header_id
+		and ooha.merch_cust_id=cmcb.id
+		and oola.material_id = tmb.sap_id
+		and ooha.order_type='1'
+		and ooha.attribute8 =#{lpno,jdbcType=VARCHAR}
+		and ooha.attribute9 =#{isMatched,jdbcType=VARCHAR}
+		and ooha.ship_id = #{shipid,jdbcType=DECIMAL}
+		and cmcb.pid =#{merchid,jdbcType=DECIMAL}
+		and ooha.states =#{states,jdbcType=VARCHAR}
+     group by ooha.id  ,
+       ooha.sap_order_id ,
+       cmcb.id ,
+       cmcb.name ,
+       oola.order_price ,
+       oola.material_id ,
+       tmb.sku
+       ,oola.unit,OOHA.SHIP_ID,OOHA.ORGANIZATION_ID,tmb.attribute6)
+  	<include refid="OracleDialectSuffix" />
+  </select>
+  <select id="countDistributeDetailList" resultType="int" parameterType="java.util.Map">
+  	SELECT count(1)
+  	FROM  (SELECT ooha.id  orderid,
+       ooha.sap_order_id saporderid,
+       cmcb.id merchid,
+       cmcb.name merchname,
+       oola.order_price price,
+       sum(oola.num) num,
+       sum(oola.order_amt) amt,
+       oola.material_id materialId,
+       tmb.sku
+       ,oola.unit
+  	FROM om_order_headers_all ooha,
+       om_order_lines_all   oola,
+       c_merch_cust_base    cmcb,
+       t_material_base tmb
+	where ooha.id= oola.header_id
+		and ooha.merch_cust_id=cmcb.id
+		and oola.material_id = tmb.sap_id
+		and ooha.order_type='1'
+		and ooha.attribute8 =#{lpno,jdbcType=VARCHAR}
+		and ooha.attribute9 =#{isMatched,jdbcType=VARCHAR}
+		and ooha.ship_id = #{shipid,jdbcType=DECIMAL}
+		and cmcb.pid =#{merchid,jdbcType=DECIMAL}
+		and ooha.states =#{states,jdbcType=VARCHAR}
+     group by ooha.id  ,
+       ooha.sap_order_id ,
+       cmcb.id ,
+       cmcb.name ,
+       oola.order_price ,
+       oola.material_id ,
+       tmb.sku
+       ,oola.unit)
+  </select>
+  
+   <select id="distributorEditList" resultMap="ditributeDetailResultMap" parameterType="java.util.Map">
+  	<include refid="OracleDialectPrefix" />
+  	SELECT ooha.id  orderid,
+       ooha.sap_order_id saporderid,
+       cmcb.id merchid,
+       cmcb.name merchname,
+       sum(oola.num) num,
+       sum(oola.order_amt) amt 
+  	FROM om_order_headers_all ooha,
+       om_order_lines_all   oola,
+       c_merch_cust_base    cmcb,
+       t_material_base tmb
+	where ooha.id= oola.header_id
+		and ooha.merch_cust_id=cmcb.id
+		and oola.material_id = tmb.sap_id
+		and ooha.order_type='1'
+		and ooha.attribute8 =#{lpno,jdbcType=VARCHAR}
+		and ooha.attribute9 =#{isMatched,jdbcType=VARCHAR}
+		and ooha.ship_id = #{shipid,jdbcType=DECIMAL}
+		and cmcb.pid =#{merchid,jdbcType=DECIMAL}
+		and ooha.states =#{states,jdbcType=VARCHAR}
+     group by ooha.id  ,
+       ooha.sap_order_id ,
+       cmcb.id ,
+       cmcb.name 
+  	<include refid="OracleDialectSuffix" />
+  </select>
+  
+  <select id="countDistributorEditList" resultType="int" parameterType="java.util.Map">
+  	SELECT count(1)
+  	FROM  (SELECT ooha.id  orderid,
+       ooha.sap_order_id saporderid,
+       cmcb.id merchid,
+       cmcb.name merchname,
+       sum(oola.num) num,
+       sum(oola.order_amt) amt
+  	FROM om_order_headers_all ooha,
+       om_order_lines_all   oola,
+       c_merch_cust_base    cmcb,
+       t_material_base tmb
+	where ooha.id= oola.header_id
+		and ooha.merch_cust_id=cmcb.id
+		and oola.material_id = tmb.sap_id
+		and ooha.order_type='1'
+		and ooha.attribute8 =#{lpno,jdbcType=VARCHAR}
+		and ooha.attribute9 =#{isMatched,jdbcType=VARCHAR}
+		and ooha.ship_id = #{shipid,jdbcType=DECIMAL}
+		and cmcb.pid =#{merchid,jdbcType=DECIMAL}
+		and ooha.states =#{states,jdbcType=VARCHAR}
+     group by ooha.id  ,
+       ooha.sap_order_id ,
+       cmcb.id ,
+       cmcb.name)
+  </select>
+  
+  <select id="getOrderLinesAllAmt" resultMap="LinesResultMap" parameterType="java.lang.Long">
+  		SELECT sum(nvl(oola.amt, 0)) amt,
+       sum(nvl(oola.order_amt, 0)) order_amt,
+       sum(nvl(oola.discount_amt, 0)) discount_amt,
+       sum(nvl(oola.hb_amt, 0)) hb_amt
+  	FROM om_order_lines_all oola
+ 	where oola.header_id = #{id,jdbcType=DECIMAL}
+  </select>
+  
+  <select id="getOrderProcessIds" resultType="String" parameterType="java.lang.Long">
+  	SELECT distinct ooha.attribute1
+  FROM om_order_headers_all ooha
+ where ooha.order_type = '1'
+   and ooha.states = '2'
+   and ooha.ship_id =#{merchid,jdbcType=DECIMAL}
+  </select>
+  
+  <select id="selectPriceByMaterialId" resultType="DECIMAL" parameterType="java.util.Map">
+  	SELECT nvl(tmp.price,0)
+  FROM (SELECT *
+          FROM t_material_price
+         where edate + 0.99999 > sysdate
+         order by bdate desc) tmp,
+       c_merch_cust_base cmcb,
+       crm_sales_organization cso
+ where 1 = 1
+   and cmcb.organization_id = cso.id
+   and tmp.organization_id = cso.sap_id
+   and cmcb.id=#{merchCustId,jdbcType=DECIMAL}
+   and tmp.material_id=#{materialId,jdbcType=VARCHAR}
+   and rownum=1
+  </select>
+  <resultMap type="com.hhnz.customer.dto.CustomerRetailDTO" id="retailCustomer">
+  	<result column="id" property="id" jdbcType="DECIMAL"/>
+  	<result column="name" property="name" jdbcType="VARCHAR"/>
+  	<result column="pid" property="pid" jdbcType="DECIMAL"/>
+  	<result column="pname" property="pname" jdbcType="VARCHAR"/>
+  	<result column="organization_id" property="organizationId" jdbcType="VARCHAR"/>
+  </resultMap>
+  <select id="selectRetailCustomers" resultMap="retailCustomer" parameterType="java.util.Map">
+  	SELECT cmcb.id,
+       cmcb.name,
+       cmcb.pid,
+       pcmcb.name pname,
+       pcmcb.organization_id
+  FROM c_merch_cust_base      cmcb,
+       c_merch_cust_base      pcmcb,
+       c_merch_cust_station   cmcs
+ where 1 = 1
+   and cmcb.pid = pcmcb.id
+   and pcmcb.id = cmcs.merch_cust_id
+   <if test="custType !=null">
+   and cmcb.cust_type = #{custType}
+   </if>
+   and cmcb.states='3'
+   and exists (select 1 from c_merch_cust_account cmca
+   where cmca.merch_cust_id= cmcb.id)
+   <if test="usertype ==1 and merchid !=null and merchid !=''">
+    and cmcb.pid =#{merchid,jdbcType=DECIMAL}
+   </if>
+   <if test="usertype !=1">
+   		<if test="stationids != null and stationids.size()>0">
+    	and cmcs.station_id in
+		<foreach item="item" index="index" collection="stationids"
+			open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		</if>
+   </if>
+  </select>
+  
+  <update id="updateLineDeliveredNum" parameterType="java.lang.Long">
+  	update om_order_lines_all oola
+   set oola.delivered_num =
+       (SELECT sum(nvl(oos.delivered_num, 0))
+          FROM om_order_spilts oos
+         where oos.header_id = oola.header_id
+           and oos.line_id = oola.id)
+   , oola.attribute3 =
+       (SELECT sum(nvl(oos.attribute3, 0))
+          FROM om_order_spilts oos
+         where oos.header_id = oola.header_id
+           and oos.line_id = oola.id)
+ where oola.header_id =#{orderId,jdbcType=DECIMAL}
+  </update>
+  
+  <update id="updateTransferStatesWhenDelivery">
+  	UPDATE OM_ORDER_HEADERS_ALL ooha
+	SET states = '7'
+	WHERE
+		EXISTS (SELECT 1 FROM OM_ORDER_HEADERS_ALL	WHERE order_type = '7' AND states = '7'	AND ooha.ATTRIBUTE13 = ID)
+		AND ooha.states = '5'
+  </update>
+  
+</mapper>

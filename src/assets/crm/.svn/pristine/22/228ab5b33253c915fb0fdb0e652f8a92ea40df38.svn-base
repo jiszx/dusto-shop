@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.monitor.mapper.CrmExportMapper" >
+  <select id="executeSql" resultType="map" >
+  	${sql}
+  </select>
+  
+  <select id="findByKey" resultType="com.hhnz.monitor.model.CrmExport" parameterType="String">
+  	select t.export_key key,t.id,t.sql,t.mapping,t.description from CRM_EXPORT_CONFIG t where t.export_key=#{key}
+  </select>
+  
+  <select id="findAll" resultType="com.hhnz.monitor.model.CrmExport">
+    <include refid="OracleDialectPrefix" />
+  	select t.export_key key,t.id,t.sql,t.mapping,t.description from CRM_EXPORT_CONFIG t order by t.id desc
+  	<include refid="OracleDialectSuffix" />
+  </select>
+  
+  <select id="countFindAll" resultType="int" >
+  	select count(1) from CRM_EXPORT_CONFIG t order by t.id desc
+  </select>
+  
+  <insert id="insert" >
+  	INSERT INTO CRM_EXPORT_CONFIG (
+	ID,
+	EXPORT_KEY,
+	MAPPING,
+	SQL,
+	DESCRIPTION	)
+	VALUES
+		(
+			seq_crm_export_config.nextval,
+			#{key},
+			#{mapping},
+			#{sql},
+			#{description,jdbcType=VARCHAR}
+		)
+  </insert>
+  
+  <update id="update">
+  	update CRM_EXPORT_CONFIG set EXPORT_KEY=#{key},MAPPING=#{mapping},SQL=#{sql},DESCRIPTION=#{description,jdbcType=VARCHAR} where ID=#{id}
+  </update>
+  
+  <delete id="deleteById" parameterType="long">
+  	delete from CRM_EXPORT_CONFIG where ID=#{id}
+  </delete>
+  
+  <sql id="OracleDialectPrefix" >
+    <if test="begin != null" >
+      select * from ( select row_.*, rownum rownum_ from ( 
+    </if>
+  </sql>
+  <sql id="OracleDialectSuffix" >
+    <if test="begin != null" >
+      <![CDATA[ ) row_ ) where rownum_ > #{begin} and rownum_ <= #{end} ]]>
+    </if>
+  </sql>
+</mapper>

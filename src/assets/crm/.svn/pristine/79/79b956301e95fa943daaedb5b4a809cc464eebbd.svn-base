@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.account.mapper.CapitalAllocationMapper">
+
+	<resultMap type="com.hhnz.customer.model.CMerchCustBase" id="merchResultMap">
+		<result column="id" property="id" jdbcType="DECIMAL" />
+		<result column="name" property="name" jdbcType="VARCHAR" />
+		<result column="sap_customer_id" property="sapCustomerId" jdbcType="VARCHAR" />
+		<result column="cust_type"  property="custType" jdbcType="VARCHAR"/>
+	</resultMap>
+	<select id="getMerchs" resultMap="merchResultMap" parameterType="java.util.Map">
+		SELECT cmcb.id, cmcb.name, nvl(cmcb.sap_customer_id,'000000') sap_customer_id,cmcb.cust_type
+			FROM c_merch_cust_base cmcb, c_merch_cust_station cmcs
+		where cmcb.id = cmcs.merch_cust_id
+			and cmcb.states = '3'
+   			and ((cmcb.cust_type = '2' or cmcb.cust_type = '7') or
+       			 (cmcb.cust_type = '70' and exists
+        				(select 1
+            				from c_merch_cust_base cmcb2
+           				 where 1 = 1
+             				and cmcb.pid = cmcb2.id
+             				and cmcb2.sap_customer_id = '1421')))
+		<if test="stationdis !=null and stationdis.size()>0">
+			and cmcs.station_id in
+			<foreach item="item" index="index" collection="stationdis"	open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+	</select>
+	
+	<resultMap type="com.hhnz.account.model.CMerchUpaccount" id="receiveResultMap">
+		<result column="id" property="id" jdbcType="DECIMAL"/>
+		<result column="pay_amt" property="payAmt" jdbcType="DECIMAL"/>
+		<result column="PAY_TYPE" property="payType" jdbcType="VARCHAR"/>
+		<result column="PAY_DATE" property="payDate" jdbcType="VARCHAR"/>
+		<result column="ALLOCATION_AMT" property="allocationAmt" jdbcType="DECIMAL"/>
+		<result column="bank_Serial" property="bankSerial" jdbcType="VARCHAR"/>
+	</resultMap>
+	<select id="getReceives" resultMap="receiveResultMap" parameterType="java.lang.Long">
+		SELECT cmu.id,
+       cmu.pay_amt/100 pay_amt,
+       nvl(cmu.allocation_amt,0)/100 allocation_amt,
+       td.show_text pay_type,
+       case
+         when cmu.pay_type = '1' then
+          cmu.pay_date
+         else
+          to_char(cmu.bill_in_date,'yyyy-mm-dd')
+       end pay_date,
+       NVL(cmu.bank_Serial,'0') bank_Serial
+  FROM c_merch_upaccount cmu,
+  	   c_merch_cust_base cmcb,
+       t_dict td
+ where 1=1
+ and cmu.merch_cus_id= cmcb.id
+ and ( (cmu.states = '3' and cmcb.cust_type='2') or( cmu.states='5' and cmcb.cust_type in ('7','70')))
+ and cmu.pay_type= td.choose_val
+ and td.col_name='MERCH_UPAMT_TYPE'
+ and nvl(cmu.allocation_amt,0) &lt; cmu.pay_amt
+ 			and cmu.merch_cus_id=#{merchCustId,jdbcType=DECIMAL}
+	</select>
+	<resultMap type="com.hhnz.account.model.CMerchCustAccountV" id="accountResultMap">
+		<result column="id" property="id" jdbcType="DECIMAL"/>
+		<result column="merch_cust_id" property="merchCustId" jdbcType="DECIMAL"/>
+		<result column="custname" property="custname" jdbcType="VARCHAR"/>
+		<result column="cash_amt" property="cashAmt" jdbcType="DECIMAL"/>
+		<result column="sap_customer_id" property="sapCustomerId" jdbcType="VARCHAR"/>
+		<result column="allocation_amt" property="allocationAmt" jdbcType="DECIMAL"/>
+		<result column="total_amt" property="totalAmt" jdbcType="DECIMAL"/>
+	</resultMap>
+	<select id="selectRetailerAccount" resultMap="accountResultMap" parameterType="java.util.Map">
+		SELECT 
+		CMCA.ID,
+       CMCA.MERCH_CUST_ID,
+       CMCA.CASH_AMT,
+       CMCB.SAP_CUSTOMER_ID,
+       CMCB.NAME CUSTNAME,
+       abs(CMCA.CASH_AMT/100) allocation_amt,
+       round(CMCA.CASH_AMT/100,2)  total_amt
+  FROM C_MERCH_CUST_ACCOUNT CMCA, C_MERCH_CUST_BASE CMCB
+ WHERE 1 = 1
+   AND CMCA.MERCH_CUST_ID = CMCB.ID
+   AND CMCA.ORGANIZATION_ID = CMCB.ORGANIZATION_ID
+		<if test="ids !=null and ids.size()>0">
+		  AND CMCA.MERCH_CUST_ID IN
+		  <foreach item="item" index="index" collection="ids"	open="(" separator="," close=")">
+				#{item}
+		 </foreach>
+		</if>
+	</select>
+	<select id="countRetailerAccount" resultType="int" parameterType="java.util.Map">
+		SELECT 
+		count(1)
+  FROM C_MERCH_CUST_ACCOUNT CMCA, C_MERCH_CUST_BASE CMCB
+ WHERE 1 = 1
+   AND CMCA.MERCH_CUST_ID = CMCB.ID
+   AND CMCA.ORGANIZATION_ID = CMCB.ORGANIZATION_ID
+		<if test="ids !=null and ids.size()>0">
+		  AND CMCA.MERCH_CUST_ID IN
+		  <foreach item="item" index="index" collection="ids"	open="(" separator="," close=")">
+				#{item}
+		 </foreach>
+		</if>
+	</select>
+	
+	<resultMap type="com.hhnz.account.dto.OrderVerifieDTO" id="orderResultMap">
+		<result column="lpno" property="lpno" jdbcType="VARCHAR"/>
+		<result column="amt" property="amt" jdbcType="DECIMAL"/>
+		<result column="date" property="date" jdbcType="VARCHAR"/>
+		<result column="states" property="states" jdbcType="VARCHAR"/>
+		<result column="id" property="orderId" jdbcType="DECIMAL"/>
+		<result column="custname" property="custname" jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	<select id="getOrders" resultMap="orderResultMap" parameterType="java.lang.Long">
+		SELECT ooha.id ,sum(oola.order_amt)/100 amt,ooha.states,cmcb.name custname
+  			FROM om_order_lines_all oola, 
+  				om_order_headers_all ooha,
+  				c_merch_cust_base cmcb
+ 		where oola.header_id = ooha.id
+ 		    and ooha.merch_cust_id= cmcb.id
+  			and ooha.ship_id =#{merchCustId,jdbcType=DECIMAL}
+  			and ooha.states='2'
+			group by ooha.id,ooha.states,cmcb.name
+	</select>
+	
+	<select id="countOrders" resultType="int" parameterType="java.lang.Long">
+		SELECT COUNT(1)
+  			FROM om_order_lines_all oola, 
+  				om_order_headers_all ooha,
+  				c_merch_cust_base cmcb
+ 		where oola.header_id = ooha.id
+ 		    and ooha.merch_cust_id= cmcb.id
+  			and ooha.ship_id =#{merchCustId,jdbcType=DECIMAL}
+  			and ooha.states='2'
+	</select>
+	
+	<select id="getRecords" resultMap="orderResultMap" parameterType="java.lang.Long">
+		SELECT ooha.attribute8 lpno,sum(oola.order_amt)/100 amt,ooha.states
+  			FROM om_order_lines_all oola, om_order_headers_all ooha
+ 		where oola.header_id = ooha.id
+  			and ooha.ship_id =#{merchCustId,jdbcType=DECIMAL}
+  			and ooha.attribute8 is not null
+  			and ooha.states='2'
+			group by ooha.attribute8,ooha.states
+	</select>
+	
+	<select id="countRecords" resultType="int" parameterType="java.lang.Long">
+		SELECT COUNT(1)
+  			FROM om_order_lines_all oola, om_order_headers_all ooha
+ 		where oola.header_id = ooha.id
+  			and ooha.ship_id =#{merchCustId,jdbcType=DECIMAL}
+  			and ooha.states='2'
+  			and ooha.attribute8 is not null
+	</select>
+	
+	<resultMap type="com.hhnz.account.dto.OrderReceiveDTO" id="orderReceiveResultMap">
+		<result column="merch_Cust_Id" property="merchCustId" jdbcType="DECIMAL"/>
+		<result column="custname" property="custname" jdbcType="VARCHAR"/>
+		<result column="cash_Amt" property="cashAmt" jdbcType="DECIMAL"/>
+		<result column="sap_Customer_Id" property="sapCustomerId" jdbcType="VARCHAR"/>
+		<result column="order_Id" property="orderId" jdbcType="DECIMAL"/>
+		<result column="order_Amt" property="orderAmt" jdbcType="DECIMAL"/>
+		<result column="allocation_Amt" property="allocationAmt" jdbcType="DECIMAL"/>
+		<result column="total_Amt" property="totalAmt" jdbcType="DECIMAL"/>
+	</resultMap>
+	<select id="selectRetailerOrders" parameterType="java.util.Map" resultMap="orderReceiveResultMap">
+		SELECT ooha.merch_cust_id,
+       cmcb.sap_customer_id,
+       cmcb.name custname,
+       cmca.Cash_Amt Cash_Amt,
+       <!-- ooha.id order_Id, -->
+       sum(nvl(oola.order_amt, 0))/100 order_Amt,
+       sum(nvl(oola.order_amt, 0))/100 allocation_Amt,
+       cmca.Cash_Amt+sum(nvl(oola.order_amt, 0))/100 total_Amt
+  FROM om_order_headers_all ooha,
+       om_order_lines_all   oola,
+       c_merch_cust_base    cmcb,
+       c_merch_cust_account cmca
+ where 1 = 1
+   and ooha.id = oola.header_id
+   and ooha.merch_cust_id = cmcb.id
+   and ooha.organization_id = cmcb.organization_id
+   and ooha.merch_cust_id = cmca.merch_cust_id
+   and ooha.organization_id = cmca.organization_id
+   and cmcb.states='3'
+   and cmcb.cust_type=decode(#{type,jdbcType=VARCHAR},'1','5','2','7')
+   <if test="ids !=null and ids.size()>0">
+		  AND decode(#{type,jdbcType=VARCHAR},'1',ooha.attribute8,'2',ooha.id) IN
+		  <foreach item="item" index="index" collection="ids"	open="(" separator="," close=")">
+				#{item}
+		 </foreach>
+		</if>
+ group by ooha.merch_cust_id,
+          cmcb.sap_customer_id,
+          cmcb.name,
+          <!-- ooha.id, -->
+          cmca.Cash_Amt
+	</select>
+	<select id="countRetailerOrders" resultType="int" parameterType="java.util.Map">
+		SELECT count(1)
+  FROM om_order_headers_all ooha,
+       om_order_lines_all   oola,
+       c_merch_cust_base    cmcb,
+       c_merch_cust_account cmca
+ where 1 = 1
+   and ooha.id = oola.header_id
+   and ooha.merch_cust_id = cmcb.id
+   and ooha.organization_id = cmcb.organization_id
+   and ooha.merch_cust_id = cmca.merch_cust_id
+   and ooha.organization_id = cmca.organization_id
+   and cmcb.states='3'
+   and cmcb.cust_type='5'
+   <if test="ids !=null and ids.size()>0">
+		  AND ooha.attribute8 IN
+		  <foreach item="item" index="index" collection="ids"	open="(" separator="," close=")">
+				#{item}
+		 </foreach>
+		</if>
+	</select>
+	
+	<resultMap type="com.hhnz.account.dto.AllocationDetailsDTO" id="AllocationDetailsResultMap">
+		<result column="upaccountId" property="upaccountId" jdbcType="DECIMAL"/>
+		<result column="merchCustId" property="merchCustId" jdbcType="DECIMAL"/>	
+		<result column="merchName" property="merchName" jdbcType="VARCHAR"/>	
+		<result column="allocationAmt" property="allocationAmt" jdbcType="DECIMAL"/>	
+		<result column="allocation_date" property="allocationDate" jdbcType="TIMESTAMP"/>	
+		<result column="sap_Customer_Id" property="sapCustomerId" jdbcType="VARCHAR"/>	
+		<result column="sap_voucher_id" property="sapVouderId" jdbcType="VARCHAR"/>	
+		<result column="operator" property="operator" jdbcType="VARCHAR"/>	
+		<result column="states" property="states" jdbcType="VARCHAR"/>	
+	</resultMap>
+	<select id="getAllocationDetail" resultMap="AllocationDetailsResultMap" parameterType="java.util.Map">
+	<include refid="OracleDialectPrefix" />
+		SELECT cmu.id upaccountId,
+       cmu.pay_amt/100 allocationAmt,
+       cmu.pay_type,
+       cmaa.allocation_date,
+       te.name operator,
+       cmcb.name merchName,
+       cmcb.sap_customer_id,
+       cmcb.id merchCustId,
+       cmu.states,
+       cmcal.sap_voucher_id
+  FROM c_merch_upaccount          cmu,
+       c_merch_account_allocation cmaa,
+       c_merch_cust_base          cmcb,
+       t_employee                 te,
+       c_merch_cust_account_log   cmcal
+ where 1 = 1
+   and cmu.id = cmaa.allocation_id
+   and cmu.merch_cus_id = cmcb.id
+   and cmaa.allocation_oid = te.id(+)
+   and cmu.id = cmcal.order_id(+)
+   and cmu.organization_id = cmcb.organization_id
+   and cmaa.UPACCOUNT_ID=#{upaccountId,jdbcType=DECIMAL}
+	<include refid="OracleDialectSuffix" />	
+	</select>
+	
+	<select id="countAllocationDetail" resultType="int" parameterType="java.lang.Long">
+		SELECT count(1)
+  FROM c_merch_upaccount          cmu,
+       c_merch_account_allocation cmaa,
+       c_merch_cust_base          cmcb,
+       t_employee                 te,
+       c_merch_cust_account_log   cmcal
+ where 1 = 1
+   and cmu.id = cmaa.allocation_id
+   and cmu.merch_cus_id = cmcb.id
+   and cmaa.allocation_oid = te.id(+)
+   and cmu.id = cmcal.order_id(+)
+   and cmu.organization_id = cmcb.organization_id
+   and cmaa.UPACCOUNT_ID=#{upaccountId,jdbcType=DECIMAL}
+	</select>
+	<sql id="OracleDialectPrefix">
+		<if test="page != null">
+			select * from ( select row_.*, rownum rownum_ from (
+		</if>
+	</sql>
+	<sql id="OracleDialectSuffix">
+		<if test="page != null">
+      <![CDATA[ ) row_ ) where rownum_ > #{begin} and rownum_ <= #{end} ]]>
+		</if>
+	</sql>
+</mapper>

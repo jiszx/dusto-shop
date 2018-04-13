@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.config.mapper.ProcessDeployMapper" >
+  <resultMap id="BaseResultMap" type="com.hhnz.config.model.ProcessDeploy" >
+    <result column="ID" property="id" jdbcType="NVARCHAR" />
+    <result column="DEPLOY_ID" property="deployId" jdbcType="NVARCHAR" />
+    <result column="PKEY" property="pkey" jdbcType="NVARCHAR" />
+    <result column="NAME" property="name" jdbcType="NVARCHAR" />
+    <result column="VERSION" property="version" jdbcType="DECIMAL" />
+    <result column="DEPLOY_DES" property="deployDes" jdbcType="NVARCHAR" />
+  </resultMap>
+  <sql id="Example_Where_Clause" >
+    <where >
+      <foreach collection="oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause" >
+    <where >
+      <foreach collection="example.oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List" >
+    ID, DEPLOY_ID, PKEY, NAME, VERSION, DEPLOY_DES
+  </sql>
+  <select id="selectByExample" resultMap="BaseResultMap" parameterType="com.hhnz.config.model.ProcessDeployExample" >
+    <include refid="OracleDialectPrefix" />
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from V_PROCESS_DEPLOY
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+    <include refid="OracleDialectSuffix" />
+  </select>
+  <delete id="deleteByExample" parameterType="com.hhnz.config.model.ProcessDeployExample" >
+    delete from V_PROCESS_DEPLOY
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="com.hhnz.config.model.ProcessDeploy" >
+    insert into V_PROCESS_DEPLOY (ID, DEPLOY_ID, PKEY, 
+      NAME, VERSION, DEPLOY_DES
+      )
+    values (#{id,jdbcType=NVARCHAR}, #{deployId,jdbcType=NVARCHAR}, #{pkey,jdbcType=NVARCHAR}, 
+      #{name,jdbcType=NVARCHAR}, #{version,jdbcType=DECIMAL}, #{deployDes,jdbcType=NVARCHAR}
+      )
+  </insert>
+  <insert id="insertSelective" parameterType="com.hhnz.config.model.ProcessDeploy" >
+    insert into V_PROCESS_DEPLOY
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="deployId != null" >
+        DEPLOY_ID,
+      </if>
+      <if test="pkey != null" >
+        PKEY,
+      </if>
+      <if test="name != null" >
+        NAME,
+      </if>
+      <if test="version != null" >
+        VERSION,
+      </if>
+      <if test="deployDes != null" >
+        DEPLOY_DES,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=NVARCHAR},
+      </if>
+      <if test="deployId != null" >
+        #{deployId,jdbcType=NVARCHAR},
+      </if>
+      <if test="pkey != null" >
+        #{pkey,jdbcType=NVARCHAR},
+      </if>
+      <if test="name != null" >
+        #{name,jdbcType=NVARCHAR},
+      </if>
+      <if test="version != null" >
+        #{version,jdbcType=DECIMAL},
+      </if>
+      <if test="deployDes != null" >
+        #{deployDes,jdbcType=NVARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="com.hhnz.config.model.ProcessDeployExample" resultType="java.lang.Integer" >
+    select count(*) from V_PROCESS_DEPLOY
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map" >
+    update V_PROCESS_DEPLOY
+    <set >
+      <if test="record.id != null" >
+        ID = #{record.id,jdbcType=NVARCHAR},
+      </if>
+      <if test="record.deployId != null" >
+        DEPLOY_ID = #{record.deployId,jdbcType=NVARCHAR},
+      </if>
+      <if test="record.pkey != null" >
+        PKEY = #{record.pkey,jdbcType=NVARCHAR},
+      </if>
+      <if test="record.name != null" >
+        NAME = #{record.name,jdbcType=NVARCHAR},
+      </if>
+      <if test="record.version != null" >
+        VERSION = #{record.version,jdbcType=DECIMAL},
+      </if>
+      <if test="record.deployDes != null" >
+        DEPLOY_DES = #{record.deployDes,jdbcType=NVARCHAR},
+      </if>
+    </set>
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map" >
+    update V_PROCESS_DEPLOY
+    set ID = #{record.id,jdbcType=NVARCHAR},
+      DEPLOY_ID = #{record.deployId,jdbcType=NVARCHAR},
+      PKEY = #{record.pkey,jdbcType=NVARCHAR},
+      NAME = #{record.name,jdbcType=NVARCHAR},
+      VERSION = #{record.version,jdbcType=DECIMAL},
+      DEPLOY_DES = #{record.deployDes,jdbcType=NVARCHAR}
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <sql id="OracleDialectPrefix" >
+    <if test="page != null" >
+      select * from ( select row_.*, rownum rownum_ from ( 
+    </if>
+  </sql>
+  <sql id="OracleDialectSuffix" >
+    <if test="page != null" >
+      <![CDATA[ ) row_ ) where rownum_ > #{page.begin} and rownum_ <= #{page.end} ]]>
+    </if>
+  </sql>
+</mapper>

@@ -1,0 +1,44 @@
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+             xmlns:beans="http://www.springframework.org/schema/beans"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.0.xsd">
+
+    <http auto-config="true" >
+        <!-- <intercept-url pattern='/**' requires-channel='https'/>-->
+        <intercept-url pattern="/login.jsp" filters="none"/>
+        <intercept-url pattern="/static/**"  filters="none"/>
+        <intercept-url pattern="/code.codeImg*" filters="none"/>
+        <intercept-url pattern="/api/**"  filters="none"/>
+        <intercept-url pattern="/process/goNext"  filters="none"/><!-- 无权限验证的外部流程调用，暂定，后续如果有安全考虑，将改为其他方式调用 -->
+        <intercept-url pattern="/process/startProcess"  filters="none"/><!-- 无权限验证的外部流程调用，暂定，后续如果有安全考虑，将改为其他方式调用 -->
+        <intercept-url pattern="/monitor/rfc/current/remoteExecute"  filters="none"/><!-- RFC功能远程调用 -->
+        <intercept-url pattern="/monitor/rfc/current/remoteExecute/param"  filters="none"/><!-- RFC功能远程调用 -->
+        <intercept-url pattern="/order/mail/delivery/print"  filters="none"/><!-- 物流配送打印页 -->
+        <form-login login-page="/login.jsp" always-use-default-target="true" default-target-url="/index.jhtml" authentication-failure-handler-ref="loginFailure"></form-login>
+        <custom-filter ref="securityInterceptor" before="FILTER_SECURITY_INTERCEPTOR"/>
+        <access-denied-handler ref="accessDeniedHandler"/>
+        <session-management>
+            <concurrency-control max-sessions="10" error-if-maximum-exceeded="false"></concurrency-control>
+        </session-management>
+    </http>
+
+
+    <beans:bean id="securityInterceptor" class="com.hhnz.security.SecurityInterceptor">
+        <beans:property name="accessDecisionManager" ref="accessDecisionManagerBean" ></beans:property>
+        <beans:property name="authenticationManager" ref="authenticationManager"></beans:property>
+        <beans:property name="securityMetadataSource" ref="securityMetadataSource"></beans:property>
+    </beans:bean>
+
+    <authentication-manager alias="authenticationManager">
+        <authentication-provider user-service-ref="userDetailsService">
+            <password-encoder hash="md5"></password-encoder>
+        </authentication-provider>
+    </authentication-manager>
+
+    <beans:bean id="messageSource"
+                class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+        <beans:property name="basename"
+                        value="classpath:messages_zh_CN"/>
+    </beans:bean>
+</beans:beans>

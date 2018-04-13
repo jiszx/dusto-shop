@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.monitor.mapper.TLogMapper" >
+  <resultMap id="BaseResultMap" type="com.hhnz.monitor.model.TLog" >
+    <id column="ID" property="id" jdbcType="DECIMAL" />
+    <result column="OPER_ID" property="operId" jdbcType="VARCHAR" />
+    <result column="ACCESS_IP" property="accessIp" jdbcType="VARCHAR" />
+    <result column="CLASS_NAME" property="className" jdbcType="VARCHAR" />
+    <result column="METHOD_NAME" property="methodName" jdbcType="VARCHAR" />
+    <result column="OP_PARAMS" property="opParams" jdbcType="VARCHAR" />
+    <result column="EXCEPTION_INFO" property="exceptionInfo" jdbcType="VARCHAR" />
+    <result column="OP_TS" property="opTs" jdbcType="TIMESTAMP" />
+  </resultMap>
+  <sql id="Example_Where_Clause" >
+    <where >
+      <foreach collection="oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause" >
+    <where >
+      <foreach collection="example.oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List" >
+    ID, OPER_ID, ACCESS_IP, CLASS_NAME, METHOD_NAME, OP_PARAMS, EXCEPTION_INFO, OP_TS
+  </sql>
+  <select id="selectByExample" resultMap="BaseResultMap" parameterType="com.hhnz.monitor.model.TLogExample" >
+    <include refid="OracleDialectPrefix" />
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from T_LOG
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+    <include refid="OracleDialectSuffix" />
+  </select>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.math.BigDecimal" >
+    select 
+    <include refid="Base_Column_List" />
+    from T_LOG
+    where ID = #{id,jdbcType=DECIMAL}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.math.BigDecimal" >
+    delete from T_LOG
+    where ID = #{id,jdbcType=DECIMAL}
+  </delete>
+  <delete id="deleteByExample" parameterType="com.hhnz.monitor.model.TLogExample" >
+    delete from T_LOG
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="com.hhnz.monitor.model.TLog" >
+    <selectKey resultType="java.math.BigDecimal" keyProperty="id" order="BEFORE" >
+      select SEQ_LOG_ID.nextval from dual
+    </selectKey>
+    insert into T_LOG (ID, OPER_ID, ACCESS_IP, 
+      CLASS_NAME, METHOD_NAME, OP_PARAMS, 
+      EXCEPTION_INFO, OP_TS)
+    values (#{id,jdbcType=DECIMAL}, #{operId,jdbcType=VARCHAR}, #{accessIp,jdbcType=VARCHAR}, 
+      #{className,jdbcType=VARCHAR}, #{methodName,jdbcType=VARCHAR}, #{opParams,jdbcType=VARCHAR}, 
+      #{exceptionInfo,jdbcType=VARCHAR}, #{opTs,jdbcType=TIMESTAMP})
+  </insert>
+  <insert id="insertSelective" parameterType="com.hhnz.monitor.model.TLog" >
+    <selectKey resultType="java.math.BigDecimal" keyProperty="id" order="BEFORE" >
+      select SEQ_LOG_ID.nextval from dual
+    </selectKey>
+    insert into T_LOG
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      ID,
+      <if test="operId != null" >
+        OPER_ID,
+      </if>
+      <if test="accessIp != null" >
+        ACCESS_IP,
+      </if>
+      <if test="className != null" >
+        CLASS_NAME,
+      </if>
+      <if test="methodName != null" >
+        METHOD_NAME,
+      </if>
+      <if test="opParams != null" >
+        OP_PARAMS,
+      </if>
+      <if test="exceptionInfo != null" >
+        EXCEPTION_INFO,
+      </if>
+      <if test="opTs != null" >
+        OP_TS,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      #{id,jdbcType=DECIMAL},
+      <if test="operId != null" >
+        #{operId,jdbcType=VARCHAR},
+      </if>
+      <if test="accessIp != null" >
+        #{accessIp,jdbcType=VARCHAR},
+      </if>
+      <if test="className != null" >
+        #{className,jdbcType=VARCHAR},
+      </if>
+      <if test="methodName != null" >
+        #{methodName,jdbcType=VARCHAR},
+      </if>
+      <if test="opParams != null" >
+        #{opParams,jdbcType=VARCHAR},
+      </if>
+      <if test="exceptionInfo != null" >
+        #{exceptionInfo,jdbcType=VARCHAR},
+      </if>
+      <if test="opTs != null" >
+        #{opTs,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="com.hhnz.monitor.model.TLogExample" resultType="java.lang.Integer" >
+    select count(*) from T_LOG
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map" >
+    update T_LOG
+    <set >
+      <if test="record.id != null" >
+        ID = #{record.id,jdbcType=DECIMAL},
+      </if>
+      <if test="record.operId != null" >
+        OPER_ID = #{record.operId,jdbcType=VARCHAR},
+      </if>
+      <if test="record.accessIp != null" >
+        ACCESS_IP = #{record.accessIp,jdbcType=VARCHAR},
+      </if>
+      <if test="record.className != null" >
+        CLASS_NAME = #{record.className,jdbcType=VARCHAR},
+      </if>
+      <if test="record.methodName != null" >
+        METHOD_NAME = #{record.methodName,jdbcType=VARCHAR},
+      </if>
+      <if test="record.opParams != null" >
+        OP_PARAMS = #{record.opParams,jdbcType=VARCHAR},
+      </if>
+      <if test="record.exceptionInfo != null" >
+        EXCEPTION_INFO = #{record.exceptionInfo,jdbcType=VARCHAR},
+      </if>
+      <if test="record.opTs != null" >
+        OP_TS = #{record.opTs,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map" >
+    update T_LOG
+    set ID = #{record.id,jdbcType=DECIMAL},
+      OPER_ID = #{record.operId,jdbcType=VARCHAR},
+      ACCESS_IP = #{record.accessIp,jdbcType=VARCHAR},
+      CLASS_NAME = #{record.className,jdbcType=VARCHAR},
+      METHOD_NAME = #{record.methodName,jdbcType=VARCHAR},
+      OP_PARAMS = #{record.opParams,jdbcType=VARCHAR},
+      EXCEPTION_INFO = #{record.exceptionInfo,jdbcType=VARCHAR},
+      OP_TS = #{record.opTs,jdbcType=TIMESTAMP}
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="com.hhnz.monitor.model.TLog" >
+    update T_LOG
+    <set >
+      <if test="operId != null" >
+        OPER_ID = #{operId,jdbcType=VARCHAR},
+      </if>
+      <if test="accessIp != null" >
+        ACCESS_IP = #{accessIp,jdbcType=VARCHAR},
+      </if>
+      <if test="className != null" >
+        CLASS_NAME = #{className,jdbcType=VARCHAR},
+      </if>
+      <if test="methodName != null" >
+        METHOD_NAME = #{methodName,jdbcType=VARCHAR},
+      </if>
+      <if test="opParams != null" >
+        OP_PARAMS = #{opParams,jdbcType=VARCHAR},
+      </if>
+      <if test="exceptionInfo != null" >
+        EXCEPTION_INFO = #{exceptionInfo,jdbcType=VARCHAR},
+      </if>
+      <if test="opTs != null" >
+        OP_TS = #{opTs,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=DECIMAL}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.hhnz.monitor.model.TLog" >
+    update T_LOG
+    set OPER_ID = #{operId,jdbcType=VARCHAR},
+      ACCESS_IP = #{accessIp,jdbcType=VARCHAR},
+      CLASS_NAME = #{className,jdbcType=VARCHAR},
+      METHOD_NAME = #{methodName,jdbcType=VARCHAR},
+      OP_PARAMS = #{opParams,jdbcType=VARCHAR},
+      EXCEPTION_INFO = #{exceptionInfo,jdbcType=VARCHAR},
+      OP_TS = #{opTs,jdbcType=TIMESTAMP}
+    where ID = #{id,jdbcType=DECIMAL}
+  </update>
+  <sql id="OracleDialectPrefix" >
+    <if test="page != null" >
+      select * from ( select row_.*, rownum rownum_ from ( 
+    </if>
+  </sql>
+  <sql id="OracleDialectSuffix" >
+    <if test="page != null" >
+      <![CDATA[ ) row_ ) where rownum_ > #{page.begin} and rownum_ <= #{page.end} ]]>
+    </if>
+  </sql>
+</mapper>

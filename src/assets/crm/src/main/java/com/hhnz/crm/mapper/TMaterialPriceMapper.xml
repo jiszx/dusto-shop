@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.crm.mapper.TMaterialPriceMapper" >
+  <resultMap id="BaseResultMap" type="com.hhnz.crm.model.TMaterialPrice" >
+    <id column="SAP_RECORD_NO" property="sapRecordNo" jdbcType="VARCHAR" />
+    <result column="MATERIAL_ID" property="materialId" jdbcType="VARCHAR" />
+    <result column="CREATE_TS" property="createTs" jdbcType="TIMESTAMP" />
+    <result column="ORGANIZATION_ID" property="organizationId" jdbcType="VARCHAR" />
+    <result column="PRICE" property="price" jdbcType="DECIMAL" />
+    <result column="UNIT" property="unit" jdbcType="VARCHAR" />
+    <result column="BDATE" property="bdate" jdbcType="TIMESTAMP" />
+    <result column="EDATE" property="edate" jdbcType="TIMESTAMP" />
+    <result column="CHANNEL" property="channel" jdbcType="VARCHAR" />
+    <result column="ADJUST_PRICE" property="adjustPrice" jdbcType="DECIMAL" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    SAP_RECORD_NO, MATERIAL_ID, CREATE_TS, ORGANIZATION_ID, PRICE, UNIT, BDATE, EDATE, 
+    CHANNEL, ADJUST_PRICE
+  </sql>
+  
+  <select id="selectByMaterialBase" resultMap="BaseResultMap" parameterType="com.hhnz.crm.dto.ProductPriceQueryDTO" >
+    SELECT P.MATERIAL_ID, P.ORGANIZATION_ID, P.CHANNEL
+	  FROM T_MATERIAL_PRICE P
+	 INNER JOIN T_MATERIAL_BASE T
+	    ON T.SAP_ID = P.MATERIAL_ID
+	 <where>
+	 	<if test="sapIds != null">
+	 		AND T.SAP_ID IN 
+	 		<foreach collection="sapIds" item="listItem" open="(" close=")" separator="," >
+				#{listItem,jdbcType=VARCHAR}
+            </foreach>
+	 	</if>
+	 	<if test="attribute1 != null">
+	 		AND T.ATTRIBUTE1 = #{attribute1,jdbcType=VARCHAR}
+	 	</if>
+	 	<if test="series != null">
+	 		AND T.SERIES = #{series,jdbcType=VARCHAR}
+	 	</if>
+	 </where>
+	 GROUP BY P.MATERIAL_ID, P.ORGANIZATION_ID, P.CHANNEL
+  </select>
+  
+  <select id="selectActiveByMaterialIdAndOrgIdAndChannel" resultMap="BaseResultMap" >
+    SELECT 
+    <include refid="Base_Column_List" />
+    	from T_MATERIAL_PRICE T
+	 <where>
+	 	<if test="materialId != null">
+	 		AND T.MATERIAL_ID = #{materialId,jdbcType=VARCHAR}
+	 	</if>
+	 	<if test="organizationId != null">
+	 		AND T.ORGANIZATION_ID = #{organizationId,jdbcType=VARCHAR}
+	 	</if>
+	 	<if test="channel != null">
+	 		AND T.CHANNEL = #{channel,jdbcType=VARCHAR}
+	 	</if>
+	 		AND T.BDATE <![CDATA[<=]]> to_date(to_char(SYSDATE,'yyyy-MM-dd'),'yyyy-MM-dd') 
+	 		AND T.EDATE <![CDATA[>=]]> to_date(to_char(SYSDATE,'yyyy-MM-dd'),'yyyy-MM-dd')
+	 </where>
+	  order by CREATE_TS DESC
+  </select>
+  
+  <select id="selectLaterByMaterialIdAndOrgIdAndChannel" resultMap="BaseResultMap" >
+    SELECT 
+    <include refid="Base_Column_List" />
+    	from T_MATERIAL_PRICE T
+	 <where>
+	 	<if test="materialId != null">
+	 		AND T.MATERIAL_ID = #{materialId,jdbcType=VARCHAR}
+	 	</if>
+	 	<if test="organizationId != null">
+	 		AND T.ORGANIZATION_ID = #{organizationId,jdbcType=VARCHAR}
+	 	</if>
+	 	<if test="channel != null">
+	 		AND T.CHANNEL = #{channel,jdbcType=VARCHAR}
+	 	</if>
+	 		AND T.BDATE <![CDATA[>]]> to_date(to_char(SYSDATE,'yyyy-MM-dd'),'yyyy-MM-dd') 
+	 </where>
+	  order by CREATE_TS DESC
+  </select>
+  
+  <insert id="insertBatch" parameterType="java.util.List">
+      BEGIN
+      <foreach collection="materialPrices" item="item" index="index" separator=";" >
+      insert into T_MATERIAL_PRICE (SAP_RECORD_NO, MATERIAL_ID, CREATE_TS, 
+      ORGANIZATION_ID, PRICE, UNIT, 
+      BDATE, EDATE, CHANNEL, 
+      ADJUST_PRICE)
+    values ('C'||SEQ_MATERIAL_PRICE_ID.nextval, #{item.materialId,jdbcType=VARCHAR}, #{item.createTs,jdbcType=TIMESTAMP}, 
+      #{item.organizationId,jdbcType=VARCHAR}, #{item.price,jdbcType=DECIMAL}, #{item.unit,jdbcType=VARCHAR}, 
+      #{item.bdate,jdbcType=TIMESTAMP}, #{item.edate,jdbcType=TIMESTAMP}, #{item.channel,jdbcType=VARCHAR}, 
+      #{item.adjustPrice,jdbcType=DECIMAL})
+      </foreach>
+      ;END ;
+  </insert>
+  
+  <insert id="updateBatch" parameterType="java.util.List">
+      BEGIN
+      <foreach collection="materialPrices" item="item" index="index" separator=";" >
+      update T_MATERIAL_PRICE
+    set MATERIAL_ID = #{item.materialId,jdbcType=VARCHAR},
+      CREATE_TS = #{item.createTs,jdbcType=TIMESTAMP},
+      ORGANIZATION_ID = #{item.organizationId,jdbcType=VARCHAR},
+      PRICE = #{item.price,jdbcType=DECIMAL},
+      UNIT = #{item.unit,jdbcType=VARCHAR},
+      BDATE = #{item.bdate,jdbcType=TIMESTAMP},
+      EDATE = #{item.edate,jdbcType=TIMESTAMP},
+      CHANNEL = #{item.channel,jdbcType=VARCHAR},
+      ADJUST_PRICE = #{item.adjustPrice,jdbcType=DECIMAL}
+    where SAP_RECORD_NO = #{item.sapRecordNo,jdbcType=VARCHAR} 
+      </foreach>
+      ;END ;
+  </insert>
+  
+  <insert id="insertSelective" parameterType="com.hhnz.crm.model.TMaterialPrice" >
+  	<selectKey resultType="java.lang.Long" keyProperty="id" order="BEFORE" >
+      select SEQ_MATERIAL_PRICE_ID.nextval from dual
+    </selectKey>
+    insert into T_MATERIAL_PRICE
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      SAP_RECORD_NO,
+      <if test="materialId != null" >
+        MATERIAL_ID,
+      </if>
+      <if test="createTs != null" >
+        CREATE_TS,
+      </if>
+      <if test="organizationId != null" >
+        ORGANIZATION_ID,
+      </if>
+      <if test="price != null" >
+        PRICE,
+      </if>
+      <if test="unit != null" >
+        UNIT,
+      </if>
+      <if test="bdate != null" >
+        BDATE,
+      </if>
+      <if test="edate != null" >
+        EDATE,
+      </if>
+      <if test="channel != null" >
+        CHANNEL,
+      </if>
+      <if test="adjustPrice != null" >
+        ADJUST_PRICE,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      'C'||#{id,jdbcType=VARCHAR},
+      <if test="materialId != null" >
+        #{materialId,jdbcType=VARCHAR},
+      </if>
+      <if test="createTs != null" >
+        #{createTs,jdbcType=TIMESTAMP},
+      </if>
+      <if test="organizationId != null" >
+        #{organizationId,jdbcType=VARCHAR},
+      </if>
+      <if test="price != null" >
+        #{price,jdbcType=DECIMAL},
+      </if>
+      <if test="unit != null" >
+        #{unit,jdbcType=VARCHAR},
+      </if>
+      <if test="bdate != null" >
+        #{bdate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="edate != null" >
+        #{edate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="channel != null" >
+        #{channel,jdbcType=VARCHAR},
+      </if>
+      <if test="adjustPrice != null" >
+        #{adjustPrice,jdbcType=DECIMAL},
+      </if>
+    </trim>
+  </insert>
+  
+  <update id="updateByPrimaryKeySelective" parameterType="com.hhnz.crm.model.TMaterialPrice" >
+    update T_MATERIAL_PRICE
+    <set >
+      <if test="materialId != null" >
+        MATERIAL_ID = #{materialId,jdbcType=VARCHAR},
+      </if>
+      <if test="createTs != null" >
+        CREATE_TS = #{createTs,jdbcType=TIMESTAMP},
+      </if>
+      <if test="organizationId != null" >
+        ORGANIZATION_ID = #{organizationId,jdbcType=VARCHAR},
+      </if>
+      <if test="price != null" >
+        PRICE = #{price,jdbcType=DECIMAL},
+      </if>
+      <if test="unit != null" >
+        UNIT = #{unit,jdbcType=VARCHAR},
+      </if>
+      <if test="bdate != null" >
+        BDATE = #{bdate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="edate != null" >
+        EDATE = #{edate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="channel != null" >
+        CHANNEL = #{channel,jdbcType=VARCHAR},
+      </if>
+      <if test="adjustPrice != null" >
+        ADJUST_PRICE = #{adjustPrice,jdbcType=DECIMAL},
+      </if>
+    </set>
+    where SAP_RECORD_NO = #{sapRecordNo,jdbcType=VARCHAR}
+  </update>
+</mapper>

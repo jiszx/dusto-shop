@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE generatorConfiguration PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+        "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd" >
+<generatorConfiguration>
+    <classPathEntry location="D:\\DataBase\\Oracle\\product\\12.1.0\\dbhome_1\\jdbc\\lib\\ojdbc7.jar"/>
+    <context id="context">
+        <commentGenerator>
+        	<property name="suppressDate" value="true"/>
+        	<property name="suppressAllComments" value="true" />
+        </commentGenerator>
+        <jdbcConnection driverClass="oracle.jdbc.driver.OracleDriver"
+                        connectionURL="jdbc:oracle:thin:@localhost:1521:orcl" userId="crmtest" password="crmtest"/>
+        <javaModelGenerator targetPackage="com.hhnz.encrypt.model" targetProject="F:\\HHNZ_IDEA\\crm\\src\\main\\java"></javaModelGenerator>
+        <sqlMapGenerator targetPackage="com.hhnz.encrypt.mapper" targetProject="F:\\HHNZ_IDEA\\crm\\src\\main\\java" />
+        <javaClientGenerator targetPackage="com.hhnz.encrypt.mapper" targetProject="F:\\HHNZ_IDEA\\crm\\src\\main\\java" type="ANNOTATEDMAPPER"/>
+
+        <table tableName="t_encrypt_key">
+        </table>
+    </context>
+</generatorConfiguration>

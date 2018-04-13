@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.salepolicy.mapper.PolicyUtilMapper" >
+  <!-- <resultMap type="com.hhnz.salepolicy.model.PolicyOrgModel" id="policyorgResultMap">
+  	<result column="orgname" property="orgname" jdbcType="VARCHAR"/>
+  	<result column="id" property="orgid" jdbcType="VARCHAR"/>
+  	<result column="pid" property="orgpid" jdbcType="VARCHAR"/>
+  </resultMap>
+  <select id="getPolicyOrg" resultMap="policyorgResultMap" parameterType="java.lang.Long">
+  		SELECT cso.id,(SELECT rec.name FROM crm_sales_organization rec where rec.id=cso.pid)||'-'||cso.name as orgname,cso.pid
+  FROM crm_sales_organization cso
+ where 1 = 1
+   and cso.levels = '2'
+ start with cso.id in (SELECT tjs.org_id
+                         FROM t_job_station tjs, t_job_user tju
+                        where tju.job_id = tjs.id
+                          and tju.emp_id = #{userid,jdbcType=DECIMAL})
+connect by prior cso.id = cso.pid
+union all
+	SELECT cso.id,(SELECT rec.name FROM crm_sales_organization rec where rec.id=cso.pid)||'-'||cso.name as orgname,cso.pid
+  FROM crm_sales_organization cso
+ where 1 = 1
+   and cso.levels = '2'
+ start with cso.id in (SELECT tjs.org_id
+                         FROM t_job_station tjs, t_job_user tju
+                        where tju.job_id = tjs.id
+                          and tju.emp_id = #{userid,jdbcType=DECIMAL})
+connect by prior cso.pid = cso.id
+  </select> -->
+  
+  
+  <resultMap type="com.hhnz.salepolicy.model.PolicyMaterialModel" id="policyMaterialResultMap">
+  <result column="sap_id" property="sapId" jdbcType="VARCHAR"/>
+  <result column="sku" property="sku" jdbcType="VARCHAR"/>
+  <result column="material_name" property="materialName" jdbcType="VARCHAR"/>
+  <result column="unit" property="unit" jdbcType="VARCHAR"/>
+  <result column="price" property="price" jdbcType="VARCHAR"/>
+  </resultMap>
+  <select id="getPolicyMaterial" resultMap="policyMaterialResultMap" parameterType="java.lang.String">
+   SELECT tmb.sap_id,
+       tmb.sku,
+       tmb.material_name,
+       NVL(tmu.unit, ' ') AS UNIT,
+       tmp.price / 100 as price
+  FROM t_material_base        tmb,
+       t_material_unit        tmu,
+       t_material_price       tmp,
+       crm_sales_organization cso
+ where tmb.unit = tmu.code(+)
+   and tmb.sap_id = tmp.material_id
+   and cso.sap_id = tmp.organization_id
+   and tmp.edate > sysdate
+   and cso.id =#{orgid,jdbcType=VARCHAR}
+  </select>
+  
+  <resultMap type="com.hhnz.salepolicy.model.PolicySearchModel" id="policySearchReusltMap">
+  	<result column="id" property="id" jdbcType="DECIMAL"/>
+   	<result column="orgname" property="orgname" jdbcType="VARCHAR"/>
+   	<result column="typename" property="typename" jdbcType="VARCHAR"/>
+   	<result column="creater" property="creater" jdbcType="VARCHAR"/>
+	<result column="policy_type" property="policyType" jdbcType="VARCHAR"/>
+	<result column="description" property="description" jdbcType="VARCHAR"/> 
+	<result column="b_date" property="bDate" jdbcType="TIMESTAMP"/>
+	<result column="e_date" property="eDate" jdbcType="TIMESTAMP"/>
+	<result column="amt" property="amt" jdbcType="DECIMAL"/>
+	<result column="balance_amt" property="balanceAmt" jdbcType="DECIMAL"/>
+	<result column="states" property="states" jdbcType="VARCHAR"/>
+	<result column="cost_typeid" property="costTypeid" jdbcType="VARCHAR"/>
+	<result column="cost_subjectid" property="costSubjectid" jdbcType="VARCHAR"/>
+  </resultMap>
+  <select id="getPolicyMaterials" resultType="com.hhnz.order.model.OrderMaterial" parameterType="java.util.Map">
+  	SELECT
+		MATERIAL_ID AS materialId,
+		sku
+	FROM
+		OM_POLICY_LINES opl,
+		T_MATERIAL_BASE tmb
+	WHERE
+		OPL.MATERIAL_ID = TMB.SAP_ID
+	AND OPL.HEADER_ID = #{policyid}
+  </select>
+  <select id="getPolicyList" resultMap="policySearchReusltMap" parameterType="java.util.Map">
+ select id,
+       orgname,
+       typename,
+       creater,
+       verification,
+       effect,
+       policy_type,
+       description,
+       b_date,
+       e_date,
+       amt,
+       balance_amt,
+       states,
+       cost_typeid,
+       cost_subjectid
+	  from (select row_.*, rownum rownum_
+					          from (SELECT
+						oph. ID,
+						cso. NAME AS orgname,
+						opt. NAME AS typename,
+						te. NAME AS creater,
+						opt.verification,
+						oph.policy_type,
+						oph.description,
+						oph.b_date,
+						oph.e_date,
+						oph.amt/100.0 as amt,
+						nvl(oph.balance_amt,0) /100.0 as balance_amt,
+						oph.states,
+						oph.cost_typeid,
+						oph.cost_subjectid,
+						CASE
+					WHEN SYSDATE > B_DATE
+					AND SYSDATE &lt; (e_date + 0.99999) THEN
+						'1'
+					ELSE
+						'0'
+					END AS effect
+					FROM
+						om_policy_headers oph,
+						om_policy_type opt,
+						crm_sales_organization cso,
+						t_employee te
+					WHERE
+						1 = 1
+					AND oph.policy_type = opt. ID
+					AND oph.organization_id = cso. ID
+					AND oph.create_oid = te. ID (+)
+					<if test="orgid!=null">
+						and oph.organization_id in
+	                    <foreach item="item" index="index" collection="orgid" open="(" separator="," close=")">  
+	 		 				#{item}  
+	 					</foreach>
+					</if>
+ 					<if test="policyid!=null">
+ 					  and oph.id=#{policyid}
+ 					</if>
+                   ) row_)
+ where rownum_ > #{bpage,jdbcType=DECIMAL}
+   and rownum_ &lt;=#{epage,jdbcType=DECIMAL}
+  </select>
+  <resultMap type="com.hhnz.salepolicy.model.PolicyCustArea" id="custAreaReusltMap">
+  	<result column="id" property="id" jdbcType="DECIMAL"/>
+   	<result column="name" property="name" jdbcType="VARCHAR"/>
+   	<result column="pid" property="pid" jdbcType="DECIMAL"/>
+  </resultMap>
+  <select id="getAreaCust" resultMap="custAreaReusltMap" parameterType="java.util.Map">
+  	SELECT cmcb.id,cmcb.name,1 as pid
+  FROM crm_station crs, c_merch_cust_station cmcs, c_merch_cust_base cmcb
+ where cmcs.merch_cust_id = cmcb.id
+   and cmcs.station_id = crs.id
+   and crs.organization_id  in 
+   ( SELECT cso.id FROM crm_sales_organization cso
+   where 1=1
+   and cso.levels=4
+   start with cso.id in
+   <foreach item="item" index="index" collection="orgid" open="(" separator="," close=")">  
+  #{item}  
+  </foreach> 
+   connect by prior cso.id=cso.pid)
+  </select>
+  
+  <resultMap type="com.hhnz.organization.model.CrmSalesOrganization" id="PolicyAreaResultMap">
+  	<result column="id" property="id" jdbcType="VARCHAR"/>
+  	<result column="name" property="name" jdbcType="VARCHAR"/>
+  </resultMap>
+  <select id="getPolicyArea" resultMap="PolicyAreaResultMap" parameterType="java.lang.Long">
+  	SELECT cso.id, cso.name
+  FROM crm_sales_organization cso,
+       (SELECT ltrim(rtrim(column_value)) as orgid
+          FROM (select *
+                  from table(splitstr((select t.attribute1
+                                        from OM_POLICY_HEADERS t
+                                       where t.id = #{id,jdbcType=DECIMAL}),
+                                      ',')))) rec
+ where rec.orgid = cso.id
+  </select>
+  <resultMap type="com.hhnz.customer.model.CMerchCustBase" id="PolicyCustAreaResultMap">
+  	<result column="id" property="id" jdbcType="DECIMAL"/>
+  	<result column="name" property="name" jdbcType="VARCHAR"/>
+  </resultMap>
+  <select id="getPolicyCustArea" resultMap="PolicyCustAreaResultMap" parameterType="java.lang.Long">
+  	SELECT cmcb.id, cmcb.name
+  FROM c_merch_cust_base cmcb,
+       (SELECT ltrim(rtrim(column_value)) as merchid
+          FROM (select *
+                  from table(splitstr((select t.attrbute2
+                                        from OM_POLICY_HEADERS t
+                                        where t.id = #{id,jdbcType=DECIMAL}),
+                                      ',')))) rec
+ where rec.merchid = cmcb.id
+  </select>
+</mapper>

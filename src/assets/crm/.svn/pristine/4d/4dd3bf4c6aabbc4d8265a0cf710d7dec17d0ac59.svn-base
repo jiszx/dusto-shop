@@ -1,0 +1,211 @@
+body {
+    font-family: "微软雅黑";
+}
+
+.nav.nav-pills > li {
+    padding: 5px 0;
+}
+
+.nav.nav-pills > li > a {
+    padding: 5px 15px;
+    background: rgba(0, 0, 0, .05);
+    border: none;
+    transition: 0.2s;
+    font-size: 13px;
+
+}
+
+.nav.nav-pills > li.active > a, .nav.nav-pills > li.active > a:hover {
+    color: #fff;
+    background: #3c8dbc;
+    font-weight: normal;
+}
+
+.nav.nav-pills > li > a:hover {
+    background: hsla(202, 68%, 74%, .35);
+    font-weight: normal;
+}
+
+#stepLink2 {
+    position: fixed;
+    top: 0;
+    right: 0;
+    padding: 15px;
+    z-index: 2000;
+    background-color: rgba(255, 255, 255, .75);
+    box-shadow: -2px 3px 5px hsla(0, 0%, 0%, .15);
+    transition: 0.3s;
+    opacity: 0;
+}
+
+#stepLink2:hover {
+    background-color: #fff;
+}
+
+.font12 {
+    font-size: 12px;
+}
+
+.form-horizontal .input-box-list {
+    display: table;
+    margin: 10px 0 0 0;
+    padding-left: 10px;
+}
+
+.input-box-list-title, .input-box-list-value {
+    display: table-cell;
+}
+
+.input-box-list-title {
+    width: 173px;
+    text-align: right;
+    vertical-align: middle;
+    padding-right: 5px;
+}
+
+textarea {
+    resize: none;
+}
+
+input::-webkit-input-placeholder, textarea::-webkit-input-placeholder {
+    font-size: 12px;
+}
+
+.btn-long {
+    padding: 8px 6.18%;
+}
+
+.block-save-link {
+    float: right;
+    font-size: 13px;
+    padding: 4px 10px 0;
+}
+
+.block-save-link:hover {
+    text-decoration: underline;
+}
+
+.contact-box, .contact-box-new, .contact-box-add {
+    border: 1px solid hsla(0, 0%, 95%, 1);
+    background-color: #fff;
+    height: 239px;
+    padding: 20px 15px;
+    max-height: 239px;
+    overflow: hidden;
+}
+
+.bank-box, .bank-box-add {
+    border: 1px solid hsla(0, 0%, 95%, 1);
+    background-color: #fff;
+    height: 190px;
+    padding: 20px 15px;
+    max-height: 190px;
+    overflow: hidden;
+}
+
+.bank-box-add {
+    text-align: center;
+    line-height: 180px;
+    font-size: 18px;
+    color: hsla(0, 0%, 65%, 1);
+    border: 1px dashed hsla(0, 0%, 90%, 1);
+    cursor: pointer;
+    transition: 0.2s;
+}
+.contract-box {
+    border-radius: 0;
+}
+
+.contract-box thead {
+    background-color: hsla(255, 0%, 95%, 1);
+}
+
+.contract-box tbody {
+    background-color: #FFF;
+}
+
+.contract-box td, .lawyer-box th {
+    font-size: 12px;
+    text-align: center;
+}
+.contract_box{
+    width:100%;
+}
+.contract_box tr td{
+    border:1px solid #ccc;
+    line-height:30px;
+    height:30px;
+    background-color:#fff;
+}
+.title{
+    position: absolute;
+    height: 60px !important;
+    width: 100px;
+    line-height: 60px !important;
+    border:1px solid #ccc;
+    left: 14px;
+}
+.label-control{
+    width:200px;
+    text-align:right;
+}
+.label-section{
+    width:173px;
+}
+.label-base{
+    width:90px;
+}
+.exampleInputName2{
+    width:300px;
+    text-align:left;
+}
+.contact-box:before, .bank-box:before {
+    content: '';
+    height: 3px;
+    display: block;
+    background-color: #3c8dbc;
+    margin: -20px -15px 0 -15px;;
+}
+
+.file-list {
+    list-style: none;
+    font-family: 'FontAwesome';
+    padding-left: 10px;
+    padding-top: 20px;
+    max-height: 239px;
+    overflow: auto;
+}
+
+.file-list > li {
+    list-style: none;
+    padding: 6px 0;
+    border-bottom: 1px dashed hsla(0, 0%, 90%, 1);
+}
+
+.file-list > li > span.file-name {
+    padding-left: 5px;
+}
+
+.file-list > li:before {
+    content: "\f0f6";
+}
+.info-table{
+    margin: 0px;
+}
+
+.info-table th{
+    background-color: #F2F2F2;
+    text-align: center;
+    width: 20%;
+}
+
+.info-table td{
+    text-align: left;
+    background-color: #FFF;
+    width: 30%;
+}
+
+.info-table-light th{
+    background-color: #F9F9F9;
+    font-weight: normal;
+}

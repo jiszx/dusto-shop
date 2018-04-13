@@ -1,0 +1,544 @@
+/*定义滚动条高宽及背景 高宽分别对应横竖滚动条的尺寸*/
+::-webkit-scrollbar
+{
+width: 0px;
+height: 0px;
+background-color: #F5F5F5;
+}
+
+/*定义滚动条轨道 内阴影+圆角*/
+::-webkit-scrollbar-track
+{
+-webkit-box-shadow: inset 0 0 1px rgba(0,0,0,0);
+border-radius: 10px;
+background-color: #F5F5F5;
+}
+
+/*定义滑块 内阴影+圆角*/
+::-webkit-scrollbar-thumb
+{
+border-radius: 10px;
+-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.3);
+background-color: #555;
+}
+
+input[type="button"], input[type="submit"], input[type="search"], input[type="reset"] {
+  -webkit-appearance: none;
+}
+
+textarea { -webkit-appearance: none;}
+/** { touch-action: none; }*/
+html{
+  font-size: 50px;
+  max-width: 750px;
+  margin: 0 auto;
+  position: relative;
+  height: 100%;
+}
+body{
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  background-color: #fff;
+}
+#app{
+  height: 100%;
+}
+.img-block{
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/*=================================================================
+  文字相关
+  =================================================================*/
+.fontsize-18{font-size: 0.18rem;}
+.fontsize-20{font-size: 0.2rem;}
+.fontsize-24{font-size: 0.24rem;}
+.fontsize-26{font-size: 0.26rem;}
+.fontsize-28{font-size: 0.28rem;}
+.fontsize-30{font-size: 0.30rem;}
+.fontsize-32{font-size: 0.32rem;}
+
+.fontBold{font-weight: bold;}
+.bold{font-weight: bold;}
+
+.text-center{text-align: center;}
+.text-left{text-align: left}
+.text-right{text-align: right}
+/*文字超出显示省略号*/
+.ellipsis{
+  overflow: hidden;
+  text-overflow:ellipsis;
+  white-space: nowrap;
+}
+
+/*字体相关*/
+.lineheight-1{line-height: 1;}
+.lineheight-16{line-height: 0.16rem;}
+.lineheight-18{line-height: 0.18rem;}
+.lineheight-24{line-height: 0.24rem;}
+.lineheight-28{line-height: 0.28rem;}
+.lineheight-32{line-height: 0.32rem;}
+
+.lineheight-normal{line-height:1.4;}
+.word-wrap{word-wrap:break-word}
+
+.line-through{
+  text-decoration: line-through;
+}
+
+/*=================================================================
+  color相关
+  =================================================================*/
+.color-error{color: #ff4949;}
+.red{color:#ea5361;}
+.gray{color:#999;}
+.blue{color: #337ab7;}
+.orange{color:#fe955e;}
+.green{color: #0eb393;}
+.error{color: #f5596e;}
+.black{color:#000;}
+.white{color: white;}
+
+.bg-primary{background-color: #ea5361;}
+.bg-yellow{background-color: yellow;}
+.bg-none{background: none !important;}
+.bg-none *{background: none !important;}
+.bg-transparent{background: transparent;}
+.link{color: #337ab7;cursor: pointer;}
+/*=================================================================
+  布局相关
+  =================================================================*/
+.none{
+  display: none;
+}
+.inline-block{
+  display: inline-block;
+}
+.block{
+  display: block;
+}
+.table{display: table}
+.table-cell{display: table-cell}
+.vertical-align-middle{vertical-align-middle: middle;}
+
+.border-box{
+  box-sizing: border-box;
+}
+/*=================================================================
+  float等宽列表
+  使用示例：
+    <div class="inline_box">
+      <div class="inline_2"></div>
+      <div class="inline_2"></div>
+    </div>
+  =================================================================*/
+.inline_box{}
+.inline_box:after{content:".";display:block;height:0;clear:both;visibility:hidden}
+.inline_2, .inline_3, .inline_4, .inline_5, .inline_6{float:left;}
+.inline_2{width:50%; *width:49.9%;}
+.inline_3{width:33.33333%; *width:33.3%;}
+.inline_4{width:25%; *width:24.9%;}
+.inline_5{width:20%; *width:19.9%;}
+.inline_6{width:16.66666%; *width:16.6%;}
+
+/*清除浮动*/
+.clearfix:after{content:".";display:block;height:0;clear:both;visibility:hidden}
+
+
+/*=================================================================
+  width && height
+  =================================================================*/
+
+.width20{width: 0.2rem;}
+.width40{width: 0.4rem;}
+.width60{width: 0.6rem;}
+.width80{width: 0.8rem;}
+.width100{width: 1rem;}
+
+.height10{height: 0.1rem;}
+.height20{height: 0.20rem;}
+.height30{height: 0.30rem;}
+.height40{height: 0.40rem;}
+.height50{height: 0.50rem;}
+.height60{height: 0.60rem;}
+
+
+
+/*=================================================================
+  padding
+  =================================================================*/
+.paddingT0 { padding-top: 0 !important; }
+.paddingT1{ padding-top: 0.01rem; }
+.paddingT5  { padding-top: 0.05rem; }
+.paddingT10 { padding-top: 0.1rem; }
+.paddingT15 { padding-top: 0.15rem; }
+.paddingT20 { padding-top: 0.20rem; }
+.paddingT30 { padding-top: 0.30rem; }
+
+.paddingB0 { padding-bottom: 0 !important; }
+.paddingB5  { padding-bottom: 0.05rem; }
+.paddingB10 { padding-bottom: 0.10rem; }
+.paddingB15 { padding-bottom: 0.15rem; }
+.paddingB20 { padding-bottom: 0.20rem; }
+.paddingB30 { padding-bottom: 0.30rem; }
+
+.paddingL0 { padding-left: 0 !important; }
+.paddingL5  { padding-left: 0.05rem; }
+.paddingL10 { padding-left: 0.10rem; }
+.paddingL15 { padding-left: 0.15rem; }
+.paddingL20 { padding-left: 0.20rem; }
+.paddingL60 { padding-left: 0.60rem; }
+.paddingL30 { padding-left: 0.30rem; }
+
+.paddingR0 { padding-right: 0 !important; }
+.paddingR5  { padding-right: 0.05rem; }
+.paddingR10 { padding-right: 0.10rem; }
+.paddingR15 { padding-right: 0.15rem; }
+.paddingR20 { padding-right: 0.20rem; }
+.paddingR30 { padding-right: 0.30rem; }
+
+.padding0{padding: 0 !important;}
+.padding20 { padding:  20rem; }
+
+/*=================================================================
+  margin
+  =================================================================*/
+.marginL0 { margin-left: 0 !important;}
+.marginT0 { margin-top: 0 !important;}
+
+.marginT10 { margin-top: 0.10rem; }
+.marginT20 { margin-top: 0.20rem; }
+.marginT30 { margin-top: 0.30rem; }
+.marginT40 { margin-top: 0.40rem; }
+.marginT50 { margin-top: 0.50rem; }
+.marginT60 { margin-top: 0.60rem; }
+
+.marginL10 { margin-left: 0.10rem; }
+.marginL20 { margin-left: 0.20rem; }
+.marginL30 { margin-left: 0.30rem; }
+.marginL40 { margin-left: 0.40rem; }
+.marginL50 { margin-left: 0.50rem; }
+.marginL60 { margin-left: 0.60rem; }
+
+.marginR10 { margin-right: 0.10rem; }
+.marginR20 { margin-right: 0.20rem; }
+.marginR30 { margin-right: 0.30rem; }
+.marginR40 { margin-right: 0.40rem; }
+.marginR50 { margin-right: 0.50rem; }
+.marginR60 { margin-right: 0.60rem; }
+
+.marginB10 { margin-bottom: 0.10rem; }
+.marginB20 { margin-bottom: 0.20rem; }
+.marginB30 { margin-bottom: 0.30rem; }
+.marginB40 { margin-bottom: 0.40rem; }
+.marginB50 { margin-bottom: 0.50rem; }
+.marginB60 { margin-bottom: 0.60rem; }
+
+.margin-auto{margin-left: auto;margin-right: auto;}
+
+
+/*=================================================================
+  z-index-100
+  =================================================================*/
+.z-index-10{z-index: 10;}
+.z-index-20{z-index: 20;}
+.z-index-30{z-index: 30;}
+.z-index-40{z-index: 40;}
+.z-index-50{z-index: 50;}
+.z-index-60{z-index: 60;}
+.z-index-70{z-index: 70;}
+.z-index-80{z-index: 80;}
+.z-index-90{z-index: 90;}
+.z-index-100{z-index: 100;}
+
+/*左浮动，右浮动*/
+.pull-left{
+  float: left;
+}
+.pull-right{
+  float: right;
+}
+
+.absolute{
+  position: absolute;
+}
+.relative{
+  position: relative;
+}
+.fixed{
+  position: fixed;
+}
+
+/*分割线-虚线*/
+.cutLine-dashed{
+  display: block;
+  height: 0;
+  margin:5px 0;
+  border-bottom: 1px dashed #c8c8c8;
+}
+.vertical-line{
+  display: inline-block;
+  width: 2px;
+  height: 16px;
+  border-left: 2px;
+  background: #ccc;
+  vertical-align: middle;
+}
+
+/*两端对齐*/
+.justify-align{
+  float: left;
+  display: inline-block;
+  text-align: justify;
+  vertical-align: middle;
+}
+.justify-align > span { display: inline-block /* Opera */; padding-left: 100%; }
+
+/*清除浮动*/
+.clearfix:after{content:".";display:block;height:0;clear:both;visibility:hidden}
+
+
+
+
+
+/*symbol引用*/
+.icon {
+  width: 1em; height: 1em;
+  vertical-align: -0.15em;
+  fill: currentColor;
+  overflow: hidden;
+}
+
+/**
+动画
+ */
+/* 无限旋转 */
+@keyframes spin{
+  from {
+    transform:rotate(0);
+  }
+  to {
+    transform:rotate(360deg);
+  }
+}
+/** 先scale变大再变为原本尺寸，试用按钮点击 */
+
+@keyframes scale-spring{
+  0% {
+    opacity: .5;
+    transform: scale(.5);
+  }
+  80% {
+    opacity: .8;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/**
+加载更多公共样式
+ */
+.loading-more-box{
+
+}
+.loading-more-box .loading-more{
+  padding: 10px 0;
+  color: #999999;
+  text-align: center;
+}
+/*
+重置侧边栏导航样式
+*/
+.component-side-bar .collapse-item__content{
+  padding: 0px 0 10px 15px !important;
+}
+.component-side-bar .collapse-title-wrapper>div{
+  display: inline-block !important;
+}
+.component-side-bar .collapse-item-header-arrow{
+  position: relative !important;
+  top: 2px !important;
+  right: auto !important;
+  width: 16px;
+  height: 16px;
+}
+/*重置checkbox和radio样式*/
+.cart-goods .van-checkbox__control:checked+.van-icon-success{
+  border-color: #ea5361;
+  background-color: #ea5361;
+}
+.cart-goods .van-checkbox__control:checked+.van-icon-success{
+  border-color: #ea5361;
+  background-color: #ea5361;
+}
+.cart-goods .van-checkbox .van-icon-success{
+  width: 0.36rem;
+  height: 0.36rem;
+}
+.cart-goods .van-checkbox .van-icon-success::before{
+  line-height: 0.36rem;
+}
+.cart-goods .van-radio{
+  display: flex;
+  align-items: center;
+}
+.cart-goods .van-radio__label{
+  flex: 1;
+}
+.cart-goods .van-checkbox{
+  display: flex;
+  align-items: center;
+}
+.cart-goods .submit-wrap .van-checkbox__input .van-icon{
+  font-size: 12px;
+}
+
+
+.van-checkbox__control:checked+.van-icon-success{
+  border-color: #ea5361;
+  background-color: #ea5361;
+}
+/**
+ 1像素解决方案
+*/
+.border-1px, .border-1px-t, .border-1px-b, .border-1px-tb, .border-1px-l, .border-1px-r {
+  position: relative;
+}
+
+.border-1px:before {
+  content: " ";
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 1px;
+  border: 1px solid #C7C7C7;
+  color: #C7C7C7;
+  transform-origin: left top;
+  transform: scale(0.5);
+}
+
+.border-1px-t:before {
+  content: " ";
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  height: 1px;
+  border-top: 1px solid #C7C7C7;
+  color: #C7C7C7;
+  transform-origin: 0 0;
+  transform: scaleY(0.5);
+}
+
+.border-1px-b:after {
+  content: " ";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  height: 1px;
+  border-bottom: 1px solid #C7C7C7;
+  color: #C7C7C7;
+  transform-origin: 0 100%;
+  transform: scaleY(0.5);
+}
+
+.border-1px-tb :before {
+  content: " ";
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  height: 1px;
+  border-top: 1px solid #C7C7C7;
+  color: #C7C7C7;
+  transform-origin: 0 0;
+  transform: scaleY(0.5);
+}
+.border-1px-tb:after {
+  content: " ";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  height: 1px;
+  border-bottom: 1px solid #C7C7C7;
+  color: #C7C7C7;
+  transform-origin: 0 100%;
+  transform: scaleY(0.5);
+}
+
+.border-1px-l:before {
+  content: " ";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  bottom: 0;
+  border-left: 1px solid #C7C7C7;
+  color: #C7C7C7;
+  transform-origin: 0 0;
+  transform: scaleX(0.5);
+}
+
+.border-1px-r:after {
+  content: " ";
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 1px;
+  bottom: 0;
+  border-right: 1px solid #C7C7C7;
+  color: #C7C7C7;
+  transform-origin: 100% 0;
+  transform: scaleX(0.5);
+}
+
+.mapTips{
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: flex;
+  color: #fff;
+  padding: 8px;
+  border-radius: 3px;
+  background-color: rgba(0,0,0,.8);
+  min-width: 120px;
+  text-align: center;
+}
+.mapTips:after{
+  content: "";
+  display: block;
+  position: absolute;
+  left: 60px;
+  bottom: -17px;
+  margin-left: -8px;
+  border: 10px solid transparent;
+  border-top-color: rgba(0,0,0,.8);
+}
+.mapTips>p{
+  max-width: 120px;
+  margin: 8px 10px 8px 8px;
+  font-size: .875em;
+  font-weight: 400;
+  -webkit-box-flex: 1;
+  -webkit-flex: 1;
+  flex: 1;
+  word-wrap: break-word;
+}
+.amap-marker-label{
+  border: none;
+  background-color:transparent;
+}
+
+._van-red-icon .van-cell__right-icon{
+  color:#ea5361;
+}
+.present-wrapper .van-cell.van-hairline::after{
+  border-bottom-width:0 !important;
+}

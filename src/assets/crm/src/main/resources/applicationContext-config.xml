@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:jpa="http://www.springframework.org/schema/data/jpa"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-3.0.xsd
+    http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx-2.0.xsd
+    http://www.springframework.org/schema/data/jpa  
+    http://www.springframework.org/schema/data/jpa/spring-jpa.xsd
+    http://www.springframework.org/schema/task
+	http://www.springframework.org/schema/task/spring-task-3.0.xsd">
+    <context:component-scan base-package="com.hhnz">
+    	<context:exclude-filter type="regex" expression="com.hhnz.service.impl.DefaultExceptionServiceImpl"/>
+    </context:component-scan>
+    <bean
+            class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath:config.properties</value>
+            </list>
+        </property>
+        <property name="ignoreUnresolvablePlaceholders">
+        	<value>true</value>
+        </property>
+    </bean>
+    <!-- 数据源 -->
+    <!-- c3p0连接池配置 -->
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        <property name="driverClass">
+            <value>${oracle.jdbc.driver}</value>
+        </property>
+        <property name="jdbcUrl">
+            <value>${crm.jdbc.url}</value>
+        </property>
+        <property name="user">
+            <value>${crm.jdbc.username}</value>
+        </property>
+        <property name="password">
+            <value>${crm.jdbc.password}</value>
+        </property>
+        <property name="preferredTestQuery" value="select 1 from dual" />
+        <property name="autoCommitOnClose" value="${c3p0.autoCommitOnClose}"/>
+        <property name="initialPoolSize" value="${c3p0.initialPoolSize}"/>
+        <property name="minPoolSize" value="${c3p0.minPoolSize}"/>
+        <property name="maxPoolSize" value="${c3p0.maxPoolSize}"/>
+        <property name="maxIdleTime" value="${c3p0.maxIdleTime}"/>
+        <property name="acquireIncrement" value="${c3p0.acquireIncrement}"/>
+        <property name="maxStatements" value="${c3p0.maxStatements}"/>
+        <property name="idleConnectionTestPeriod" value="${c3p0.idleConnectionTestPeriod}"/>
+        <property name="acquireRetryAttempts" value="${c3p0.acquireRetryAttempts}"/>
+        <property name="breakAfterAcquireFailure" value="${c3p0.breakAfterAcquireFailure}"/>
+        <property name="testConnectionOnCheckout" value="${c3p0.testConnectionOnCheckout}"/>
+        <property name="checkoutTimeout" value="${c3p0.checkoutTimeout}"/>
+    </bean>
+    
+    <!-- 创建SqlSessionFactory，同时指定数据源 -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="configurationProperties">
+            <props>
+                <prop key="jdbcTypeForNull">NULL</prop>
+            </props>
+        </property>
+        <property name="plugins">
+            <array>
+            <bean class="com.hhnz.interceptor.PaginatorInterceptor"></bean>
+            </array>
+        </property>
+    </bean>
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.hhnz.*.mapper"/>
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
+    </bean>
+
+    <bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">  
+        <property name="dataSource" ref="dataSource" />  
+        <property name="persistenceUnitName" value="Oracle" />  
+        <property name="persistenceProvider" ref="persistenceProvider" />  
+        <property name="jpaDialect" ref="jpaDialect" />  
+        <property name="jpaVendorAdapter" ref="jpaVendorAdapter" />  
+        <property name="packagesToScan" value="com.hhnz.rmi.db.model"/>  
+        <property name="jpaProperties">
+            <props>  
+                <prop key="hibernate.dialect">${hibernate.dialect}</prop>  
+                <prop key="hibernate.temp.use_jdbc_metadata_defaults">${hibernate.temp.use_jdbc_metadata_defaults}</prop>  
+                <prop key="hibernate.show_sql">${hibernate.show_sql}</prop>  
+                <prop key="hibernate.format_sql">${hibernate.format_sql}</prop>  
+                <prop key="hibernate.max_fetch_depth">${hibernate.max_fetch_depth}</prop>  
+                <prop key="hibernate.jdbc.fetch_size">${hibernate.jdbc.fetch_size}</prop>  
+                <prop key="hibernate.jdbc.batch_size">${hibernate.jdbc.batch_size}</prop>  
+                <prop key="hibernate.hbm2ddl.auto">${hibernate.hbm2ddl.auto}</prop>
+                <!-- <prop key="hibernate.enable_lazy_load_no_trans">true</prop> -->
+                
+            </props>
+        </property>  
+    </bean>  
+      
+    <!-- <bean class="org.hibernate.jpa.HibernatePersistenceProvider" /> -->  
+    <bean id="persistenceProvider" class="org.hibernate.jpa.HibernatePersistenceProvider" />  
+    <bean id="jpaDialect" class="org.springframework.orm.jpa.vendor.HibernateJpaDialect" />  
+    <bean id="jpaVendorAdapter" class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">  
+        <property name="database" value="ORACLE"></property>  
+    </bean>  
+      
+    <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">  
+        <property name="entityManagerFactory" ref="entityManagerFactory" />  
+    </bean>  
+      
+    <tx:annotation-driven transaction-manager="transactionManager" />  
+	<aop:aspectj-autoproxy proxy-target-class="true"/>
+    <jpa:repositories base-package="com.hhnz.rmi.db.repository"
+        entity-manager-factory-ref="entityManagerFactory"  
+        transaction-manager-ref="transactionManager"/>
+
+    <task:annotation-driven/> 
+    
+    <!--生成数据的定时任务-->
+    <task:scheduled-tasks scheduler="myScheduler">  
+        <task:scheduled ref="crmTaskJobController" method="JobMain" cron="0 0 3 * * ?"/>  
+    </task:scheduled-tasks>  
+    <task:scheduler id="myScheduler" pool-size="10" /> 
+    
+    <aop:aspectj-autoproxy proxy-target-class="true"/>
+    <!--<aop:config>
+        <aop:aspect ref="logAspect">
+            <aop:pointcut id="controller" expression="execution(* com.hhnz.*.service.*(..) )"/>
+            <aop:around method="doAround" pointcut-ref="controller"/>
+        </aop:aspect>
+    </aop:config>-->
+    
+    <bean class="com.hhnz.util.ApplicationContextUtil" factory-method="getInstance" ></bean>
+    <bean class="com.hhnz.jco.message.RFCMessage" factory-method="getInstance" init-method="startExecutor"></bean>
+
+    <!---->
+    <bean id="processEngineConfiguration" class="org.activiti.spring.SpringProcessEngineConfiguration">
+        <property name="dataSource" ref="dataSource"></property>
+        <property name="transactionManager" ref="transactionManager" />
+        <property name="jobExecutorActivate" value="false" />
+        <property name="mailServerHost" value="mail.mfhcd.com" />
+        <property name="databaseSchemaUpdate" value="true"/>
+        <property name="mailServerPort" value="25" />
+        <!--<property name="mailServerDefaultFrom" value="servdicedesk@mfhcd.com" />
+        <property name="mailServerUsername" value="servicdedesk@mfhcd.com" />
+        <property name="mailServerPassword" value="7ujm(OL>)" />-->
+        <property name="activityFontName" value="宋体"/>
+        <property name="annotationFontName" value="宋体"/>
+        <property name="labelFontName" value="宋体"/>
+<!--
+        <property name="beans">
+            <map>
+                <entry key="service" value-ref="groupService"></entry>
+            </map>
+        </property>-->
+
+    </bean>
+    <bean id="processEngine" class="org.activiti.spring.ProcessEngineFactoryBean">
+        <property name="processEngineConfiguration" ref="processEngineConfiguration" />
+    </bean>
+
+    <bean class="org.activiti.spring.ProcessEngineFactoryBean">
+        <property name="processEngineConfiguration" ref="processEngineConfiguration" />
+    </bean>
+    <bean id="repositoryService" factory-bean="processEngine"
+          factory-method="getRepositoryService" />
+    <bean id="runtimeService" factory-bean="processEngine"
+          factory-method="getRuntimeService" />
+    <bean id="taskService" factory-bean="processEngine"
+          factory-method="getTaskService" />
+    <bean id="historyService" factory-bean="processEngine"
+          factory-method="getHistoryService" />
+    <bean id="managementService" factory-bean="processEngine"
+          factory-method="getManagementService" />
+    <bean id="formService" factory-bean="processEngine"
+          factory-method="getFormService"></bean>
+    <bean id="identityService" factory-bean="processEngine"
+          factory-method="getIdentityService"></bean>
+
+	<!-- jedis -->
+	<bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
+        <property name="maxTotal" value="1000" />
+        <property name="maxIdle" value="20" />
+        <property name="testOnBorrow" value="true"/>
+        <property name="testOnReturn" value="true"/>
+        <property name="maxWaitMillis" value="60000"/>
+    </bean>
+    
+    <bean id="freeMarkerConfigurer" class="org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer">
+		<property name="templateLoaderPath" value="classpath:template" /> <!-- 指定模板文件目录  -->
+		<property name="freemarkerSettings"><!-- 设置FreeMarker环境属性 -->
+			<props>
+				<prop key="template_update_delay">1800</prop> <!--刷新模板的周期，单位为秒 -->
+				<prop key="default_encoding">UTF-8</prop> <!--模板的编码格式 -->
+				<prop key="locale">zh_CN</prop> <!--本地化设置-->
+			</props>
+		</property>
+	</bean>
+
+	<!-- 注意:这里的参数(如用户名、密码)都是针对邮件发送者的 -->
+	<bean id="javaMailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+		<property name="host">  
+			<value>${mail.send.host}</value>  
+		</property>
+		<property name="port">  
+            <value>${mail.send.port}</value>  
+        </property>  
+		<property name="javaMailProperties">  
+			<props>  
+				<prop key="mail.smtp.auth">${mail.smtp.auth}</prop>  
+                <prop key="mail.smtp.timeout">${mail.smtp.timeout}</prop>  
+                <prop key="mail.smtp.starttls.enable">${mail.smtp.starttls.enable}</prop>  
+                <prop key="mail.smtp.socketFactory.port">${mail.smtp.socketFactory.port}</prop>  
+                <prop key="mail.smtp.socketFactory.fallback">${mail.smtp.socketFactory.fallback}</prop>
+			</props>  
+		</property>  
+		<property name="username">  
+			<value>${mail.user}</value> <!-- 发送者用户名 -->
+		</property>  
+		<property name="password">  
+			<value>${mail.password}</value> <!-- 发送者密码 -->
+		</property> 
+	</bean>
+    
+	<bean id="jedisPool" class="redis.clients.jedis.JedisPool">  
+	    <constructor-arg name="poolConfig" ref="jedisPoolConfig"/>  
+	    <constructor-arg name="host" value="${redis.host}"/>
+	    <constructor-arg name="port" value="${redis.port}" type="int"/>
+	    <constructor-arg name="timeout" value="${redis.timeout}" type="int"/>
+	    <constructor-arg name="password" value="${redis.password}"/>
+	</bean>
+    <!-- JCO -->
+    
+    <!-- Spring  task -->
+    <!-- <task:executor id="executor" pool-size="5" />  
+    <task:scheduler id="scheduler" pool-size="10" />  
+    <task:annotation-driven executor="executor" scheduler="scheduler" /> -->
+</beans>

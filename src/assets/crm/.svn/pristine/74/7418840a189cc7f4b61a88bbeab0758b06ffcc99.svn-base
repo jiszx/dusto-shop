@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.account.mapper.ReceiveVerifieMapper" >
+  <sql id="OracleDialectPrefix" >
+    <if test="page != null" >
+      select * from ( select row_.*, rownum rownum_ from ( 
+    </if>
+  </sql>
+  <sql id="OracleDialectSuffix" >
+    <if test="page != null" >
+      <![CDATA[ ) row_ ) where rownum_ > #{begin} and rownum_ <= #{end} ]]>
+    </if>
+  </sql>
+  <resultMap type="com.hhnz.account.dto.AccountReceiveDTO" id="AccountResultMap">
+  	<result column="upid" property="upid" jdbcType="DECIMAL"/>
+  	<result column="pay_amt" property="payAmt" jdbcType="DECIMAL"/>
+  	<result column="receive_Amt" property="receiveAmt" jdbcType="DECIMAL"/>
+  	<result column="unreceive_Amt" property="unreceiveAmt" jdbcType="DECIMAL"/>
+  </resultMap>
+  <select id="upAccountList" resultMap="AccountResultMap" parameterType="java.util.Map">
+  	<include refid="OracleDialectPrefix"></include>
+  	SELECT cmu.pay_amt/100 pay_amt,
+       cmu.id upid,
+       cmu.pay_amt/100-nvl(cmu.RECEVICE_AMT, 0)/100 unreceive_Amt
+  FROM c_merch_upaccount cmu, c_merch_cust_base cmcb
+ where cmu.merch_cus_id = cmcb.id
+   and cmu.organization_id = cmcb.organization_id
+   and cmu.states='5'
+   and cmcb.sap_customer_id =#{sapcustomerid,jdbcType=VARCHAR}
+  	<include refid="OracleDialectSuffix"></include>
+  </select>
+  <select id="countUpAccountList" resultType="int" parameterType="java.util.Map">
+  	SELECT count(1)
+  FROM c_merch_upaccount cmu, c_merch_cust_base cmcb
+ where cmu.merch_cus_id = cmcb.id
+   and cmu.organization_id = cmcb.organization_id
+   and cmu.states='5'
+   and cmcb.sap_customer_id =#{sapcustomerid,jdbcType=VARCHAR}
+  </select>
+  
+  <resultMap type="com.hhnz.account.model.CMerchReceiveVerifie" id="verifieListResultMap">
+  	<result column="INVOICE_NO" property="invoiceNo" jdbcType="VARCHAR"/>
+  	<result column="verifie_Amt" property="verifieAmt" jdbcType="DECIMAL"/>
+  	<result column="type" property="type" jdbcType="DECIMAL"/>
+  	<result column="verified_id" property="verifiedId" jdbcType="DECIMAL"/>
+  	<result column="merch_cust_id" property="merchCustId" jdbcType="DECIMAL"/>
+  	<result column="STATES" property="states" jdbcType="VARCHAR"/>
+  	<result column="MSG" property="msg" jdbcType="VARCHAR"/>
+  </resultMap>
+  <select id="getVerifieList" resultMap="verifieListResultMap" parameterType="java.util.Map">
+  	<include refid="OracleDialectPrefix"></include>
+  	 select type,sum(verifie_amt)/100 verifie_amt,nvl(invoice_no,'合计') invoice_no,states,msg  from( SELECT cmrv.type,
+       cmrv.verifie_amt,
+       case
+         when cmrv.type = '2' then
+          '应收发票编号:' ||cmrv.verified_id
+         else
+           '收款凭证编号:CRM编号'||cmrv.verified_id||'-SAP编号'||(SELECT cmcal.SAP_VOUCHER_ID
+             FROM c_merch_cust_account_log cmcal
+            where cmcal.type = '1'
+              and cmcal.order_id = cmrv.verified_id)
+       end as invoice_no,
+       cmrv.states, cmrv.msg
+  FROM c_merch_receive_verifie cmrv
+ where cmrv.invoice_id = #{invoiceId,jdbcType=DECIMAL}
+   and cmrv.invoice_no =#{invoiceNo,jdbcType=VARCHAR})
+   group by grouping sets((),(type,invoice_no,states,msg))
+  	<include refid="OracleDialectSuffix"></include>
+  </select>
+  
+  <select id="countVerifieList" parameterType="java.util.Map" resultType="int">
+  	SELECT count(1)
+  FROM c_merch_receive_verifie cmrv
+ where cmrv.invoice_id = #{invoiceId,jdbcType=DECIMAL}
+   and cmrv.invoice_no =#{invoiceNo,jdbcType=VARCHAR}
+  </select>
+  
+  <select id="getReceiveVerifie" resultMap="verifieListResultMap" parameterType="java.util.Map">
+  		SELECT sum(verifie_amt) verifie_amt, verified_id,merch_cust_id
+ 		 	FROM c_merch_receive_verifie 
+ 		where invoice_id = #{invoiceId,jdbcType=VARCHAR}
+ 		    and invoice_no = #{invoiceNo,jdbcType=DECIMAL}
+			and type in ('1','3')
+ 			group by verified_id,merch_cust_id
+  </select>
+  <select id="verifieAll" statementType="CALLABLE" parameterType="java.util.Map">
+     <![CDATA[
+    {call RECEIVE_VERIFIE(#{p_org_id,mode=IN,jdbcType=VARCHAR},
+    #{p_result,mode=OUT,jdbcType=VARCHAR})}
+	]]>
+   </select>
+</mapper>

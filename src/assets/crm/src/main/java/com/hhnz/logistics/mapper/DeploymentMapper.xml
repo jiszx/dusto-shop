@@ -1,0 +1,400 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.logistics.mapper.DeploymentMapper" >
+	<resultMap type="com.hhnz.logistics.dto.DeploymentDTO" id="ListResultMap">
+   	<result column="orgname" property="orgname" jdbcType="VARCHAR"/>
+   	<result column="provname" property="provname" jdbcType="VARCHAR"/>
+   	<result column="prov" property="prov" jdbcType="VARCHAR"/>
+   	<result column="defaultRdc" property="defaultRdc" jdbcType="VARCHAR"/>
+   	<result column="RdcName" property="RdcName" jdbcType="VARCHAR"/>
+   	<result column="custname" property="custname" jdbcType="VARCHAR"/>
+   	<result column="address" property="address" jdbcType="VARCHAR"/>
+   	<result column="contact" property="contact" jdbcType="VARCHAR"/>
+   	<result column="contactModel" property="contactModel" jdbcType="VARCHAR"/>
+   	<result column="cust_type" property="custType" jdbcType="VARCHAR"/>
+   	<result column="sap_customer_id" property="sapCustomerId" jdbcType="VARCHAR"/>
+   	<result column="id" property="id" jdbcType="DECIMAL"/>
+   	<result column="create_ts" property="createTs" jdbcType="VARCHAR"/>
+   	<result column="creater" property="creater" jdbcType="VARCHAR"/>
+   	<result column="salesPerson" property="salesPerson" jdbcType="VARCHAR"/>
+   	<result column="salesPersonModel" property="salesPersonModel" jdbcType="VARCHAR"/>
+   	<result column="states" property="states" jdbcType="VARCHAR"/>
+   	<result column="weight" property="weight" jdbcType="DECIMAL"/>
+   	<result column="allocationNum" property="allocationNum" jdbcType="DECIMAL"/>
+   	<result column="orderId" property="orderId" jdbcType="VARCHAR"/>
+   </resultMap>
+	 <select id="selectDeploymentList" resultMap="ListResultMap" parameterType="java.util.Map">
+   	SELECT 
+       (select c.name from crm_sales_organization c where c.id= cso.pid )||'-'||cso.name orgname,
+       prov.name provname,
+       ta.name prov,
+        nvl((select t.show_text
+             from t_dict t
+            where 1 = 1
+              and t.col_name = 'VIRTUAL_WAREHOUSE_CODE'
+              and cmcc.virtual_warehouse = t.choose_val),
+           (SELECT t.show_text
+              FROM t_area_rdc ta, t_dict t
+             where ta.city_id = ooha.city_id
+               and t.col_name = 'VIRTUAL_WAREHOUSE_CODE'
+               and t.choose_val = ta.rdc_code)) defaultRdc,
+        nvl((select t.show_text
+             from t_dict t
+            where t.choose_val = ooha.rdc_code
+              and t.col_name = 'VIRTUAL_WAREHOUSE_CODE'),
+           td.show_text) RdcName,
+   	   ooha.name custname,
+   	   ooha.address,
+       ooha.contact,
+   	   ooha.contactModel,
+       ooha.cust_type,
+       ooha.sap_customer_id,
+       ooha.id,
+       to_char(ooha.create_ts,'yyyy-MM-dd HH24:mm') create_ts,
+       te.name creater,
+       te2.name  salesPerson,
+       te2.contact_tel  salesPersonModel,
+       case
+         when ooha.cust_type = '7' or ooha.cust_type = '8' or
+              ooha.attribute13 is null then
+          nvl((SELECT nvl(sum(cvwh.change_amt), 0)
+                FROM crm_virtual_warehouse_history cvwh
+               where 1 = 1
+                 and cvwh.cust_type like 'Z9%'
+                 and cvwh.related_order_id = ooha.id),
+              0)
+         else
+          nvl((SELECT nvl(sum(oodh.num), 0)
+                FROM om_order_delivered_history oodh,
+                     om_order_spilts            oos,
+                     om_order_headers_all       ooh
+               where oodh.sap_order_id = ooh.sap_order_id
+                 and ooh.id = ooha.attribute13
+                 and ooh.id = oos.header_id
+                 and ooh.merch_cust_id = oos.merch_cust_id
+                 and oodh.orderitem_sap_no = oos.orderitem_sap_no),
+              0)
+       end allocationNum,
+       (SELECT ROUND(sum(case
+                           when tmb.unit = 'TO' then
+                            oos.num
+                           else
+                            oos.num * tmb.specifications / 1000000
+                         end),
+                     3)
+          FROM t_material_base tmb, om_order_spilts oos
+         where oos.material_id = tmb.sap_id
+           and oos.header_id = ooha.id) weight,
+       ooha.attribute13 orderId,
+       ooha.states
+        
+  FROM (SELECT rec.*, rownum rownum_
+          FROM (SELECT a.*,
+                       c.name,
+                       c.sap_customer_id,
+                       c.cust_type,
+                       c.city_id,
+                       c.prov_id,
+                       d.address,
+                       d.CONTACTER contact,
+                       d.MOBILE contactModel
+                  FROM om_order_headers_all a,
+                       c_merch_cust_base c, 
+                  	   c_merch_cust_distribution d
+                 where 1 = 1
+                   		and a.merch_cust_id = c.id
+                   		and a.ship_id=d.id(+)
+                   		and (a.order_type ='5' or a.order_type='8')
+                   <if test="id !=null  and id !=''">
+    				 	and a.id =#{id,jdbcType=DECIMAL}
+   					</if>
+   					<if test="custname !=null and custname !=''">
+     					and c.name like '%'||#{custname,jdbcType=VARCHAR}||'%'
+  					 </if>
+   					<if test="merchid !=null and merchid !=''">
+   						and c.id = #{merchid,jdbcType=DECIMAL}
+   					</if>
+   					<if test="sapId !=null and sapId !=''">
+   						and c.sap_customer_id = #{sapId,jdbcType=VARCHAR}
+   					</if>
+   					<if test="startTime !=null and startTime !=''">
+	   					and a.create_ts >= to_date(#{startTime,jdbcType=VARCHAR},'yyyy-MM-dd')
+	   				</if>	
+	   				<if test="endTime !=null and endTime !=''" >
+	   					and a.create_ts &lt;=  to_date(#{endTime,jdbcType=VARCHAR},'yyyy-MM-dd')+0.99999
+	   				</if>
+	   				<if test="custType !=null and custType !=''">
+   						and c.cust_type = #{custType,jdbcType=DECIMAL}
+   					</if>
+   					<if test="addr !=null and addr !=''">
+						and d.address like '%'||#{addr,jdbcType=DECIMAL}||'%'
+				    </if>
+   					<if test="orderStates !=null and orderStates !=''">
+   						and a.states = #{orderStates,jdbcType=DECIMAL}
+   					</if>
+   					and ((1 = 1 and exists
+                        (SELECT 1
+                            FROM t_logistics_rdc tlr, t_logistics_area tla
+                           where 1 = 1
+                             and tlr.rdc_code = a.rdc_code
+                             and tlr.id = tla.logistics_rdc_id
+                             and tlr.user_id = #{userid,jdbcType=DECIMAL}
+                             and tla.area_id = d.prov_id)) or
+                       (1 = 1 and not exists
+                        (SELECT 1
+                            FROM t_logistics_rdc tlr
+                           where 1 = 1
+                             and tlr.user_id = #{userid,jdbcType=DECIMAL})))
+                 order by a.id desc) rec) ooha,
+       t_employee             te,
+       crm_sales_organization regin,
+       crm_sales_organization cso,
+       crm_sales_organization prov,
+       (select * from c_merch_cust_contract where states = '4') cmcc,
+       t_dict                 td,
+       T_AREA_RDC             tar,
+       t_area			      ta,
+       c_merch_cust_station cmcs,
+       t_employee te2,
+       crm_station crs
+ where 1 = 1
+   and ooha.create_oid = te.id(+)
+   and ooha.organization_id= cso.id(+)
+   and ooha.region_id= regin.id(+)
+   and ooha.provi_id= prov.id(+) 
+   and ooha.city_id= tar.city_id
+   and tar.rdc_code= td.choose_val
+   and ooha.prov_id= ta.id(+)
+   and ooha.merch_cust_id= cmcs.merch_cust_id
+   and cmcs.STATION_ID = crs.id
+   and crs.SALESREP_ID = te2.id(+)
+   and ooha.merch_cust_id = cmcc.merch_cust_id(+)
+   and td.col_name='VIRTUAL_WAREHOUSE_CODE'
+   <![CDATA[ and ooha.rownum_ > #{begin} and ooha.rownum_ <= #{end} ]]>
+    order by ooha.rownum_
+   </select>
+   
+   <select id="countDeploymentList" resultType="int" parameterType="java.util.Map">
+   SELECT count(1)
+                  FROM om_order_headers_all a,
+                       c_merch_cust_base c, 
+                  	   c_merch_cust_distribution d
+                 where 1 = 1
+                   		and a.merch_cust_id = c.id
+                   		and a.ship_id=d.id(+)
+                   		and (a.order_type ='5' or a.order_type='8')
+                   <if test="id !=null  and id !=''">
+    				 	and a.id =#{id,jdbcType=DECIMAL}
+   					</if>
+   					<if test="custname !=null and custname !=''">
+     					and c.name like '%'||#{custname,jdbcType=VARCHAR}||'%'
+  					 </if>
+   					<if test="merchid !=null and merchid !=''">
+   						and c.id = #{merchid,jdbcType=DECIMAL}
+   					</if>
+   					<if test="sapId !=null and sapId !=''">
+   						and c.sap_customer_id = #{sapId,jdbcType=VARCHAR}
+   					</if>
+   					<if test="startTime !=null and startTime !=''">
+	   					and a.create_ts >= to_date(#{startTime,jdbcType=VARCHAR},'yyyy-MM-dd')
+	   				</if>	
+	   				<if test="endTime !=null and endTime !=''" >
+	   					and a.create_ts &lt;=  to_date(#{endTime,jdbcType=VARCHAR},'yyyy-MM-dd')+0.99999
+	   				</if>
+	   				<if test="custType !=null and custType !=''">
+   						and c.cust_type = #{custType,jdbcType=DECIMAL}
+   					</if>
+   					<if test="addr !=null and addr !=''">
+						and d.address like '%'||#{addr,jdbcType=DECIMAL}||'%'
+				    </if>
+   					<if test="orderStates !=null and orderStates !=''">
+   						and a.states = #{orderStates,jdbcType=DECIMAL}
+   					</if>
+   					and ((1 = 1 and exists
+                        (SELECT 1
+                            FROM t_logistics_rdc tlr, t_logistics_area tla
+                           where 1 = 1
+                             and tlr.rdc_code = a.rdc_code
+                             and tlr.id = tla.logistics_rdc_id
+                             and tlr.user_id = #{userid,jdbcType=DECIMAL}
+                             and tla.area_id = d.prov_id)) or
+                       (1 = 1 and not exists
+                        (SELECT 1
+                            FROM t_logistics_rdc tlr
+                           where 1 = 1
+                             and tlr.user_id = #{userid,jdbcType=DECIMAL})))
+   </select>
+   <select id="exportListAll" resultType="com.hhnz.logistics.dto.DeploymentDTO" parameterType="java.util.Map">
+   	SELECT 
+       (select c.name from crm_sales_organization c where c.id= cso.pid )||'-'||cso.name orgname,
+       prov.name provname,
+       ta.name prov,
+        nvl((select t.show_text
+             from t_dict t
+            where 1 = 1
+              and t.col_name = 'VIRTUAL_WAREHOUSE_CODE'
+              and cmcc.virtual_warehouse = t.choose_val),
+           (SELECT t.show_text
+              FROM t_area_rdc ta, t_dict t
+             where ta.city_id = ooha.city_id
+               and t.col_name = 'VIRTUAL_WAREHOUSE_CODE'
+               and t.choose_val = ta.rdc_code)) defaultRdc,
+        nvl((select t.show_text
+             from t_dict t
+            where t.choose_val = ooha.rdc_code
+              and t.col_name = 'VIRTUAL_WAREHOUSE_CODE'),
+           td.show_text) RdcName,
+   	   ooha.name custname,
+   	   ooha.address,
+       ooha.contact,
+   	   ooha.contactModel,
+       ordertype.show_text custType,
+       ooha.sap_customer_id sapCustomerId,
+       ooha.id,
+       to_char(ooha.create_ts,'yyyy-MM-dd HH24:mm') createTs,
+       te.name creater,
+       te2.name  salesPerson,
+       te2.contact_tel  salesPersonModel,
+       tmb.sku,
+       oos.material_id materialId,
+       tmb.unit,
+       oos.num,
+       nvl(tmb.attribute6, 1) amounts,
+       case
+         when tmb.unit = 'TO' then
+          oos.num
+         else
+          oos.num / nvl(tmb.attribute6, 1)
+       end piece,
+       case
+         when tmb.unit = 'TO' then
+          oos.num
+         else
+          oos.num * tmb.specifications / 1000000
+       end weight,
+       case
+         when ooha.cust_type = '7' or ooha.cust_type = '8' or
+              ooha.attribute13 is null then
+          nvl((SELECT nvl(sum(cvwh.change_amt), 0)
+                FROM crm_virtual_warehouse_history cvwh
+               where 1 = 1
+                 and cvwh.cust_type like 'Z9%'
+                 and cvwh.material_id = oos.material_id
+                 and cvwh.related_order_id = ooha.id),
+              0)
+         else
+          nvl((SELECT nvl(sum(oodh.num), 0)
+                FROM om_order_delivered_history oodh
+               where oodh.sap_order_id = oos.sap_header_id
+                 and oodh.orderitem_sap_no = oos.orderitem_sap_no),
+              0)
+       end allocationNum,
+       decode(oos.type, '1', '标准', '2', '货补', '3', '销售政策') lineType,
+       orderstates.show_text as states,
+       ooha.dprovName,
+       ooha.cityName,
+       ooha.countyName
+  FROM (SELECT rec.*, rownum rownum_
+          FROM (SELECT a.*,
+                       c.name,
+                       c.sap_customer_id,
+                       c.cust_type,
+                       c.city_id,
+                       c.prov_id,
+                       d.address,
+                       d.CONTACTER contact,
+                       d.MOBILE contactModel,
+                       prov.name dprovName,
+                       city.name cityName,
+                       county.name countyName
+                  FROM om_order_headers_all a,
+                       c_merch_cust_base c, 
+                  	   c_merch_cust_distribution d,
+                  	   t_area prov,
+                       t_area city,
+                       t_area county
+                 where 1 = 1
+                   and d.prov_id= prov.id(+)
+                   and d.city_id= city.id(+)
+                   and d.county_id= county.id(+)
+                   and a.merch_cust_id = c.id
+                   and a.ship_id=d.id(+)
+                   and (a.order_type ='5' or a.order_type='8')
+                   <if test="id !=null  and id !=''">
+    				 	and a.id =#{id,jdbcType=DECIMAL}
+   					</if>
+   					<if test="custname !=null and custname !=''">
+     					and c.name like '%'||#{custname,jdbcType=VARCHAR}||'%'
+  					 </if>
+   					<if test="merchid !=null and merchid !=''">
+   						and c.id = #{merchid,jdbcType=DECIMAL}
+   					</if>
+   					<if test="sapId !=null and sapId !=''">
+   						and c.sap_customer_id = #{sapId,jdbcType=VARCHAR}
+   					</if>
+   					<if test="startTime !=null and startTime !=''">
+	   					and a.create_ts >= to_date(#{startTime,jdbcType=VARCHAR},'yyyy-MM-dd')
+	   				</if>	
+	   				<if test="endTime !=null and endTime !=''" >
+	   					and a.create_ts &lt;=  to_date(#{endTime,jdbcType=VARCHAR},'yyyy-MM-dd')+0.99999
+	   				</if>
+	   				<if test="custType !=null and custType !=''">
+   						and c.cust_type = #{custType,jdbcType=DECIMAL}
+   					</if>
+   					<if test="addr !=null and addr !=''">
+						and d.address like '%'||#{addr,jdbcType=DECIMAL}||'%'
+				    </if>
+   					<if test="orderStates !=null and orderStates !=''">
+   						and a.states = #{orderStates,jdbcType=DECIMAL}
+   					</if>
+   					and ((1 = 1 and exists
+                        (SELECT 1
+                            FROM t_logistics_rdc tlr, t_logistics_area tla
+                           where 1 = 1
+                             and tlr.rdc_code = a.rdc_code
+                             and tlr.id = tla.logistics_rdc_id
+                             and tlr.user_id = #{userid,jdbcType=DECIMAL}
+                             and tla.area_id = d.prov_id)) or
+                       (1 = 1 and not exists
+                        (SELECT 1
+                            FROM t_logistics_rdc tlr
+                           where 1 = 1
+                             and tlr.user_id = #{userid,jdbcType=DECIMAL})))
+                 order by a.id desc) rec) ooha,
+       t_employee             te,
+       crm_sales_organization regin,
+       crm_sales_organization cso,
+       crm_sales_organization prov,
+       (select * from c_merch_cust_contract where states = '4') cmcc,
+       t_dict                 td,
+       T_AREA_RDC             tar,
+       t_area			      ta,
+       c_merch_cust_station cmcs,
+       t_employee te2,
+       crm_station crs,
+       t_material_base tmb,
+       om_order_spilts oos,
+       t_dict orderstates,
+       t_dict ordertype
+ where 1 = 1
+   and ooha.create_oid = te.id(+)
+   and ooha.organization_id= cso.id(+)
+   and ooha.region_id= regin.id(+)
+   and ooha.provi_id= prov.id(+) 
+   and ooha.city_id= tar.city_id
+   and tar.rdc_code= td.choose_val
+   and ooha.prov_id= ta.id(+)
+   and ooha.merch_cust_id= cmcs.merch_cust_id
+   and cmcs.STATION_ID = crs.id
+   and crs.SALESREP_ID = te2.id(+)
+   and ooha.merch_cust_id = cmcc.merch_cust_id(+)
+   and td.col_name='VIRTUAL_WAREHOUSE_CODE'
+   and ooha.id = oos.header_id
+   and oos.material_id = tmb.sap_id
+   and ooha.states=orderstates.choose_val
+   and ooha.cust_type= ordertype.choose_val
+   and ordertype.col_name='CUST_MERCH_TYPE'
+   and orderstates.col_name='OM_ORDER_HEADER_TYPE'
+    order by ooha.id desc
+   </select>
+</mapper>

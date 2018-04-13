@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.crm.mapper.ApiKnowledgeCategoryMapper" >
+  <resultMap id="BaseResultMap" type="com.hhnz.crm.model.TKnowledgeCategory" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="NAME" property="name" jdbcType="VARCHAR" />
+    <result column="PID" property="pid" jdbcType="VARCHAR" />
+  </resultMap>
+  <select id="findTopCategory" resultMap="BaseResultMap">
+  		SELECT  
+           ID,NAME,PID
+		FROM
+			T_PRODUCT_CATEGORY
+		WHERE  
+			PID IS NULL
+  </select>
+  <select id="searchCategory" resultMap="BaseResultMap">
+  		<include refid="OracleDialectPrefix" />
+  		SELECT  
+           ID,NAME,PID
+		FROM
+			T_PRODUCT_CATEGORY
+		WHERE  
+		<if test="name != null  and  name != ''">
+ 			 NAME LIKE ${name}
+ 		</if>
+ 		<include refid="OracleDialectSuffix" />
+  </select>
+  <sql id="OracleDialectPrefix" >
+    <if test="begin != null" >
+      select * from ( select row_.*, rownum rownum_ from ( 
+    </if>
+  </sql>
+  <sql id="OracleDialectSuffix" >
+    <if test="begin != null" >
+      <![CDATA[ ) row_ ) where rownum_ > #{begin} and rownum_ <= #{end} ]]>
+    </if>
+  </sql>
+</mapper>

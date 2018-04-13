@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.pub.mapper.PowerOrgMapper" >
+  <resultMap id="orgResultMap" type="com.hhnz.pub.model.PowerOrg" >
+    <result column="id" property="orgid" jdbcType="VARCHAR" />
+    <result column="orgname" property="orgname" jdbcType="VARCHAR" />
+    <result column="pid" property="pidorgid" jdbcType="VARCHAR" />
+  </resultMap>
+ <select id="powerOrg" resultMap="orgResultMap" parameterType="java.util.Map">
+ 	SELECT distinct rec.*
+  FROM (SELECT cso.id,
+               (SELECT rec.name
+                  FROM crm_sales_organization rec
+                 where rec.id = cso.pid) || '-' || cso.name as orgname,
+               cso.pid
+          FROM crm_sales_organization cso
+         where 1 = 1
+           and cso.levels = '2'
+         start with cso.id in 
+         <foreach item="item" index="index" collection="orgids" open="(" separator="," close=")">  
+ 		 #{item}  
+ 		</foreach> 
+        connect by prior cso.id = cso.pid
+        union all
+        SELECT cso.id,
+               (SELECT rec.name
+                  FROM crm_sales_organization rec
+                 where rec.id = cso.pid) || '-' || cso.name as orgname,
+               cso.pid
+          FROM crm_sales_organization cso
+         where 1 = 1
+           and cso.levels = '2'
+         start with cso.id in 
+        <foreach item="item" index="index" collection="orgids" open="(" separator="," close=")">  
+ 		 #{item}  
+ 	</foreach> 
+        connect by prior cso.pid = cso.id) rec
+ </select>
+<resultMap type="com.hhnz.crm.model.UserStations" id="userstationResultMap">
+		<result column="stationid" property="stationid" jdbcType="DECIMAL" />
+		<result column="stationname" property="stationname" jdbcType="VARCHAR" />
+		<result column="stationorgid" property="stationorgid" jdbcType="VARCHAR" />
+		<result column="orgid" property="orgid" jdbcType="VARCHAR" />
+		<result column="orgname" property="orgname" jdbcType="VARCHAR" />
+		<result column="salesrep_id" property="salesrepId" jdbcType="DECIMAL" />
+		<result column="username" property="username" jdbcType="VARCHAR" />
+		<result column="description" property="description" jdbcType="VARCHAR" />
+		<result column="create_ts" property="createTs" jdbcType="TIMESTAMP" />
+		<result column="hbratio" property="hbratio" jdbcType="VARCHAR"/>
+	</resultMap>
+	<select id="getUserStations" resultMap="userstationResultMap"
+		parameterType="java.util.Map">
+		SELECT cs.id as stationid,
+       cs.name as stationname,
+       cs.organization_id as stationorgid,
+       case
+         when length(cs.organization_id) > 5 then
+          (SELECT id
+             FROM crm_sales_organization rec
+            where rec.id = substr(cs.organization_id, 0, 5))
+         else
+          (SELECT id
+             FROM crm_sales_organization rec
+            where rec.id = cs.organization_id)
+       end as orgid,
+       case
+         when length(cs.organization_id) > 5 then
+          (SELECT name
+             FROM crm_sales_organization rec
+            where rec.id = substr(cs.organization_id, 0, 5))
+         else
+          (SELECT name
+             FROM crm_sales_organization rec
+            where rec.id = cs.organization_id)
+       end as orgname,
+       case
+         when length(cs.organization_id) > 5 then
+          (SELECT attribute1
+             FROM crm_sales_organization rec
+            where rec.id = substr(cs.organization_id, 0, 5))
+         else
+          (SELECT attribute1
+             FROM crm_sales_organization rec
+            where rec.id = cs.organization_id)
+       end as hbratio,
+       cs.states,
+       cs.salesrep_id,
+       te.name as username,
+       cs.description,
+       cs.create_ts
+  FROM crm_station cs, crm_sales_organization cso, t_employee te
+ where 1 = 1
+   and cs.organization_id = cso.id
+   and cs.salesrep_id = te.id
+   and cs.organization_id in
+   <foreach collection="orgid" open="(" close=")" separator="," item="val">
+   	 #{val}
+   </foreach>
+ order by cs.create_ts desc
+	</select>
+
+<select id="getPowerStations" resultMap="userstationResultMap" parameterType="java.util.Map">
+SELECT cs.id as stationid,
+       cs.name as stationname,
+       cs.organization_id as stationorgid,
+       case
+         when length(cs.organization_id) > 5 then
+          (SELECT id
+             FROM crm_sales_organization rec
+            where rec.id = substr(cs.organization_id, 0, 5))
+         else
+          (SELECT id
+             FROM crm_sales_organization rec
+            where rec.id = cs.organization_id)
+       end as orgid,
+       case
+         when length(cs.organization_id) > 5 then
+          (SELECT name
+             FROM crm_sales_organization rec
+            where rec.id = substr(cs.organization_id, 0, 5))
+         else
+          (SELECT name
+             FROM crm_sales_organization rec
+            where rec.id = cs.organization_id)
+       end as orgname,
+       case
+         when length(cs.organization_id) > 5 then
+          (SELECT attribute1
+             FROM crm_sales_organization rec
+            where rec.id = substr(cs.organization_id, 0, 5))
+         else
+          (SELECT attribute1
+             FROM crm_sales_organization rec
+            where rec.id = cs.organization_id)
+       end as hbratio,
+       cs.states,
+       cs.salesrep_id,
+       te.name as username,
+       cs.description,
+       cs.create_ts
+  FROM crm_station cs, crm_sales_organization cso, t_employee te
+ where 1 = 1
+   and cs.organization_id = cso.id
+   and cs.salesrep_id = te.id
+   and cs.organization_id in
+   <foreach collection="orgid" open="(" close=")" separator="," item="val">
+   	 #{val}
+   </foreach>
+   <if test="userid !=null">
+   and cs.salesrep_id =#{usreid,jdbcType=DECIMAL}
+   </if>
+ order by cs.create_ts desc
+</select>
+
+<select id="subOrg" resultType="String">
+	SELECT
+		id
+	FROM
+		CRM_SALES_ORGANIZATION cso
+	WHERE
+		1 = 1 START WITH CSO. ID = #{orgid} CONNECT BY PRIOR CSO. ID = CSO.pid
+</select>
+
+</mapper>

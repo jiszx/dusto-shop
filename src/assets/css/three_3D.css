@@ -1,0 +1,26 @@
+body { background-color: #000000; margin: 0; cursor: move; overflow: hidden; }
+    .bg_section { width: 1026px; height: 1026px; background-size: cover; position: absolute; }
+    .bg_section .bg { position: absolute; width: 1026px; height: 1026px; }
+    .btn1{position: absolute;width: 200px;height: 200px;top:43.5%;left:31%;-webkit-transform: perspective(600px);background: url(../images/user.png);background-size: 100% 100%;}
+    .btn2{position: absolute;width: 200px;height: 200px;top:67%;left:47%;-webkit-transform: perspective(600px);background: url(../images/magazine.png);background-size: 100% 100%;}
+    .btn3{position: absolute;width: 230px;height: 230px;top:33%;left:3%;-webkit-transform: perspective(600px);background: url(../images/Entrance.png);background-size: 100% 100%;}
+    
+    .shoe1{position: absolute;width: 60px;height: 60px;top:34%;left:58.5%;-webkit-transform: perspective(600px);background: url(../images/shoes1.jpg);background-size: 100% 100%;}
+    .btn4{position: absolute;width: 200px;height: 200px;top:40%;left:10%;-webkit-transform: perspective(600px);background: url(../images/custom_label.png);background-size: 100% 100%;}
+    .btn5{position: absolute;width: 200px;height: 200px;top:45%;left:45%;-webkit-transform: perspective(600px);background: url(../images/after_sale_maintenance.png);background-size: 100% 100%;}
+    .btn6{position: absolute;width: 200px;height: 200px;top:20%;left:40%;-webkit-transform: perspective(600px);background: url(../images/shoppingmall.png);background-size: 100% 100%;}
+    .controlBtn{ width: 160px; height: 160px; position: fixed; z-index: 99999; left: 8%; top: 5%; }
+    .controlIcon{ background: url(../images/controlIcon.png); background-size: 100% 100%; }
+    /*.controlIconae{ background: url(../images/controlIconae.png); background-size: 100% 100%; }*/
+   .controlIconae{ background: url(../images/wish.png); background-size: 100% 100%; }
+    @-webkit-keyframes bounceant1{
+        0%{-webkit-transform:translateY(0)}
+        50%{-webkit-transform:translateY(-12px)}
+        100%{-webkit-transform:translateY(0px)}
+    }
+    @keyframes bounceant1{
+        0%{transform:translateY(0)}
+        50%{transform:translateY(-12px)}
+        100%{transform:translateY(0px)}
+    }
+    .bounceant1{-webkit-animation:bounceant1 3s infinite;animation:bounceant1 3s infinite}

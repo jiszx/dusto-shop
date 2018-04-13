@@ -1,0 +1,120 @@
+{
+  "data": [{
+    "agentID": 1,
+    "agentName": "SKU200911244303",
+    "agentType": "SKU",
+    "agentDestYear": "13000",
+    "agentPoitYear": "15.00%",
+    "agentDestQuarter": "2500",
+    "agentPoitQuarter": "4.36%",
+    "testTime": "2015-10-13"
+  },{
+    "agentID": 2,
+    "agentName": "SKU200910233002",
+    "agentType": "SKU",
+    "agentDestYear": "160",
+    "agentPoitYear": "65.00%",
+    "agentDestQuarter": "50",
+    "agentPoitQuarter": "15.24%",
+    "testTime": ""
+  },{
+    "agentID": 3,
+    "agentName": "哈哈农庄产品组1",
+    "agentType": "产品组",
+    "agentDestYear": "4570",
+    "agentPoitYear": "35.00%",
+    "agentDestQuarter": "1350",
+    "agentPoitQuarter": "25.09%",
+    "testTime": ""
+  },{
+    "agentID": 4,
+    "agentName": "康师傅",
+    "agentType": "产品品牌",
+    "agentDestYear": "200",
+    "agentPoitYear": "54.00%",
+    "agentDestQuarter": "40",
+    "agentPoitQuarter": "100.00%",
+    "testTime": ""
+  },{
+    "agentID": 5,
+    "agentName": "食品添加剂",
+    "agentType": "产品系列",
+    "agentDestYear": "160",
+    "agentPoitYear": "65.00%",
+    "agentDestQuarter": "50",
+    "agentPoitQuarter": "15.25%",
+    "testTime": ""
+  },{
+    "agentID": 6,
+    "agentName": "SKU200910233002",
+    "agentType": "SKU",
+    "agentDestYear": "160",
+    "agentPoitYear": "65.00%",
+    "agentDestQuarter": "50",
+    "agentPoitQuarter": "15.24%",
+    "testTime": ""
+  },{
+    "agentID": 7,
+    "agentName": "哈哈农庄产品组1",
+    "agentType": "产品组",
+    "agentDestYear": "4570",
+    "agentPoitYear": "35.00%",
+    "agentDestQuarter": "1350",
+    "agentPoitQuarter": "25.09%",
+    "testTime": ""
+  },{
+    "agentID": 8,
+    "agentName": "康师傅",
+    "agentType": "产品品牌",
+    "agentDestYear": "200",
+    "agentPoitYear": "54.00%",
+    "agentDestQuarter": "40",
+    "agentPoitQuarter": "100.00%",
+    "testTime": ""
+  },{
+    "agentID": 9,
+    "agentName": "食品添加剂",
+    "agentType": "产品系列",
+    "agentDestYear": "160",
+    "agentPoitYear": "65.00%",
+    "agentDestQuarter": "50",
+    "agentPoitQuarter": "15.25%",
+    "testTime": ""
+  },{
+    "agentID": 10,
+    "agentName": "SKU200910233002",
+    "agentType": "SKU",
+    "agentDestYear": "160",
+    "agentPoitYear": "65.00%",
+    "agentDestQuarter": "50",
+    "agentPoitQuarter": "15.24%",
+    "testTime": ""
+  },{
+    "agentID": 11,
+    "agentName": "哈哈农庄产品组1",
+    "agentType": "产品组",
+    "agentDestYear": "4570",
+    "agentPoitYear": "35.00%",
+    "agentDestQuarter": "1350",
+    "agentPoitQuarter": "25.09%",
+    "testTime": ""
+  },{
+    "agentID": 12,
+    "agentName": "康师傅",
+    "agentType": "产品品牌",
+    "agentDestYear": "200",
+    "agentPoitYear": "54.00%",
+    "agentDestQuarter": "40",
+    "agentPoitQuarter": "100.00%",
+    "testTime": ""
+  },{
+    "agentID": 13,
+    "agentName": "食品添加剂",
+    "agentType": "产品系列",
+    "agentDestYear": "160",
+    "agentPoitYear": "65.00%",
+    "agentDestQuarter": "50",
+    "agentPoitQuarter": "15.25%",
+    "testTime": ""
+  }]
+}

@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.crm.mapper.UtilMapper">
+	<resultMap id="UserOrgResultMap"
+		type="com.hhnz.organization.model.CrmSalesOrganization">
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="PID" property="pid" jdbcType="VARCHAR" />
+		<result column="LEVELS" property="levels" jdbcType="VARCHAR" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+		<result column="SAP_ID" property="sapId" jdbcType="VARCHAR" />
+	</resultMap>
+	<select id="getuserorgs" resultMap="UserOrgResultMap" parameterType="java.util.Map">
+	 SELECT distinct rec.*
+  	FROM (SELECT cso.id,
+       decode(cso.levels,
+              '2',
+              (SELECT t.name
+                 FROM crm_sales_organization t
+                where t.id = cso.pid) || '-' || cso.name,
+              cso.name) as name,
+       cso.pid,
+       cso.levels,
+       cso.sap_id
+  	FROM crm_sales_organization cso
+ 	where 1 = 1
+ 		and cso.levels in ('0', '1', '2')
+ 	 	start with cso.id in 
+         <foreach item="item" index="index" collection="orgids" open="(" separator="," close=")">  
+ 		 #{item}  
+ 		</foreach>
+    	connect by prior cso.id = cso.pid
+ 	 union all
+ 	 SELECT cso.id,
+       decode(cso.levels,
+              '2',
+              (SELECT t.name
+                 FROM crm_sales_organization t
+                where t.id = cso.pid) || '-' || cso.name,
+              cso.name) as name,
+       cso.pid,
+       cso.levels,
+       cso.sap_id
+  	FROM crm_sales_organization cso
+ 	where 1 = 1
+ 		and cso.levels ='2'
+ 	 	start with cso.id in 
+         <foreach item="item" index="index" collection="orgids" open="(" separator="," close=")">  
+ 		 #{item}  
+ 		</foreach>
+    	connect by prior cso.pid = cso.id
+    	)rec
+    	order by rec.levels
+	</select>
+	<select id="getOrderOrg" resultMap="UserOrgResultMap" parameterType="java.util.Map">
+		SELECT cso.id,
+       cso.pid,
+       cso.levels,
+       cso.sap_id,
+       case
+         when cso.levels = '2' then
+          (select rec.name
+             from crm_sales_organization rec
+            where rec.id = cso.pid) || '-' || cso.name
+         else
+          cso.name
+       end as name
+  FROM crm_sales_organization cso
+ where 1 = 1
+   <if test="type =='1'">
+   and cso.levels in ('1', '2')
+ start with cso.id = #{orgid,jdbcType=VARCHAR}
+connect by prior cso.id = cso.pid
+ order by cso.levels
+	</if>
+	<if test="type =='2'">
+	  and cos.id =#{orgid,jdbcType=VARCHAR}
+	</if>
+	</select>
+	<resultMap type="com.hhnz.customer.model.CMerchCustBase" id="orgcustomerResultMap">
+		<id column="ID" property="id" jdbcType="DECIMAL" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+		<result column="ABBR_NAME" property="abbrName" jdbcType="VARCHAR" />
+		<result column="PROV_ID" property="provId" jdbcType="VARCHAR" />
+		<result column="CITY_ID" property="cityId" jdbcType="VARCHAR" />
+		<result column="COUNTY_ID" property="countyId" jdbcType="VARCHAR" />
+		<result column="ADDRESS" property="address" jdbcType="VARCHAR" />
+		<result column="LP_NO" property="lpNo" jdbcType="VARCHAR" />
+		<result column="LP_NAME" property="lpName" jdbcType="VARCHAR" />
+		<result column="ZIP_CODE" property="zipCode" jdbcType="VARCHAR" />
+		<result column="REG_ADDR" property="regAddr" jdbcType="VARCHAR" />
+		<result column="TEL" property="tel" jdbcType="VARCHAR" />
+		<result column="CREATE_TS" property="createTs" jdbcType="TIMESTAMP" />
+		<result column="CREATE_OID" property="createOid" jdbcType="DECIMAL" />
+		<result column="UPDATE_TS" property="updateTs" jdbcType="TIMESTAMP" />
+		<result column="UPDATE_OID" property="updateOid" jdbcType="DECIMAL" />
+		<result column="STATES" property="states" jdbcType="VARCHAR" />
+		<result column="SAP_CUSTOMER_ID" property="sapCustomerId"
+			jdbcType="VARCHAR" />
+		<result column="CHANNEL_ID" property="channelId" jdbcType="VARCHAR" />
+		<result column="CUST_TYPE" property="custType" jdbcType="VARCHAR" />
+		<result column="IS_ATTACHMENT" property="isAttachment"
+			jdbcType="VARCHAR" />
+		<result column="BUSINESS_LICENSE" property="businessLicense"
+			jdbcType="VARCHAR" />
+	</resultMap>
+	<select id="getorgCustomer" resultMap="orgcustomerResultMap"
+		parameterType="java.util.Map">
+		SELECT cmcb.*
+		FROM c_merch_cust_base cmcb,
+			 c_merch_cust_station cmcs
+		where 1=1
+			and cmcb.id=cmcs.merch_cust_id
+			and cmcb.organization_id =#{orgid,jdbcType=VARCHAR}
+			and cmcb.states='3'
+			and cmcs.station_id= #{stationid,jdbcType=DECIMAL}
+			
+	</select>
+
+	 <resultMap type="com.hhnz.crm.model.UserJobs" id="jobsResultMap">
+		<result column="job_type" property="jobType" jdbcType="VARCHAR" />
+		<result column="id" property="orgid" jdbcType="VARCHAR" />
+		<result column="name" property="orgname" jdbcType="VARCHAR" />
+		<result column="levels" property="levels" jdbcType="VARCHAR" />
+		<result column="pid" property="orgpid" jdbcType="VARCHAR" />
+		<!-- <result column="joborgid" property="joborgid" jdbcType="VARCHAR" />
+		<result column="joborgname" property="joborgname" jdbcType="VARCHAR" /> -->
+		<result column="data_view" property="dataView" jdbcType="VARCHAR" />
+	</resultMap>
+	<select id="getUserJobs" resultMap="jobsResultMap"
+		parameterType="java.lang.Long">
+	SELECT tjs.job_type,
+       		tjs.data_view,
+       		cso.id,
+       		cso.pid,
+       		cso.name,
+       		cso.levels
+   FROM crm_sales_organization cso, t_job_station tjs, t_job_user tju
+   where 1 = 1
+  	  	and tju.job_id = tjs.id
+   		and tjs.org_id= cso.id
+   		and tju.emp_id = #{id, jdbcType = DECIMAL}
+	</select>
+
+	<resultMap type="com.hhnz.crm.model.UserStations" id="userstationResultMap">
+		<result column="stationid" property="stationid" jdbcType="DECIMAL" />
+		<result column="stationname" property="stationname" jdbcType="VARCHAR" />
+		<result column="stationorgid" property="stationorgid" jdbcType="VARCHAR" />
+		<result column="prov_name" property="provName" jdbcType="VARCHAR"/>
+		<result column="orgid" property="orgid" jdbcType="VARCHAR" />
+		<result column="orgname" property="orgname" jdbcType="VARCHAR" />
+		<result column="salesrep_id" property="salesrepId" jdbcType="DECIMAL" />
+		<result column="username" property="username" jdbcType="VARCHAR" />
+		<result column="description" property="description" jdbcType="VARCHAR" />
+		<result column="create_ts" property="createTs" jdbcType="TIMESTAMP" />
+		<result column="hbratio" property="hbratio" jdbcType="VARCHAR"/>
+	</resultMap>
+	<select id="getUserStations" resultMap="userstationResultMap"
+		parameterType="java.util.Map">
+		SELECT cs.id as stationid,
+       cs.name as stationname,
+       cs.organization_id as stationorgid,
+       cso.name as prov_name,
+       case
+         when length(cs.organization_id) > 5 then
+          (SELECT id
+             FROM crm_sales_organization rec
+            where rec.id = substr(cs.organization_id, 0, 5))
+         else
+          (SELECT id
+             FROM crm_sales_organization rec
+            where rec.id = cs.organization_id)
+       end as orgid,
+       case
+         when length(cs.organization_id) > 5 then
+          (SELECT name
+             FROM crm_sales_organization rec
+            where rec.id = substr(cs.organization_id, 0, 5))
+         else
+          (SELECT name
+             FROM crm_sales_organization rec
+            where rec.id = cs.organization_id)
+       end as orgname,
+       case
+         when length(cs.organization_id) > 5 then
+          (SELECT attribute1
+             FROM crm_sales_organization rec
+            where rec.id = substr(cs.organization_id, 0, 5))
+         else
+          (SELECT attribute1
+             FROM crm_sales_organization rec
+            where rec.id = cs.organization_id)
+       end as hbratio,
+       cs.states,
+       cs.salesrep_id,
+       te.name as username,
+       cs.description,
+       cs.create_ts
+  FROM crm_station cs, crm_sales_organization cso, t_employee te
+ where 1 = 1
+   and cs.organization_id = cso.id
+   and cs.salesrep_id = te.id
+   and te.id = nvl(#{id, jdbcType = DECIMAL},te.id)
+   <if test="type == '1'">
+     and cs.id like  #{orgid,jdbcType=VARCHAR}
+   </if>
+   <if test="type == '2'">
+     and cs.id =  #{orgid,jdbcType=VARCHAR}
+   </if>
+ order by cs.create_ts desc
+	</select>
+	
+	<select id="getCustNumByStationId" resultType="java.lang.Long" parameterType="java.lang.Long">
+		SELECT NVL(count(distinct cmcb.id),0)
+  FROM c_merch_cust_station cmcs, c_merch_cust_base cmcb
+ where cmcs.merch_cust_id = cmcb.id
+  and cmcb.states='3'
+  and cmcs.station_id =#{stationid,jdbcType=DECIMAL}
+	</select>
+	
+	<select id="getauditOrder" resultType="java.lang.Long" parameterType="java.lang.Long">
+		SELECT nvl(count(distinct ooha.id), 0)
+  FROM om_order_headers_all ooha
+ where ooha.states = '2'
+   and ooha.station_id =#{stationid,jdbcType=DECIMAL}
+	</select>
+	
+	<select id="mytaskNum" resultType="java.lang.Long" parameterType="java.lang.String">
+		SELECT nvl(count(1),0) FROM v_task t where t.ASSIGNEE_ = #{loginName,jdbcType=VARCHAR} and end_time_ is null
+	</select>
+	
+	<select id="getUserOrgInfo" resultType="java.lang.String" parameterType="java.lang.String">
+		SELECT cso3.name||'-'||cso2.name||'-'||cso2.name
+  FROM crm_sales_organization cso1,
+       crm_sales_organization cso2,
+       crm_sales_organization cso3
+ where 1=1
+   and cso1.pid = cso2.id
+   and cso2.pid = cso3.id
+   and cso1.id = #{stationorgid,jdbcType=VARCHAR}
+	</select>
+	
+	<resultMap id="factoryResultMap" type="com.hhnz.crm.model.TFactoryV" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="NAME" property="name" jdbcType="VARCHAR" />
+  </resultMap>
+	<select id="getfactorysByOrgid" resultMap="factoryResultMap" parameterType="java.lang.String">
+		SELECT tf.id, tf.name FROM t_factory tf where tf.organization_id=#{orgid,jdbcType=VARCHAR}
+	</select>
+	
+	<insert id="insertPolicyCust" parameterType="java.util.Map">
+		insert into om_policy_cust
+  (id, header_id, merch_cust_id, STATE)
+  (SELECT seq_policy_cust_id.nextval, policy.policyid, #{merchCustId,jdbcType=DECIMAL}, '1'
+     FROM crm_station crs,
+          (SELECT distinct cso.id as orgid, rec.v1 as policyid
+             FROM crm_sales_organization cso,
+                  (SELECT v1, ltrim(rtrim(v2)) as orgid
+                     FROM table(splitstrarray(cursor
+                                              (SELECT *
+                                                 FROM om_policy_headers oph
+                                                where 1 = 1
+                                                  and oph.attribute1 is not null
+                                                  and oph.attrbute2 is null
+                                                  and oph.states = '3'),
+                                              100))) rec
+            where 1 = 1
+              and cso.levels = '4'
+            start with cso.id = rec.orgid
+           connect by prior cso.id = cso.pid) policy
+    where crs.organization_id = policy.orgid
+    and crs.id=#{stationid,jdbcType=DECIMAL})
+	</insert>
+</mapper>

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:activiti="http://activiti.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath" targetNamespace="http://www.activiti.org/test">
+  <process id="transferOrder" name="仓储服务商零售订单" isExecutable="true" activiti:candidateStarterUsers="startUser">
+    <extensionElements>
+      <activiti:executionListener event="end" delegateExpression="#{processEndListerner}"></activiti:executionListener>
+      <activiti:executionListener event="start" delegateExpression="#{processStartListerner}"></activiti:executionListener>
+    </extensionElements>
+    <startEvent id="startOrder" name="开始销售订单"></startEvent>
+    <endEvent id="endOrder" name="订单完成"></endEvent>
+    <serviceTask id="SEND_SAP" name="工厂出货" activiti:delegateExpression="#{sendSAPTask}"></serviceTask>
+    <serviceTask id="REDUCE_ACCOUNT" name="扣减客户资金" activiti:delegateExpression="#{reduceMerchAccountTask}"></serviceTask>
+    <sequenceFlow id="flow23" sourceRef="startOrder" targetRef="WITHHOLD_TASK"></sequenceFlow>
+    <sequenceFlow id="flow24" name="扣款成功" sourceRef="REDUCE_ACCOUNT" targetRef="REDUCE_DEPOT">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${REDUCE_FLAG == 1}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flow30" name="金额不足" sourceRef="REDUCE_ACCOUNT" targetRef="STATE_TASK">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${REDUCE_FLAG == 0}]]></conditionExpression>
+    </sequenceFlow>
+    <serviceTask id="WITHHOLD_TASK" name="预扣销售政策金额" activiti:delegateExpression="#{withholdingTask}"></serviceTask>
+    <sequenceFlow id="flow32" name="政策预扣款成功" sourceRef="WITHHOLD_TASK" targetRef="REDUCE_ACCOUNT">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${WITHHOLD_FLAG==1}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flow33" name="政策预扣款失败" sourceRef="WITHHOLD_TASK" targetRef="STATE_TASK">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${WITHHOLD_FLAG == 0}]]></conditionExpression>
+    </sequenceFlow>
+    <serviceTask id="STATE_TASK" name="系统处理" activiti:delegateExpression="#{orderStateTask}"></serviceTask>
+    <sequenceFlow id="flow34" sourceRef="STATE_TASK" targetRef="endOrder"></sequenceFlow>
+    <serviceTask id="REDUCE_DEPOT" name="扣减库存" activiti:delegateExpression="#{reduceRetailOrderDepo}"></serviceTask>
+    <sequenceFlow id="flow43" sourceRef="REDUCE_DEPOT" targetRef="SEND_SAP"></sequenceFlow>
+    <receiveTask id="RECV_WLFK" name="工厂发货"></receiveTask>
+    <sequenceFlow id="flow87" sourceRef="SEND_SAP" targetRef="RECV_WLFK"></sequenceFlow>
+    <sequenceFlow id="flow88" sourceRef="RECV_WLFK" targetRef="STATE_TASK"></sequenceFlow>
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_transferOrder">
+    <bpmndi:BPMNPlane bpmnElement="transferOrder" id="BPMNPlane_transferOrder">
+      <bpmndi:BPMNShape bpmnElement="startOrder" id="BPMNShape_startOrder">
+        <omgdc:Bounds height="35.0" width="35.0" x="105.0" y="0.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="endOrder" id="BPMNShape_endOrder">
+        <omgdc:Bounds height="35.0" width="35.0" x="319.0" y="592.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="SEND_SAP" id="BPMNShape_SEND_SAP">
+        <omgdc:Bounds height="55.0" width="105.0" x="504.0" y="220.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="REDUCE_ACCOUNT" id="BPMNShape_REDUCE_ACCOUNT">
+        <omgdc:Bounds height="55.0" width="105.0" x="284.0" y="93.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="WITHHOLD_TASK" id="BPMNShape_WITHHOLD_TASK">
+        <omgdc:Bounds height="55.0" width="105.0" x="70.0" y="93.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="STATE_TASK" id="BPMNShape_STATE_TASK">
+        <omgdc:Bounds height="55.0" width="105.0" x="284.0" y="470.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="REDUCE_DEPOT" id="BPMNShape_REDUCE_DEPOT">
+        <omgdc:Bounds height="55.0" width="105.0" x="504.0" y="93.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="RECV_WLFK" id="BPMNShape_RECV_WLFK">
+        <omgdc:Bounds height="55.0" width="105.0" x="703.0" y="220.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="flow23" id="BPMNEdge_flow23">
+        <omgdi:waypoint x="122.0" y="35.0"></omgdi:waypoint>
+        <omgdi:waypoint x="122.0" y="93.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow24" id="BPMNEdge_flow24">
+        <omgdi:waypoint x="389.0" y="120.0"></omgdi:waypoint>
+        <omgdi:waypoint x="504.0" y="120.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="48.0" x="402.0" y="99.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow30" id="BPMNEdge_flow30">
+        <omgdi:waypoint x="336.0" y="148.0"></omgdi:waypoint>
+        <omgdi:waypoint x="336.0" y="470.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="48.0" x="284.0" y="309.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow32" id="BPMNEdge_flow32">
+        <omgdi:waypoint x="175.0" y="120.0"></omgdi:waypoint>
+        <omgdi:waypoint x="284.0" y="120.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="84.0" x="189.0" y="104.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow33" id="BPMNEdge_flow33">
+        <omgdi:waypoint x="122.0" y="148.0"></omgdi:waypoint>
+        <omgdi:waypoint x="122.0" y="497.0"></omgdi:waypoint>
+        <omgdi:waypoint x="284.0" y="497.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="84.0" x="30.0" y="319.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow34" id="BPMNEdge_flow34">
+        <omgdi:waypoint x="336.0" y="525.0"></omgdi:waypoint>
+        <omgdi:waypoint x="336.0" y="592.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow43" id="BPMNEdge_flow43">
+        <omgdi:waypoint x="556.0" y="148.0"></omgdi:waypoint>
+        <omgdi:waypoint x="556.0" y="220.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow87" id="BPMNEdge_flow87">
+        <omgdi:waypoint x="609.0" y="247.0"></omgdi:waypoint>
+        <omgdi:waypoint x="703.0" y="247.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow88" id="BPMNEdge_flow88">
+        <omgdi:waypoint x="755.0" y="275.0"></omgdi:waypoint>
+        <omgdi:waypoint x="755.0" y="497.0"></omgdi:waypoint>
+        <omgdi:waypoint x="389.0" y="497.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    http://www.springframework.org/schema/mvc
+    http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+    http://www.springframework.org/schema/context 
+    http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+	<context:component-scan base-package="com.hhnz.*.controller,com.hhnz.controller" />
+	 <bean
+            class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath:config.properties</value>
+            </list>
+        </property>
+    </bean>
+    <aop:aspectj-autoproxy proxy-target-class="true"/>
+	<mvc:annotation-driven>
+		<!---->
+		<mvc:message-converters>
+			<bean class="com.hhnz.convert.GsonHttpMessageConverter">
+			</bean>
+			<bean class="org.springframework.http.converter.StringHttpMessageConverter">
+				<property name="supportedMediaTypes">
+					<list>
+						<value>text/html;charset=UTF-8</value>
+					</list>
+				</property>
+			</bean>
+		</mvc:message-converters>
+
+	</mvc:annotation-driven>
+
+	<!-- Spring mvc config
+	<bean class="org.springframework.web.servlet.view.BeanNameViewResolver">
+		<property name="order" value="1" />
+	</bean>
+-->
+	<bean id="multipartResolver"
+		class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<property name="defaultEncoding" value="utf-8"></property>
+	</bean>
+	<bean id="localeResolver"
+		  class="org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver" />
+
+	<mvc:resources mapping="/static/**" location="/static/" />
+	<!-- -->
+	<bean id="viewResolver"
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="viewClass"
+			value="org.springframework.web.servlet.view.JstlView" />
+		<property name="prefix" value="/jsp/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+
+	<mvc:interceptors>
+	    <mvc:interceptor>
+	        <mvc:mapping path="/api/**" />
+	        <bean class="com.hhnz.api.interceptor.AuthorizationInterceptor">
+	        </bean>
+	    </mvc:interceptor>
+	    <mvc:interceptor>
+            <mvc:mapping path="/**"/>
+            <bean class="com.hhnz.security.TokenInterceptor"/>
+        </mvc:interceptor>
+	</mvc:interceptors>
+</beans>

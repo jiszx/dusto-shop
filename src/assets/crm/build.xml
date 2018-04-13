@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<project name="maven-antrun-" default="main"  >
+
+	<!--<target if="sendfileToProduct" name="mkdir" depends="renameOld">
+	  	<echo message="mkdir in 10.0.1.72 ..."/>
+		<ftp action="mkdir"
+		       server="10.0.1.72"
+		       userid="crmuser"
+		       password="crmuser123456"
+		       remotedir="/twpcrm_${TODAY}"/>
+	</target>-->
+	<target name="renameOldOrMkdir">
+		<echo message="rename old war or mkdir in 10.0.1.72 ..."/>
+		<taskdef name="groovy" classname="org.codehaus.groovy.ant.Groovy"/>
+	    <groovy>
+	        import org.apache.commons.net.ftp.FTPClient
+			
+	    	def TODAY = new Date().format("yyyyMMdd");
+	    	def NOW = new Date().format("HHmmss");
+	    	def prefix = System.getProperty("user.dir")
+	    	prefix = prefix.substring(0,prefix.lastIndexOf(File.separator))
+	    	def directory = new File(prefix+"/temp/twpcrm_${TODAY}")
+    		def file = new File(prefix+"/temp/twpcrm_${TODAY}/admin.war")
+    		if(directory.exists()){
+	    		println("directory exists...")
+	    		if(file.exists()){
+	    			println("file exists, rename it...")
+		    		new FTPClient().with {
+			            connect "10.0.1.72"
+			            login "crmuser", "crmuser123456"
+		    			rename "/twpcrm_${TODAY}/admin.war", "/twpcrm_${TODAY}/admin_expired_${NOW}.war"
+			            disconnect()
+			        }
+	    		}else{
+	    			file.mkdirs()
+	    		}
+    		}else{
+	    		println("directory does not exists, mkdir...")
+	    		directory = new File(prefix+"/temp/twpcrm_${TODAY}/admin.war")
+	    		directory.mkdirs()
+	    		ant.ftp(action:"mkdir", server:"10.0.1.72",userid:"crmuser",password:"crmuser123456",remotedir:"/twpcrm_${TODAY}")
+    		}
+	    </groovy>
+	</target>
+	<target name="sendfile" if="sendfileToProduct" depends="renameOldOrMkdir">
+		<echo message="sending files ..."/>
+		<ftp server="10.0.1.72"
+		       port="21"
+		       remotedir="/twpcrm_${TODAY}"
+		       userid="crmuser"
+		       password="crmuser123456"
+			   passive="yes"
+		       depends="yes"
+		       binary="yes"
+		       serverTimeZoneConfig="China/Beijing">
+		    <fileset dir="target">
+		      <include name="admin.war"/>
+		    </fileset>
+		  </ftp>
+	</target>
+	
+	<target name="deployTo8080" if="deployTo8080">
+		<scp todir="root:abcd1234@10.0.0.151:/opt/tomcat7/webapps">
+			<fileset dir="target">
+				<include name="admin.war" />
+			</fileset>
+		</scp>
+		<sleep seconds="3"/>
+		<echo message="kill 8080 tomcat ..."/>
+		<sshexec username="root" host="10.0.0.151" trust="true" password="abcd1234"
+		command="ps -ef | grep /opt/tomcat7/ | grep -v grep | awk '{print $2}' | xargs kill -9" />
+		
+		<echo message="remove admin folder ..."/>
+		<sshexec username="root" host="10.0.0.151" trust="true" password="abcd1234"
+		command="rm -rf /opt/tomcat7/webapps/admin" />
+		
+		<echo message="remove crmApp folder ..."/>
+		<sshexec username="root" host="10.0.0.151" trust="true" password="abcd1234"
+		command="rm -rf /opt/tomcat7/webapps/crmApp" />
+		
+		<sleep seconds="10"/>
+		<echo message="start 8080 tomcat ..."/>
+		<sshexec username="root" host="10.0.0.151" trust="true" password="abcd1234"
+		command="/opt/tomcat7/bin/restart_tomcat.sh " />
+	</target>
+	
+	<target name="init">
+		<echo message="ant run starting ..."/>
+		<tstamp>  
+	      <format property="TODAY" pattern="yyyyMMdd" locale="zh"/>  
+	    </tstamp>
+		<tstamp>  
+	      <format property="NOW" pattern="HHmmss" locale="zh"/>  
+	    </tstamp>
+	</target>
+
+	<target name="main" depends="init,sendfile,deployTo8080" >
+		<echo message="ant run finished!"/>
+	</target>
+
+</project>

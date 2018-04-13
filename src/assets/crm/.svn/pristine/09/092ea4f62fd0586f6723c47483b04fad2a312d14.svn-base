@@ -1,0 +1,1131 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.account.mapper.AccountUtilMapper" >
+  	<resultMap type="com.hhnz.account.model.AdjustCustomer" id="AdjustCustomerResultMap">
+  		<result column="name" property="name" jdbcType="VARCHAR"/>
+  		<result column="sap_Customer_Id" property="sapCustomerId" jdbcType="VARCHAR"/>
+  		<result column="merchCustId" property="merchCustId" jdbcType="DECIMAL"/>
+  	</resultMap>
+  	<select id="getAdjustCustomer" resultMap="AdjustCustomerResultMap" parameterType="java.util.Map">
+  		<!-- SELECT (SELECT rec.name
+          		FROM crm_sales_organization rec
+         			where rec.id = substr(cs.organization_id, 0, 3)) || '-' ||cmcb.name as name,
+       			cmcb.id as merchCustId,
+       			cmcb.sap_customer_id
+  			FROM crm_station cs, c_merch_cust_station cmcs, c_merch_cust_base cmcb
+ 		where cmcs.station_id = cs.id
+   			and cmcs.merch_cust_id = cmcb.id
+   			and cmcb.cust_type != '2'
+   			and exists (SELECT 1
+          					FROM c_merch_cust_account cmca
+         				where cmca.merch_cust_id = cmcb.id
+           					and cmca.organization_id = cmcb.organization_id
+           					<if test="amt !=null">
+           					and cmca.cash_amt >=  #{amt,jdbcType=DECIMAL}
+           					</if>
+           					)
+  			and cs.organization_id like #{orgid,jdbcType=VARCHAR}||'%' -->		
+  	 SELECT cmcb.name as name,
+       cmcb.id as merchCustId,
+       nvl(cmcb.sap_customer_id,0) sap_customer_id
+  	FROM c_merch_cust_base      cmcb,
+       crm_sales_organization cso,
+       c_merch_cust_account   cmca
+ 	where cmcb.organization_id = cso.id
+   		and cmcb.id = cmca.merch_cust_id
+   		and cmcb.organization_id = cmca.organization_id
+        <if test="cust_type !=null and cust_type !=''">
+            and cmcb.cust_type=#{cust_type}
+        </if>
+        <if test="cust_type ==null">
+            and cmcb.cust_type not in('2','6')
+        </if>
+        and cmcb.states='3'
+   		and cmcb.organization_id =#{orgid,jdbcType=VARCHAR}
+   		and exists (SELECT 1
+          FROM c_merch_cust_balances cmb
+         where cmb.merch_cust_id = cmcb.id
+           and cmb.organization_id = cmcb.organization_id
+           and cmb.period = to_char(sysdate, 'YYYY-MM'))
+   	order by sap_customer_id
+  	</select>
+  	<resultMap id="MerchAccountResultMap" type="com.hhnz.account.model.CMerchCustAccountV" >
+    <result column="custname" property="custname" jdbcType="VARCHAR" />
+    <result column="orgname" property="orgname" jdbcType="VARCHAR" />
+    <result column="sap_customer_id" property="sapCustomerId" jdbcType="VARCHAR" />
+    <result column="bond_amt" property="bondAmt" jdbcType="DECIMAL"/>
+    <result column="allamt" property="allamt" jdbcType="DECIMAL" />
+    <result column="merch_cust_id" property="merchCustId" jdbcType="DECIMAL" />
+    <result column="orgid" property="orgid" jdbcType="VARCHAR" />
+    <result column="cash_amt" property="cashAmt" jdbcType="DECIMAL" />
+    <result column="credit_amt" property="creditAmt" jdbcType="DECIMAL" />
+    <result column="subsidy_amt" property="subsidyAmt" jdbcType="DECIMAL" />
+    <result column="pid" property="pid" jdbcType="VARCHAR"/>
+    <result column="cust_type" property="custType" jdbcType="VARCHAR"/>
+    <result column="credit_lines" property="creditLines" jdbcType="DECIMAL" />
+    <result column="frozen_amt" property="frozenAmt" jdbcType="DECIMAL" />
+    <result column="frozen_subsidy" property="frozenSubsidy" jdbcType="DECIMAL" />
+  </resultMap>
+  
+  <select id="getAccountByMerchId" resultMap="MerchAccountResultMap" parameterType="java.lang.Long">
+	<!-- SELECT cmcb.name as custname,
+       cso.name as orgname,
+       cmca.cash_amt,
+       cmca.credit_amt,
+       cmca.subsidy_amt,
+       nvl(cmca.cash_amt, 0) + nvl(cmca.credit_amt, 0) +
+       nvl(cmca.subsidy_amt, 0) as allamt,
+       cmca.merch_cust_id,
+       cmca.organization_id as orgid,
+       cso.pid,
+       cmcb.sap_customer_id,
+       cmcb.cust_type
+  FROM c_merch_cust_base      cmcb,
+       c_merch_cust_account   cmca,
+       crm_sales_organization cso
+ where cmcb.id = cmca.merch_cust_id
+   and cmca.organization_id = cso.id
+   and cmcb.cust_type='5'
+   and cmcb.pid=#{merchCustId,jdbcType=DECIMAL} -->
+   select  rec.* from (  SELECT cmcb.name as custname,
+       cso.name as orgname,
+       cmca.cash_amt,
+       cmca.credit_amt,
+       cmca.subsidy_amt,
+       nvl(cmca.cash_amt, 0) + nvl(cmca.credit_amt, 0) +
+       nvl(cmca.subsidy_amt, 0) as allamt,
+       cmca.merch_cust_id,
+       cmca.organization_id as orgid,
+       cso.pid,
+       cmcb.sap_customer_id,
+       cmcb.cust_type,
+       cmcb.PROV_ID,
+       cmcb.city_id,
+       cmcb.COUNTY_ID,
+       cmcb.states
+  FROM c_merch_cust_base      cmcb,
+       c_merch_cust_account   cmca,
+       crm_sales_organization cso
+ where cmcb.id = cmca.merch_cust_id
+   and cmca.organization_id = cso.id
+   and cmcb.cust_type not in ('2','5','6')
+   and cmcb.id=#{merchCustId,jdbcType=DECIMAL} 
+union all
+SELECT cmcb.name as custname,
+       cso.name as orgname,
+       nvl(rec.cash_amt, 0) cash_amt,
+       nvl(rec.credit_amt, 0) credit_amt,
+       nvl(rec.subsidy_amt, 0) subsidy_amt,
+       nvl(rec.allamt, 0) allamt,
+       cmcb.id merch_cust_id,
+       cmcb.organization_id as orgid,
+       cso.pid,
+       cmcb.sap_customer_id,
+       cmcb.cust_type,
+       cmcb.PROV_ID,
+       cmcb.city_id,
+       cmcb.COUNTY_ID,
+       cmcb.states
+  FROM c_merch_cust_base cmcb,
+       crm_sales_organization cso,
+       (SELECT sum(nvl(cmca.cash_amt, 0)) cash_amt,
+               sum(nvl(cmca.credit_amt, 0)) credit_amt,
+               sum(nvl(cmca.subsidy_amt, 0)) subsidy_amt,
+               sum(nvl(cmca.cash_amt, 0) + nvl(cmca.credit_amt, 0) +
+                   nvl(cmca.subsidy_amt, 0)) as allamt,
+               cmcb.pid,
+               cmcb.organization_id
+          FROM c_merch_cust_account cmca, c_merch_cust_base cmcb
+         where cmcb.id = cmca.merch_cust_id
+           and cmcb.organization_id = cmca.organization_id
+           and cmcb.cust_type = '5'
+           and cmcb.states = '3'
+         group by cmcb.pid, cmcb.organization_id) rec
+ where 1 = 1
+   and cmcb.id = rec.pid(+)
+   and cmcb.organization_id = rec.organization_id(+)
+   and cmcb.organization_id = cso.id
+   and cmcb.cust_type = '2'
+   and cmcb.states = '3'
+   and cmcb.id=#{merchCustId,jdbcType=DECIMAL} ) rec	
+    where rec.merch_cust_id =#{merchCustId,jdbcType=DECIMAL} 
+  </select>
+  <select id="getmerchaccount" resultMap="MerchAccountResultMap" parameterType="java.util.Map">
+   SELECT cmcb.name as custname,
+       (select c.name from crm_sales_organization c where c.id= cso.pid)||'-'||cso.name as orgname,
+       cmca.cash_amt,
+       cmca.credit_amt,
+       cmca.subsidy_amt,
+       nvl(cmca.cash_amt, 0) + nvl(cmca.credit_amt, 0) +
+       nvl(cmca.subsidy_amt, 0) as allamt,
+       nvl(cmca.bond_amt, 0) bond_amt,
+       cmca.merch_cust_id,
+       cmca.organization_id as orgid,
+       cmcb.sap_customer_id,
+       cmcb.cust_type,
+       cmcb.states,
+       cmcb.create_oid,
+       nvl(cmca.contract_credit_amt,
+           nvl((SELECT cmcc.credit_amt
+                 FROM c_merch_cust_contract cmcc
+                where cmcc.merch_cust_id = cmca.merch_cust_id
+                  and cmcc.organization_id = cmca.organization_id
+                  and cmcc.states = '4'),
+               0)) credit_lines,
+       crm_merch_frozen_amt.frozen_amt_main(cmca.merch_cust_id,'1',cmcb.cust_type) frozen_amt,
+       crm_merch_frozen_amt.frozen_amt_main(cmca.merch_cust_id,'2',cmcb.cust_type) frozen_subsidy,
+       cmcb.id
+  FROM (select * from  (select a.*,rownum rownum_ from  c_merch_cust_base  a
+  		where 1=1
+         <if test="custname !=null">
+   			and a.name like #{custname,jdbcType=VARCHAR}||'%'
+   		</if>
+   		 <if test="merchid !=null and usertype !='1'">
+   			and a.id=#{merchid}
+   		</if> 
+   		<if test="orgid !=null">
+   			and a.organization_id like #{orgid,jdbcType=VARCHAR}||'%'
+   		</if>
+   		<if test="createOid !=null">
+ 	 		and a.create_oid =#{createOid,jdbcType=DECIMAL}
+ 		</if>
+ 		<if test="custTypeList != null and custTypeList !=''" >
+      		and a.CUST_TYPE in
+      		<foreach item="item" index="index" collection="custTypeList" open="(" separator="," close=")">  
+	 			#{item}  
+	  		</foreach>      		
+   		</if>
+   		<if test="usertype !='1'">
+             and exists
+                 (SELECT 1
+                    FROM c_merch_cust_station cmcs
+                  where 1 = 1
+                     and cmcs.merch_cust_id = a.id
+                     and cmcs.station_id in 
+                   <foreach item="item" index="index" collection="stationid" open="(" separator="," close=")">  
+	 					#{item}  
+				   </foreach> 
+				)
+        </if> ) where 1=1
+       and  rownum_ &lt;= #{epage,jdbcType=DECIMAL})  cmcb,
+       c_merch_cust_account   cmca,
+       crm_sales_organization cso
+ where cmcb.id = cmca.merch_cust_id
+   and cmca.organization_id = cso.id                     
+    <if test="bpage!=null">
+    	<![CDATA[ and cmcb.rownum_ > #{bpage,jdbcType=DECIMAL} and cmcb.rownum_ <= #{epage,jdbcType=DECIMAL}]]>
+    </if>
+  </select>
+  <select id="countMerchaccount" resultType="int" parameterType="java.util.Map">
+   	SELECT count(1)
+  FROM (select * from  (select a.*,rownum rownum_ from  c_merch_cust_base  a
+  		where 1=1
+         <if test="custname !=null">
+   			and a.name like #{custname,jdbcType=VARCHAR}||'%'
+   		</if>
+   		 <if test="merchid !=null and usertype !='1'">
+   			and a.id=#{merchid}
+   		</if> 
+   		<if test="orgid !=null">
+   			and a.organization_id like #{orgid,jdbcType=VARCHAR}||'%'
+   		</if>
+   		<if test="createOid !=null">
+ 	 		and a.create_oid =#{createOid,jdbcType=DECIMAL}
+ 		</if>
+ 		<if test="custTypeList != null and custTypeList !=''" >
+      		and a.CUST_TYPE in
+      		<foreach item="item" index="index" collection="custTypeList" open="(" separator="," close=")">  
+	 			#{item}  
+	  		</foreach>      		
+   		</if>
+   		<if test="usertype !='1'">
+             and exists
+                 (SELECT 1
+                    FROM c_merch_cust_station cmcs
+                  where 1 = 1
+                     and cmcs.merch_cust_id = a.id
+                     and cmcs.station_id in 
+                   <foreach item="item" index="index" collection="stationid" open="(" separator="," close=")">  
+	 					#{item}  
+				   </foreach> 
+				)
+        </if> ) where 1=1)  cmcb,
+       c_merch_cust_account   cmca,
+       crm_sales_organization cso
+ where cmcb.id = cmca.merch_cust_id
+   and cmca.organization_id = cso.id                     
+  </select>
+
+  <select id="getRetailMerchaccount" resultMap="MerchAccountResultMap" parameterType="java.util.Map">
+  	select id,
+       custname,
+       sap_customer_id,
+       cash_amt cash_amt,
+       organization_id,
+       orgname,
+       0               subsidyAmt,
+       0               creditAmt,
+       cash_amt       allamt,
+       0               creditLines,
+       0               frozenSubsidy,
+       frozenAmt   frozen_amt,
+       merch_cust_id
+  from (select row_.*, rownum rownum_
+          from (SELECT cmca.id,
+                       cmcb.name            custname,
+                       cmcb.sap_customer_id,
+                       cmca.cash_amt,
+                       cmcb.organization_id,
+                       cso.name             orgname,
+                       cmca.merch_cust_id,
+                       (SELECT nvl(sum((oola.num - nvl(oola.return_num, 0)) *
+                                   oola.order_price),0)
+                          FROM om_order_headers_all ooha,
+                               om_order_lines_all   oola
+                         where ooha.id = oola.header_id
+                           and ooha.merch_cust_id = cmca.merch_cust_id
+                           and ooha.states in ('11', '3', '5', '6', '7', '8')) -
+                       (SELECT nvl(sum(oii.amt + oii.tax), 0) * 100
+                          FROM om_invoice_item      oii,
+                               om_invoice           oi,
+                               om_order_headers_all ooha
+                         where ooha.sap_order_id = oii.order_id
+                           and oii.invoice_no = oi.invoice_no
+                           and ooha.merch_cust_id= cmcb.id) frozenAmt
+                  FROM c_merch_cust_base      cmcb,
+                       c_merch_cust_account   cmca,
+                       crm_sales_organization cso
+                 where 1 = 1
+                   and cmcb.id = cmca.merch_cust_id
+                   and cmca.organization_id = cso.id
+                   and cmcb.organization_id = cmca.organization_id
+                   and cmcb.cust_type = '5'
+                   and cmcb.pid = #{merchid, jdbcType = VARCHAR}) row_)
+   <![CDATA[  where rownum_ > #{bpage,jdbcType=DECIMAL} and rownum_ <= #{epage,jdbcType=DECIMAL} ]]>
+  </select>
+  
+  <select id="countRetailMerchaccount" resultType="int" parameterType="java.util.Map">
+  	SELECT count(1)
+  FROM c_merch_cust_base      cmcb,
+       c_merch_cust_account   cmca,
+       crm_sales_organization cso
+ where 1 = 1
+  and cmcb.id= cmca.merch_cust_id
+  and cmca.organization_id=cso.id
+  and cmcb.organization_id = cmca.organization_id
+  and cmcb.cust_type='5'
+  and cmcb.pid =#{merchid ,jdbcType=VARCHAR}
+  </select>
+  <!-- 零售商资金余额 -->
+  <select id="getaccountByPid" resultMap="MerchAccountResultMap" parameterType="java.util.Map">
+     select custname,orgname,cash_amt,credit_amt,subsidy_amt,allamt,merch_cust_id,orgid,pid, sap_customer_id,cust_type ,frozen_amt
+     from ( select row_.*, rownum rownum_ from (
+  SELECT cmcb.name as custname,
+       cso.name as orgname,
+       cmca.cash_amt,
+       cmca.credit_amt,
+       cmca.subsidy_amt,
+       nvl(cmca.cash_amt, 0) + nvl(cmca.credit_amt, 0) +
+       nvl(cmca.subsidy_amt, 0) as allamt,
+       cmca.merch_cust_id,
+       cmca.organization_id as orgid,
+       cso.pid,
+       cmcb.sap_customer_id,
+       cmcb.cust_type,
+       (SELECT nvl(sum((oola.num - nvl(oola.return_num, 0)) *
+                                   oola.order_price),0)
+                          FROM om_order_headers_all ooha,
+                               om_order_lines_all   oola
+                         where ooha.id = oola.header_id
+                           and ooha.merch_cust_id = cmca.merch_cust_id
+                           and ooha.states in ('11', '3', '5', '6', '7', '8')) -
+                       (SELECT nvl(sum(oii.amt + oii.tax), 0) * 100
+                          FROM om_invoice_item      oii,
+                               om_invoice           oi,
+                               om_order_headers_all ooha
+                         where ooha.sap_order_id = oii.order_id
+                           and oii.invoice_no = oi.invoice_no
+                           and ooha.merch_cust_id= cmcb.id)  as frozen_amt
+  FROM c_merch_cust_base      cmcb,
+       c_merch_cust_account   cmca,
+       crm_sales_organization cso
+ where cmcb.id = cmca.merch_cust_id
+   and cmca.organization_id = cso.id
+   and cmcb.organization_id= cmca.organization_id
+   and cmcb.cust_type='5'
+   and cmcb.pid=#{merchid,jdbcType=DECIMAL} 
+  <![CDATA[ ) row_ ) where rownum_ > #{bpage,jdbcType=DECIMAL} and rownum_ <= #{epage,jdbcType=DECIMAL} ]]>
+  </select>
+  
+  <resultMap type="com.hhnz.account.model.CMerchUpaccount" id="UpAccountResultMap">
+	<id column="ID" property="id" jdbcType="DECIMAL" />
+    <result column="ORGANIZATION_ID" property="organizationId" jdbcType="VARCHAR" />
+    <result column="CREATE_TS" property="createTs" jdbcType="TIMESTAMP" />
+    <result column="CREATE_OID" property="createOid" jdbcType="DECIMAL" />
+    <result column="PAY_NAME" property="payName" jdbcType="VARCHAR" />
+    <result column="PAY_BANK" property="payBank" jdbcType="VARCHAR" />
+    <result column="PAY_CITY" property="payCity" jdbcType="VARCHAR" />
+    <result column="PAY_AMT" property="payAmt" jdbcType="DECIMAL" />
+    <result column="PAY_BANK_NO" property="payBankNo" jdbcType="VARCHAR" />
+    <result column="PAY_DATE" property="payDate" jdbcType="VARCHAR" />
+    <result column="STATES" property="states" jdbcType="VARCHAR" />
+    <result column="SALESREP_ID" property="salesrepId" jdbcType="DECIMAL" />
+    <result column="SALESREP_DATE" property="salesrepDate" jdbcType="TIMESTAMP" />
+    <result column="AUDIT_TS" property="auditTs" jdbcType="TIMESTAMP" />
+    <result column="AUDIT_OID" property="auditOid" jdbcType="DECIMAL" />
+    <result column="ATTRIBUTE1" property="attribute1" jdbcType="VARCHAR" />
+    <result column="ATTRIBUTE2" property="attribute2" jdbcType="VARCHAR" />
+    <result column="ATTRIBUTE3" property="attribute3" jdbcType="VARCHAR" />
+    <result column="ATTRIBUTE4" property="attribute4" jdbcType="VARCHAR" />
+    <result column="ATTRIBUTE5" property="attribute5" jdbcType="VARCHAR" />
+    <result column="UPDATE_TS" property="updateTs" jdbcType="TIMESTAMP" />
+    <result column="UPDATE_OID" property="updateOid" jdbcType="DECIMAL" />
+    <result column="PAY_TYPE" property="payType" jdbcType="VARCHAR" />
+    <result column="MERCH_CUS_ID" property="merchCusId" jdbcType="DECIMAL" />
+    <result column="CUST_TYPE" property="custType" jdbcType="VARCHAR" />
+    <result column="CREATER" property="creater" jdbcType="VARCHAR" />
+    <result column="SALESREP" property="salesrep" jdbcType="VARCHAR" />
+    <result column="AUDITER" property="auditer" jdbcType="VARCHAR" />
+    <result column="ORGNAME" property="orgname" jdbcType="VARCHAR" />
+    <result column="CUSTNAME" property="custname" jdbcType="VARCHAR" />
+    <result column="SAP_CUSTOMER_ID" property="sapCustomerId" jdbcType="VARCHAR" />
+    <result column="BANK_ACCOUNT" property="bankAccount" jdbcType="VARCHAR" />
+    <result column="BILL_IN_DATE" property="billInDate" jdbcType="TIMESTAMP" />
+    <result column="BILL_OUT_DATE" property="billOutDate" jdbcType="TIMESTAMP" />
+    <result column="BILL_NO" property="billNo" jdbcType="VARCHAR" />
+    <result column="BILL_BANK" property="billBank" jdbcType="VARCHAR" />
+    <result column="BILL_OUT_NAME" property="billOutName" jdbcType="VARCHAR" />
+    <result column="BILL_IN_NAME" property="billInName" jdbcType="VARCHAR" />
+    <result column="unrecevice_amt" property="unreceviceAmt" jdbcType="DECIMAL"/>
+    <result column="allocation_amt" property="allocationAmt" jdbcType="DECIMAL"/>
+    <result column="bank_Serial" property="bankSerial" jdbcType="VARCHAR"/>
+  </resultMap>
+  <!-- 银行到款信息录入 -->
+  <select id="getInputAccountList" resultMap="UpAccountResultMap" parameterType="java.util.Map">
+  	select orgname,
+       creater,
+       organization_id,
+       id,
+       create_ts,
+       create_oid,
+       pay_name,
+       pay_bank,
+       pay_city,
+       pay_amt,
+       pay_bank_no,
+       pay_date,
+       pay_type,
+       states,
+       bank_account,
+       bill_out_date,
+       bill_in_date,
+       bill_no,
+       bill_out_name,
+       bill_in_name,
+       bill_bank,
+       merch_cus_id,
+       cust_type,
+       bank_Serial
+  from (select row_.*, rownum rownum_
+          from (SELECT cso.name            as orgname,
+                       te1.name            as creater,
+                       cmu.organization_id,
+                       cmu.id,
+                       cmu.create_ts,
+                       cmu.create_oid,
+                       cmu.pay_name,
+                       cmu.pay_bank,
+                       cmu.pay_city,
+                       cmu.pay_amt/100 pay_amt,
+                       cmu.pay_bank_no,
+                       cmu.pay_date,
+                       cmu.pay_type,
+                       cmu.states,
+                       cmu.bank_account,
+                       cmu.bill_out_date,
+                       cmu.bill_in_date,
+                       cmu.bill_no,
+                       cmu.bill_out_name,
+                       cmu.bill_in_name,
+                       cmu.bill_bank,
+                       cmu.merch_cus_id,
+                       cmcb.cust_type,
+                       cmu.bank_Serial
+                  FROM c_merch_upaccount      cmu,
+                  	   c_merch_cust_base     cmcb,
+                       crm_sales_organization cso,
+                       t_employee             te1
+                 where cmu.organization_id = cso.id
+                   and cmu.create_oid = te1.id(+)
+                   and cmu.merch_cus_id= cmcb.id(+)
+                   <if test="orgid !=null">
+                   and cmu.organization_id like #{orgid,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payBankNo !=null">
+                   and cmu.pay_bank_no =#{payBankNo,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payType !=null">
+                   and cmu.pay_Type = #{payType,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payCity !=null">
+                   and cmu.pay_city = #{payCity,jdbcType=VARCHAR}
+                   </if>
+                   <if test="bankSerial !=null">
+                   and cmu.BANK_SERIAL  like #{bankSerial,jdbcType=VARCHAR}
+                   </if>
+                   and cmu.states = '1') row_)
+  <![CDATA[ 
+   where rownum_ > #{bpage, jdbcType = DECIMAL}
+   and rownum_ <= #{epage, jdbcType = DECIMAL}
+   order by create_ts desc
+  ]]>
+  </select>
+  <select id="countInputAccountList" resultType="int" parameterType="java.util.Map">
+  	SELECT count(*)
+                  FROM c_merch_upaccount      cmu,
+                       crm_sales_organization cso,
+                       t_employee             te1
+                 where cmu.organization_id = cso.id
+                   and cmu.create_oid = te1.id(+)
+                   <if test="orgid !=null">
+                   and cmu.organization_id like #{orgid,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payBankNo !=null">
+                   and cmu.pay_bank_no =#{payBankNo,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payType !=null">
+                   and cmu.pay_Type = #{payType,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payCity !=null">
+                   and cmu.pay_city = #{payCity,jdbcType=VARCHAR}
+                   </if>
+                   <if test="bankSerial !=null">
+                   and cmu.BANK_SERIAL like #{bankSerial,jdbcType=VARCHAR}
+                   </if>
+                   and cmu.states = '1'
+  </select>
+  
+  <select id="getSalesAccountList" resultMap="UpAccountResultMap" parameterType="java.util.Map">
+  select orgname,
+       creater,
+       merch_cus_id,
+       custname,
+       cust_type,
+       organization_id,
+       id,
+       create_ts,
+       create_oid,
+       pay_name,
+       pay_bank,
+       pay_city,
+       pay_amt,
+       pay_bank_no,
+       pay_date,
+       pay_type,
+       states,
+       SAP_CUSTOMER_ID,
+       cust_type,
+       bank_Serial
+  from (select row_.*, rownum rownum_
+          from (SELECT cso.name            as orgname,
+                       te1.name            as creater,
+                       cmu.merch_cus_id,
+                       cmcb.name as custname,
+                       <!-- cmcb.cust_type, -->
+                       cmu.organization_id,
+                       cmu.id,
+                       cmu.create_ts,
+                       cmu.create_oid,
+                       cmu.pay_name,
+                       cmu.pay_bank,
+                       cmu.pay_city,
+                       cmu.pay_amt/100 pay_amt,
+                       cmu.pay_bank_no,
+                       cmu.pay_date,
+                       cmu.pay_type,
+                       cmu.states,
+                       cmcb.SAP_CUSTOMER_ID,
+                       cmcb.cust_type,
+                       cmu.bank_Serial
+                  FROM c_merch_upaccount      cmu,
+                       crm_sales_organization cso,
+                       t_employee             te1,
+                       c_merch_cust_base      cmcb
+                 where cmu.organization_id = cso.id
+                   and cmu.merch_cus_id = cmcb.id(+)
+                   and cmu.create_oid = te1.id(+)
+                    <if test="orgid !=null">
+                   and cmu.organization_id like #{orgid,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payBankNo !=null">
+                   and cmu.pay_bank_no =#{payBankNo,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payType !=null">
+                   and cmu.pay_Type = #{payType,jdbcType=VARCHAR}
+                   </if>
+                   <!-- <if test="payCity !=null">
+                   and cmu.pay_city = #{payCity,jdbcType=VARCHAR}
+                   </if> -->
+                   <if test="payName !=null">
+                   and cmu.pay_name like #{payName,jdbcType=VARCHAR}||'%'
+                   </if>
+                   <if test="merchstation != null">
+                   and EXISTS ( SELECT 1	FROM C_MERCH_CUST_BASE mcb,
+				       	   T_EMPLOYEE             E,
+					       CRM_SALES_ORGANIZATION SO1,
+					       crm_station            crs,
+					       c_merch_cust_station   cmcs,
+					      (SELECT * FROM  t_dict t where
+					      t.COL_NAME='CUST_MERCH_TYPE') d
+				 	  WHERE 1=1
+				 		and  mcb.create_oid = e.id(+)
+				  		and mcb.organization_id= SO1.id
+				  		and mcb.id= cmcs.merch_cust_id(+)
+				  		and cmcs.station_id= crs.id(+)
+				  		and mcb.cust_type =d.choose_val(+)
+						and cmcs.STATION_ID in 
+					    <foreach collection="merchstation" item="item" index="index" open="(" separator="," close=")">
+				    	  #{item}
+					    </foreach>
+					    and mcb.id=cmcb.id
+					)
+                   </if>
+                   and cmu.pay_type='1'
+                   and cmu.states in
+                   <choose>
+				    <when test="states != null">
+				      <foreach item="item" index="index" collection="states" open="(" separator="," close=")">  
+	 							#{item}  
+						   </foreach>
+				    </when>
+				    <otherwise>
+				      ('2','4')
+				    </otherwise>
+				   </choose>
+				   ) row_)
+                   
+  <![CDATA[ 
+   where rownum_ > #{bpage, jdbcType = DECIMAL}
+   and rownum_ <= #{epage, jdbcType = DECIMAL}
+  ]]>
+  </select>
+  <select id="countSalesAccountList" resultType="int" parameterType="java.util.Map">
+	SELECT count(*)
+                  FROM c_merch_upaccount      cmu,
+                       crm_sales_organization cso,
+                       t_employee             te1,
+                       c_merch_cust_base      cmcb
+                 where cmu.organization_id = cso.id
+                   and cmu.merch_cus_id = cmcb.id(+)
+                   and cmu.create_oid = te1.id(+)
+                    <if test="orgid !=null">
+                   and cmu.organization_id like #{orgid,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payBankNo !=null">
+                   and cmu.pay_bank_no =#{payBankNo,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payType !=null">
+                   and cmu.pay_Type = #{payType,jdbcType=VARCHAR}
+                   </if>
+                   <!-- <if test="payCity !=null">
+                   and cmu.pay_city = #{payCity,jdbcType=VARCHAR}
+                   </if> -->
+                   <if test="payName !=null">
+                   and cmu.pay_name like #{payName,jdbcType=VARCHAR}||'%'
+                   </if>
+                   <if test="merchstation != null">
+                   and EXISTS ( SELECT 1	FROM C_MERCH_CUST_BASE mcb,
+				       	   T_EMPLOYEE             E,
+					       CRM_SALES_ORGANIZATION SO1,
+					       crm_station            crs,
+					       c_merch_cust_station   cmcs,
+					      (SELECT * FROM  t_dict t where
+					      t.COL_NAME='CUST_MERCH_TYPE') d
+				 	  WHERE 1=1
+				 		and  mcb.create_oid = e.id(+)
+				  		and mcb.organization_id= SO1.id
+				  		and mcb.id= cmcs.merch_cust_id(+)
+				  		and cmcs.station_id= crs.id(+)
+				  		and mcb.cust_type =d.choose_val(+)
+						and cmcs.STATION_ID in 
+					    <foreach collection="merchstation" item="item" index="index" open="(" separator="," close=")">
+				    	  #{item}
+					    </foreach>
+					    and mcb.id=cmcb.id
+					)
+                   </if>
+                   and cmu.pay_type='1'
+                   and cmu.states in
+                   <choose>
+				    <when test="states != null">
+				      <foreach item="item" index="index" collection="states" open="(" separator="," close=")">  
+	 							#{item}  
+					  </foreach>
+				    </when>
+				    <otherwise>
+				      ('2','4')
+				    </otherwise>
+				   </choose>
+  </select>
+
+  <select id="getUpAccountList" resultMap="UpAccountResultMap" parameterType="java.util.Map">
+  	select orgname,
+       creater,
+       salesrep,
+       salesrep_date,
+       merch_cus_id,
+       salesrep_id,
+       custname,
+       cust_type,
+       organization_id,
+       id,
+       create_ts,
+       create_oid,
+       pay_name,
+       pay_bank,
+       pay_city,
+       pay_amt,
+       pay_bank_no,
+       pay_date,
+       pay_type,
+       states,
+       SAP_CUSTOMER_ID,
+       cust_type,
+       bank_Serial
+  from (select row_.*, rownum rownum_
+          from (SELECT cso.name            as orgname,
+                       te1.name            as creater,
+                       te2.name            as salesrep,
+                       cmu.salesrep_date,
+                       cmu.salesrep_id,
+                       cmu.merch_cus_id,
+                       cmcb.name           as custname,
+                       <!-- cmcb.cust_type, -->
+                       cmu.organization_id,
+                       cmu.id,
+                       cmu.create_ts,
+                       cmu.create_oid,
+                       cmu.pay_name,
+                       cmu.pay_bank,
+                       cmu.pay_city,
+                       cmu.pay_amt/100 pay_amt,
+                       cmu.pay_bank_no,
+                       cmu.pay_date,
+                       cmu.pay_type,
+                       cmu.states,
+                       cmcb.SAP_CUSTOMER_ID,
+                       cmcb.cust_type,
+                       cmu.bank_Serial
+                  FROM c_merch_upaccount      cmu,
+                       crm_sales_organization cso,
+                       t_employee             te1,
+                       t_employee             te2,
+                       c_merch_cust_base      cmcb
+                 where cmu.organization_id = cso.id
+                   and cmu.merch_cus_id = cmcb.id
+                   and cmu.salesrep_id = te2.id(+)
+                   and cmu.create_oid = te1.id(+)
+                   <if test="orgid !=null and orgid !=' '">
+                   and cmu.organization_id like #{orgid,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payBankNo !=null and payBankNo !=' '">
+                   and cmu.pay_bank_no =#{payBankNo,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payType !=null">
+                   and cmu.pay_Type = #{payType,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payCity !=null">
+                   and cmu.pay_city = #{payCity,jdbcType=VARCHAR}
+                   </if>
+                   <if test="custname !=null">
+                   and cmcb.name like #{custname,jdbcType=VARCHAR}
+                   </if>
+                   <if test="bankSerial !=null">
+                   and cmu.BANK_SERIAL like #{bankSerial,jdbcType=VARCHAR}
+                   </if>
+                   and cmcb.cust_type != '2'
+                   and cmu.states  in('3','6')
+                   order by cmu.states desc) row_)
+ <![CDATA[ 
+   where rownum_ > #{bpage, jdbcType = DECIMAL}
+   and rownum_ <= #{epage, jdbcType = DECIMAL}
+  ]]>
+  </select>
+  <select id="countUpAccountList" resultType="int" parameterType="java.util.Map">
+  	select count(*)
+                  FROM c_merch_upaccount      cmu,
+                       crm_sales_organization cso,
+                       t_employee             te1,
+                       t_employee             te2,
+                       c_merch_cust_base      cmcb
+                 where cmu.organization_id = cso.id
+                   and cmu.merch_cus_id = cmcb.id
+                   and cmu.salesrep_id = te2.id(+)
+                   and cmu.create_oid = te1.id(+)
+                   <if test="orgid !=null and orgid !=' '">
+                   and cmu.organization_id like #{orgid,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payBankNo !=null and payBankNo !=' '">
+                   and cmu.pay_bank_no =#{payBankNo,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payType !=null">
+                   and cmu.pay_Type = #{payType,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payCity !=null">
+                   and cmu.pay_city = #{payCity,jdbcType=VARCHAR}
+                   </if>
+                   <if test="custname !=null">
+                   and cmcb.name like #{custname,jdbcType=VARCHAR}
+                   </if>
+                   <if test="bankSerial !=null">
+                   and cmu.BANK_SERIAL  like #{bankSerial,jdbcType=VARCHAR}
+                   </if>
+                   and cmcb.cust_type != '2'
+                   and cmu.states  in('3','6')
+                   order by cmu.states desc
+  </select>
+  
+  <select id="findAllList" resultMap="UpAccountResultMap" parameterType="java.util.Map">
+  select orgname,
+       creater,
+       salesrep,
+       salesrep_date,
+       merch_cus_id,
+       salesrep_id,
+       custname,
+       cust_type,
+       organization_id,
+       id,
+       create_ts,
+       create_oid,
+       pay_name,
+       pay_bank,
+       pay_city,
+       pay_amt,
+       pay_bank_no,
+       pay_date,
+       pay_type,
+       states,
+       SAP_CUSTOMER_ID,
+       cust_type,
+       attribute2,
+       unrecevice_amt,
+       BANK_SERIAL
+  from (select row_.*, rownum rownum_
+          from (SELECT cso.name            as orgname,
+                       te1.name            as creater,
+                       te2.name            as salesrep,
+                       cmu.salesrep_date,
+                       cmu.salesrep_id,
+                       cmu.merch_cus_id,
+                       cmcb.name           as custname,
+                       <!-- cmcb.cust_type, -->
+                       cmu.organization_id,
+                       cmu.id,
+                       cmu.create_ts,
+                       cmu.create_oid,
+                       cmu.pay_name,
+                       cmu.pay_bank,
+                       cmu.pay_city,
+                       cmu.pay_amt/100 pay_amt,
+                       cmu.pay_bank_no,
+                       cmu.pay_date,
+                       cmu.pay_type,
+                       cmu.states,
+                       cmcb.SAP_CUSTOMER_ID,
+                       cmcb.cust_type,
+                       cmu.attribute2，
+                       nvl(cmu.unrecevice_amt,0)/100 unrecevice_amt,
+                       cmu.BANK_SERIAL
+                  FROM c_merch_upaccount      cmu,
+                       crm_sales_organization cso,
+                       t_employee             te1,
+                       t_employee             te2,
+                       (select * from  c_merch_cust_base  where cust_type !='2')    cmcb
+                 where cmu.organization_id = cso.id
+                   and cmu.merch_cus_id = cmcb.id
+                   and cmu.salesrep_id = te2.id(+)
+                   and cmu.create_oid = te1.id(+)
+                   <if test="orgid !=null and orgid !=' '">
+                   and cmu.organization_id like #{orgid,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payBankNo !=null and payBankNo !=' '">
+                   and cmu.pay_bank_no =#{payBankNo,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payType !=null">
+                   and cmu.pay_Type = #{payType,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payCity !=null">
+                   and cmu.pay_city = #{payCity,jdbcType=VARCHAR}
+                   </if>
+                   <if test="custname !=null">
+                   and cmcb.name like #{custname,jdbcType=VARCHAR}
+                   </if>
+                   <if test="states !=null">
+                   and cmu.states = #{states,jdbcType=VARCHAR}
+                   </if>
+                   <if test="sapCustomerId !=null">
+                   and cmcb.sap_Customer_Id like #{sapCustomerId,jdbcType=VARCHAR}
+                   </if>
+                   <if test="bankSerial !=null">
+                   and cmu.BANK_SERIAL like #{bankSerial,jdbcType=VARCHAR}
+                   </if>
+                   and cmcb.cust_type in('1','2','3','4','7','70','8','9')
+                   order by cmu.create_ts desc
+                   ) row_)
+ <![CDATA[ 
+   where rownum_ > #{bpage, jdbcType = DECIMAL}
+   and rownum_ <= #{epage, jdbcType = DECIMAL}
+  ]]>
+  </select>
+  <select id="countAllList" resultType="int" parameterType="java.util.Map">
+  select count(*)
+                  FROM c_merch_upaccount      cmu,
+                       crm_sales_organization cso,
+                       t_employee             te1,
+                       t_employee             te2,
+                      (select * from  c_merch_cust_base  where cust_type !='2') cmcb
+                 where cmu.organization_id = cso.id
+                   and cmu.merch_cus_id = cmcb.id
+                  <!--  and cmcb.cust_type !='2' -->
+                   and cmu.salesrep_id = te2.id(+)
+                   and cmu.create_oid = te1.id(+)
+                   <if test="orgid !=null and orgid !=' '">
+                   and cmu.organization_id like #{orgid,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payBankNo !=null and payBankNo !=' '">
+                   and cmu.pay_bank_no =#{payBankNo,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payType !=null">
+                   and cmu.pay_Type = #{payType,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payCity !=null">
+                   and cmu.pay_city = #{payCity,jdbcType=VARCHAR}
+                   </if>
+                   <if test="custname !=null">
+                   and cmcb.name like #{custname,jdbcType=VARCHAR}
+                   </if>
+                   <if test="bankSerial !=null">
+                   and cmu.BANK_SERIAL like #{bankSerial,jdbcType=VARCHAR}
+                   </if>
+                   and cmcb.cust_type in('1','2','3','4','7','70','8','9')
+  </select>
+  
+  <select id="getdistributorsList" resultMap="UpAccountResultMap" parameterType="java.util.Map">
+	select orgname,
+       creater,
+       salesrep,
+       salesrep_date,
+       merch_cus_id,
+       salesrep_id,
+       custname,
+       cust_type,
+       organization_id,
+       id,
+       create_ts,
+       create_oid,
+       pay_name,
+       pay_bank,
+       pay_city,
+       pay_amt,
+       pay_bank_no,
+       pay_date,
+       pay_type,
+       states,
+       unrecevice_amt,
+       allocation_amt,
+       BANK_SERIAL
+  from (select row_.*, rownum rownum_
+          from (SELECT cso.name            as orgname,
+                       te1.name            as creater,
+                       te2.name            as salesrep,
+                       cmu.salesrep_date,
+                       cmu.salesrep_id,
+                       cmu.merch_cus_id,
+                       cmcb.name           as custname,
+                       cmcb.cust_type,
+                       cmu.organization_id,
+                       cmu.id,
+                       cmu.create_ts,
+                       cmu.create_oid,
+                       cmu.pay_name,
+                       cmu.pay_bank,
+                       cmu.pay_city,
+                       cmu.pay_amt/100 pay_amt,
+                       cmu.pay_bank_no,
+                       cmu.pay_date,
+                       cmu.pay_type,
+                       cmu.states,
+                       cmu.pay_amt/100-nvl(cmu.recevice_amt,0)/100 unrecevice_amt,
+                       nvl(cmu.allocation_amt,0)/100 allocation_amt,
+                       cmu.BANK_SERIAL
+                  FROM c_merch_upaccount      cmu,
+                       crm_sales_organization cso,
+                       t_employee             te1,
+                       t_employee             te2,
+                       c_merch_cust_base      cmcb
+                 where cmu.organization_id = cso.id
+                   and cmu.merch_cus_id = cmcb.id
+                   and cmu.salesrep_id = te2.id(+)
+                   and cmu.create_oid = te1.id(+)
+                   <if test="orgid !=null and orgid !=' '">
+                   and cmu.organization_id like #{orgid,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payBankNo !=null and payBankNo !=' '">
+                   and cmu.pay_bank_no =#{payBankNo,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payType !=null">
+                   and cmu.pay_Type = #{payType,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payCity !=null">
+                   and cmu.pay_city = #{payCity,jdbcType=VARCHAR}
+                   </if>
+                   <if test="custname !=null">
+                   and cmcb.name like #{custname,jdbcType=VARCHAR}
+                   </if>
+                   <if test="states !=null">
+                   and cmu.states = #{states,jdbcType=VARCHAR}
+                   </if>
+                   <if test="bankSerial !=null">
+                   and cmu.BANK_SERIAL like #{bankSerial,jdbcType=VARCHAR}
+                   </if>
+                   and cmcb.cust_type in('2','7','70')
+                   <!-- and cmu.states = '3' -->
+                   order by cmu.create_ts desc
+                   ) row_)
+ <![CDATA[ 
+   where rownum_ > #{bpage, jdbcType = DECIMAL}
+   and rownum_ <= #{epage, jdbcType = DECIMAL}
+  ]]>  
+  </select>
+  
+  
+  <select id="countDistributorsList" resultType="int" parameterType="java.util.Map">
+			SELECT count(1)
+                  FROM c_merch_upaccount      cmu,
+                       crm_sales_organization cso,
+                       t_employee             te1,
+                       t_employee             te2,
+                       c_merch_cust_base      cmcb
+                 where cmu.organization_id = cso.id
+                   and cmu.merch_cus_id = cmcb.id
+                   and cmu.salesrep_id = te2.id(+)
+                   and cmu.create_oid = te1.id(+)
+                   <if test="orgid !=null and orgid !=' '">
+                   and cmu.organization_id like #{orgid,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payBankNo !=null and payBankNo !=' '">
+                   and cmu.pay_bank_no =#{payBankNo,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payType !=null">
+                   and cmu.pay_Type = #{payType,jdbcType=VARCHAR}
+                   </if>
+                   <if test="payCity !=null">
+                   and cmu.pay_city = #{payCity,jdbcType=VARCHAR}
+                   </if>
+                   <if test="custname !=null">
+                   and cmcb.name like #{custname,jdbcType=VARCHAR}
+                   </if>
+                   <if test="states !=null">
+                   and cmu.states = #{states,jdbcType=VARCHAR}
+                   </if>
+                   <if test="bankSerial !=null">
+                   and cmu.BANK_SERIAL like #{bankSerial,jdbcType=VARCHAR}
+                   </if>
+                   and cmcb.cust_type in('2','7')
+                   <!-- and cmu.states = '3' -->
+  </select>
+  <resultMap type="com.hhnz.customer.model.CMerchCustBase" id="orgcustomerResultMap">
+		<id column="ID" property="id" jdbcType="DECIMAL" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+		<result column="ABBR_NAME" property="abbrName" jdbcType="VARCHAR" />
+		<result column="PROV_ID" property="provId" jdbcType="VARCHAR" />
+		<result column="CITY_ID" property="cityId" jdbcType="VARCHAR" />
+		<result column="COUNTY_ID" property="countyId" jdbcType="VARCHAR" />
+		<result column="ADDRESS" property="address" jdbcType="VARCHAR" />
+		<result column="LP_NO" property="lpNo" jdbcType="VARCHAR" />
+		<result column="LP_NAME" property="lpName" jdbcType="VARCHAR" />
+		<result column="ZIP_CODE" property="zipCode" jdbcType="VARCHAR" />
+		<result column="REG_ADDR" property="regAddr" jdbcType="VARCHAR" />
+		<result column="TEL" property="tel" jdbcType="VARCHAR" />
+		<result column="CREATE_TS" property="createTs" jdbcType="TIMESTAMP" />
+		<result column="CREATE_OID" property="createOid" jdbcType="DECIMAL" />
+		<result column="UPDATE_TS" property="updateTs" jdbcType="TIMESTAMP" />
+		<result column="UPDATE_OID" property="updateOid" jdbcType="DECIMAL" />
+		<result column="STATES" property="states" jdbcType="VARCHAR" />
+		<result column="SAP_CUSTOMER_ID" property="sapCustomerId"
+			jdbcType="VARCHAR" />
+		<result column="CHANNEL_ID" property="channelId" jdbcType="VARCHAR" />
+		<result column="CUST_TYPE" property="custType" jdbcType="VARCHAR" />
+		<result column="IS_ATTACHMENT" property="isAttachment"
+			jdbcType="VARCHAR" />
+		<result column="BUSINESS_LICENSE" property="businessLicense"
+			jdbcType="VARCHAR" />
+	</resultMap>
+	<select id="getorgCustomer" resultMap="orgcustomerResultMap"
+		parameterType="java.util.Map">
+		<!-- SELECT cmcb.*
+		FROM c_merch_cust_base cmcb,
+			 c_merch_cust_station cmcs
+		where 1=1
+			and cmcb.id=cmcs.merch_cust_id
+			and cmcb.organization_id =#{orgid,jdbcType=VARCHAR}
+			and cmcb.states='3'
+			and cmcb.cust_type !='5'
+			and exists (SELECT *
+          		FROM c_merch_cust_contract cmcc
+         	where cmcc.merch_cust_id = cmcb.id
+           		and cmcc.organization_id = cmcb.organization_id
+           		and cmcc.states = '4')
+			and cmcs.station_id in
+			<foreach item="item" index="index" collection="stationid" open="(" separator="," close=")">  
+	 			#{item}  
+			</foreach> -->
+	   SELECT cmcb.*
+  FROM c_merch_cust_base cmcb, c_merch_cust_account cmca
+ where 1 = 1
+   and cmcb.id = cmca.merch_cust_id
+   and cmcb.organization_id = cmca.organization_id     
+   and cmcb.organization_id = #{orgid, jdbcType = VARCHAR}
+   and cmcb.states = '3'
+   and cmcb.cust_type not in ('5','6')
+   and exists (SELECT 1
+          FROM c_merch_cust_balances cmb
+         where cmb.merch_cust_id = cmcb.id
+           and cmb.organization_id = cmcb.organization_id
+           and cmb.period = to_char(sysdate, 'YYYY-MM'))
+	</select>
+	
+   <update id="upSapVoucherId" parameterType="java.lang.Long">
+   	update c_merch_cust_account_log cmcal
+set cmcal.sap_voucher_id =
+(SELECT rec.sap_voucher_id FROM c_merch_cust_account_log rec
+where rec.merch_cust_id= cmcal.merch_cust_id
+and rec.organization_id= cmcal.organization_id
+and rec.order_id= cmcal.order_id
+and rec.order_id=#{id,jdbcType=DECIMAL}
+and rec.sap_voucher_id is not null)
+where cmcal.sap_voucher_id is null
+and cmcal.order_id=#{id,jdbcType=DECIMAL}
+   </update>
+   
+   <select id="getMaxPeriod" resultType="String">
+   	 SELECT max(cmcb.period) FROM c_merch_cust_balances  cmcb
+   </select>
+   
+   <select id="upBalance" statementType="CALLABLE" parameterType="java.util.Map">
+     <![CDATA[
+    {call account(#{p_period,mode=IN,jdbcType=VARCHAR},
+    #{p_result,mode=OUT,jdbcType=VARCHAR})}
+	]]>
+   </select>
+   
+   <select id="validateTask" resultType="String" parameterType="java.lang.Long">
+   		SELECT nvl('1','0') FROM ACT_HI_ACTINST aha
+   		 where 1 = 1
+   		and aha.id_ = (SELECT max(t.id_)
+                    FROM ACT_HI_ACTINST t
+                   where t.proc_inst_id_ = #{processId,jdbcType=VARCHAR}) 
+   		and aha.act_id_='RECV_M2O'  and aha.act_name_='等待订单资金匹配'
+   </select>
+</mapper>

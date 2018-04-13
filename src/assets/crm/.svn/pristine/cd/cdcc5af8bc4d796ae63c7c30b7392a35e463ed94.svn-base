@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.crm.mapper.TPriceAdjustApprovedMapper" >
+  <resultMap id="BaseResultMap" type="com.hhnz.crm.model.TPriceAdjustApproved" >
+    <id column="ID" property="id" jdbcType="DECIMAL" />
+    <result column="MATERIAL_ID" property="materialId" jdbcType="VARCHAR" />
+    <result column="CREATE_TS" property="createTs" jdbcType="TIMESTAMP" />
+    <result column="ORGANIZATION_ID" property="organizationId" jdbcType="VARCHAR" />
+    <result column="PRICE" property="price" jdbcType="DECIMAL" />
+    <result column="OPT" property="opt" jdbcType="VARCHAR" />
+    <result column="BDATE" property="bdate" jdbcType="TIMESTAMP" />
+    <result column="EDATE" property="edate" jdbcType="TIMESTAMP" />
+    <result column="CHANNEL" property="channel" jdbcType="VARCHAR" />
+    <result column="RECORD_ID" property="recordId" jdbcType="DECIMAL" />
+  </resultMap>
+  <sql id="Example_Where_Clause" >
+    <where >
+      <foreach collection="oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause" >
+    <where >
+      <foreach collection="example.oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List" >
+    ID, MATERIAL_ID, CREATE_TS, ORGANIZATION_ID, PRICE, OPT, BDATE, EDATE, CHANNEL, RECORD_ID
+  </sql>
+  <select id="selectByExample" resultMap="BaseResultMap" parameterType="com.hhnz.crm.model.TPriceAdjustApprovedExample" >
+    <include refid="OracleDialectPrefix" />
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from T_PRICE_ADJUST_APPROVED
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+    <include refid="OracleDialectSuffix" />
+  </select>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Long" >
+    select 
+    <include refid="Base_Column_List" />
+    from T_PRICE_ADJUST_APPROVED
+    where ID = #{id,jdbcType=DECIMAL}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long" >
+    delete from T_PRICE_ADJUST_APPROVED
+    where ID = #{id,jdbcType=DECIMAL}
+  </delete>
+  <delete id="deleteByExample" parameterType="com.hhnz.crm.model.TPriceAdjustApprovedExample" >
+    delete from T_PRICE_ADJUST_APPROVED
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="com.hhnz.crm.model.TPriceAdjustApproved" >
+    <selectKey resultType="java.lang.Long" keyProperty="id" order="BEFORE" >
+      select SEQ_PRICE_ADJUST_APPROVED_ID.nextval from dual
+    </selectKey>
+    insert into T_PRICE_ADJUST_APPROVED (ID, MATERIAL_ID, CREATE_TS, 
+      ORGANIZATION_ID, PRICE, OPT, 
+      BDATE, EDATE, CHANNEL, 
+      RECORD_ID)
+    values (#{id,jdbcType=DECIMAL}, #{materialId,jdbcType=VARCHAR}, #{createTs,jdbcType=TIMESTAMP}, 
+      #{organizationId,jdbcType=VARCHAR}, #{price,jdbcType=DECIMAL}, #{opt,jdbcType=VARCHAR}, 
+      #{bdate,jdbcType=TIMESTAMP}, #{edate,jdbcType=TIMESTAMP}, #{channel,jdbcType=VARCHAR}, 
+      #{recordId,jdbcType=DECIMAL})
+  </insert>
+  <insert id="insertApprovedAdjustBatch" parameterType="java.util.List" >
+    BEGIN
+      <foreach collection="adjustApprovedList" item="item" index="index" separator=";" >
+      insert into T_PRICE_ADJUST_APPROVED (ID, MATERIAL_ID, CREATE_TS, 
+      ORGANIZATION_ID, PRICE, OPT, 
+      BDATE, EDATE, CHANNEL, 
+      RECORD_ID)
+    values (SEQ_PRICE_ADJUST_APPROVED_ID.nextval, #{item.materialId,jdbcType=VARCHAR}, #{item.createTs,jdbcType=TIMESTAMP}, 
+      #{item.organizationId,jdbcType=VARCHAR}, #{item.price,jdbcType=DECIMAL}, #{item.opt,jdbcType=VARCHAR}, 
+      #{item.bdate,jdbcType=TIMESTAMP}, #{item.edate,jdbcType=TIMESTAMP}, #{item.channel,jdbcType=VARCHAR}, 
+      #{item.recordId,jdbcType=DECIMAL})
+      </foreach>
+      ;END ;
+  </insert>
+  
+  <insert id="insertSelective" parameterType="com.hhnz.crm.model.TPriceAdjustApproved" >
+    <selectKey resultType="java.lang.Long" keyProperty="id" order="BEFORE" >
+      select SEQ_PRICE_ADJUST_APPROVED_ID.nextval from dual
+    </selectKey>
+    insert into T_PRICE_ADJUST_APPROVED
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      ID,
+      <if test="materialId != null" >
+        MATERIAL_ID,
+      </if>
+      <if test="createTs != null" >
+        CREATE_TS,
+      </if>
+      <if test="organizationId != null" >
+        ORGANIZATION_ID,
+      </if>
+      <if test="price != null" >
+        PRICE,
+      </if>
+      <if test="opt != null" >
+        OPT,
+      </if>
+      <if test="bdate != null" >
+        BDATE,
+      </if>
+      <if test="edate != null" >
+        EDATE,
+      </if>
+      <if test="channel != null" >
+        CHANNEL,
+      </if>
+      <if test="recordId != null" >
+        RECORD_ID,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      #{id,jdbcType=DECIMAL},
+      <if test="materialId != null" >
+        #{materialId,jdbcType=VARCHAR},
+      </if>
+      <if test="createTs != null" >
+        #{createTs,jdbcType=TIMESTAMP},
+      </if>
+      <if test="organizationId != null" >
+        #{organizationId,jdbcType=VARCHAR},
+      </if>
+      <if test="price != null" >
+        #{price,jdbcType=DECIMAL},
+      </if>
+      <if test="opt != null" >
+        #{opt,jdbcType=VARCHAR},
+      </if>
+      <if test="bdate != null" >
+        #{bdate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="edate != null" >
+        #{edate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="channel != null" >
+        #{channel,jdbcType=VARCHAR},
+      </if>
+      <if test="recordId != null" >
+        #{recordId,jdbcType=DECIMAL},
+      </if>
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="com.hhnz.crm.model.TPriceAdjustApprovedExample" resultType="java.lang.Integer" >
+    select count(*) from T_PRICE_ADJUST_APPROVED
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map" >
+    update T_PRICE_ADJUST_APPROVED
+    <set >
+      <if test="record.id != null" >
+        ID = #{record.id,jdbcType=DECIMAL},
+      </if>
+      <if test="record.materialId != null" >
+        MATERIAL_ID = #{record.materialId,jdbcType=VARCHAR},
+      </if>
+      <if test="record.createTs != null" >
+        CREATE_TS = #{record.createTs,jdbcType=TIMESTAMP},
+      </if>
+      <if test="record.organizationId != null" >
+        ORGANIZATION_ID = #{record.organizationId,jdbcType=VARCHAR},
+      </if>
+      <if test="record.price != null" >
+        PRICE = #{record.price,jdbcType=DECIMAL},
+      </if>
+      <if test="record.opt != null" >
+        OPT = #{record.opt,jdbcType=VARCHAR},
+      </if>
+      <if test="record.bdate != null" >
+        BDATE = #{record.bdate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="record.edate != null" >
+        EDATE = #{record.edate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="record.channel != null" >
+        CHANNEL = #{record.channel,jdbcType=VARCHAR},
+      </if>
+      <if test="record.recordId != null" >
+        RECORD_ID = #{record.recordId,jdbcType=DECIMAL},
+      </if>
+    </set>
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map" >
+    update T_PRICE_ADJUST_APPROVED
+    set ID = #{record.id,jdbcType=DECIMAL},
+      MATERIAL_ID = #{record.materialId,jdbcType=VARCHAR},
+      CREATE_TS = #{record.createTs,jdbcType=TIMESTAMP},
+      ORGANIZATION_ID = #{record.organizationId,jdbcType=VARCHAR},
+      PRICE = #{record.price,jdbcType=DECIMAL},
+      OPT = #{record.opt,jdbcType=VARCHAR},
+      BDATE = #{record.bdate,jdbcType=TIMESTAMP},
+      EDATE = #{record.edate,jdbcType=TIMESTAMP},
+      CHANNEL = #{record.channel,jdbcType=VARCHAR},
+      RECORD_ID = #{record.recordId,jdbcType=DECIMAL}
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="com.hhnz.crm.model.TPriceAdjustApproved" >
+    update T_PRICE_ADJUST_APPROVED
+    <set >
+      <if test="materialId != null" >
+        MATERIAL_ID = #{materialId,jdbcType=VARCHAR},
+      </if>
+      <if test="createTs != null" >
+        CREATE_TS = #{createTs,jdbcType=TIMESTAMP},
+      </if>
+      <if test="organizationId != null" >
+        ORGANIZATION_ID = #{organizationId,jdbcType=VARCHAR},
+      </if>
+      <if test="price != null" >
+        PRICE = #{price,jdbcType=DECIMAL},
+      </if>
+      <if test="opt != null" >
+        OPT = #{opt,jdbcType=VARCHAR},
+      </if>
+      <if test="bdate != null" >
+        BDATE = #{bdate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="edate != null" >
+        EDATE = #{edate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="channel != null" >
+        CHANNEL = #{channel,jdbcType=VARCHAR},
+      </if>
+      <if test="recordId != null" >
+        RECORD_ID = #{recordId,jdbcType=DECIMAL},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=DECIMAL}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.hhnz.crm.model.TPriceAdjustApproved" >
+    update T_PRICE_ADJUST_APPROVED
+    set MATERIAL_ID = #{materialId,jdbcType=VARCHAR},
+      CREATE_TS = #{createTs,jdbcType=TIMESTAMP},
+      ORGANIZATION_ID = #{organizationId,jdbcType=VARCHAR},
+      PRICE = #{price,jdbcType=DECIMAL},
+      OPT = #{opt,jdbcType=VARCHAR},
+      BDATE = #{bdate,jdbcType=TIMESTAMP},
+      EDATE = #{edate,jdbcType=TIMESTAMP},
+      CHANNEL = #{channel,jdbcType=VARCHAR},
+      RECORD_ID = #{recordId,jdbcType=DECIMAL}
+    where ID = #{id,jdbcType=DECIMAL}
+  </update>
+  <sql id="OracleDialectPrefix" >
+    <if test="page != null" >
+      select * from ( select row_.*, rownum rownum_ from ( 
+    </if>
+  </sql>
+  <sql id="OracleDialectSuffix" >
+    <if test="page != null" >
+      <![CDATA[ ) row_ ) where rownum_ > #{page.begin} and rownum_ <= #{page.end} ]]>
+    </if>
+  </sql>
+</mapper>

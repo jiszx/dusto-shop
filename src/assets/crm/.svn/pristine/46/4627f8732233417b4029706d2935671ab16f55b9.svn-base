@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.customer.mapper.ApiCMerchCustMapper" >
+  <resultMap id="CMerchCustBaseMap" type="com.hhnz.customer.model.CMerchCustBase" >
+    <result column="ID" property="id" jdbcType="DECIMAL" />
+    <result column="NAME" property="name" jdbcType="VARCHAR" />
+    <result column="ABBR_NAME" property="abbrName" jdbcType="VARCHAR" />
+    <result column="PROV_ID" property="provId" jdbcType="VARCHAR" />
+    <result column="CITY_ID" property="cityId" jdbcType="VARCHAR" />
+    <result column="COUNTY_ID" property="countyId" jdbcType="VARCHAR" />
+    <result column="ADDRESS" property="address" jdbcType="VARCHAR" />
+    <result column="LP_NO" property="lpNo" jdbcType="VARCHAR" />
+    <result column="LP_NAME" property="lpName" jdbcType="VARCHAR" />
+    <result column="ZIP_CODE" property="zipCode" jdbcType="VARCHAR" />
+    <result column="REG_ADDR" property="regAddr" jdbcType="VARCHAR" />
+    <result column="TEL" property="tel" jdbcType="VARCHAR" />
+    <result column="CREATE_TS" property="createTs" jdbcType="TIMESTAMP" />
+    <result column="CREATE_OID" property="createOid" jdbcType="DECIMAL" />
+    <result column="UPDATE_TS" property="updateTs" jdbcType="TIMESTAMP" />
+    <result column="UPDATE_OID" property="updateOid" jdbcType="DECIMAL" />
+    <result column="STATES" property="states" jdbcType="VARCHAR" />
+    <result column="SAP_CUSTOMER_ID" property="sapCustomerId" jdbcType="VARCHAR" />
+    <result column="CHANNEL_ID" property="channelId" jdbcType="VARCHAR" />
+    <result column="CUST_TYPE" property="custType" jdbcType="VARCHAR" />
+    <result column="IS_ATTACHMENT" property="isAttachment" jdbcType="VARCHAR" />
+    <result column="BUSINESS_LICENSE" property="businessLicense" jdbcType="VARCHAR" />
+    <result column="CONTACT_NAME" property="contactName" jdbcType="VARCHAR" />
+    <result column="CONTACT_TEL" property="contactTel" jdbcType="VARCHAR" />
+    <result column="ORGANIZATION_ID" property="organizationId" jdbcType="VARCHAR" />
+    <result column="PID" property="pid" jdbcType="DECIMAL" />
+    <result column="INVOICE_NAME" property="invoiceName" jdbcType="VARCHAR" />
+    <result column="INVOICE_TAX_NUM" property="invoiceTaxNum" jdbcType="VARCHAR" />
+    <result column="INVOICE_ADDRESS" property="invoiceAddress" jdbcType="VARCHAR" />
+    <result column="INVOICE_ACCOUNT" property="invoiceAccount" jdbcType="VARCHAR" />
+    <result column="INVOICE_TEL" property="invoiceTel" jdbcType="VARCHAR" />
+    <result column="INVOICE_BANK_NAME" property="invoiceBankName" jdbcType="VARCHAR" />
+    <result column="INVOICE_ACCOUNT_NAME" property="invoiceAccountName" jdbcType="VARCHAR" />
+    <result column="OPENING_TYPE" property="openingType" jdbcType="VARCHAR" />
+    <result column="OPENING_REASON" property="openingReason" jdbcType="VARCHAR" />
+    <result column="OPENING_MERCHANT" property="openingMerchant" jdbcType="VARCHAR" />
+    <result column="OPENING_CLOSE_TS" property="openingCloseTs" jdbcType="TIMESTAMP" />
+    <result column="EXPAND_KA_PLACE" property="expandKaPlace" jdbcType="VARCHAR" />
+    <result column="EXPAND_BC_PLACE" property="expandBcPlace" jdbcType="VARCHAR" />
+    <result column="EXPAND_CIRCULATE_PLACE" property="expandCirculatePlace" jdbcType="VARCHAR" />
+    <result column="EXPAND_FACTORY_PLACE" property="expandFactoryPlace" jdbcType="VARCHAR" />
+    <result column="EXPAND_SCHOOL_PLACE" property="expandSchoolPlace" jdbcType="VARCHAR" />
+    <result column="EXPAND_RETAIL_PLACE" property="expandRetailPlace" jdbcType="VARCHAR" />
+    <result column="EXPAND_AREA_PEOPLES" property="expandAreaPeoples" jdbcType="VARCHAR" />
+    <result column="EXPAND_AREA_VOLUME" property="expandAreaVolume" jdbcType="VARCHAR" />
+    <result column="EXPAND_BUSINES_VOLUME" property="expandBusinesVolume" jdbcType="VARCHAR" />
+    <result column="EXPAND_SPENT_MAMT" property="expandSpentMamt" jdbcType="VARCHAR" />
+    <result column="EXPAND_SPENT_FAMT" property="expandSpentFamt" jdbcType="VARCHAR" />
+    <result column="CONTEXT_SALES_YEAR" property="contextSalesYear" jdbcType="VARCHAR" />
+    <result column="CONTEXT_BUSINESS_RATIO" property="contextBusinessRatio" jdbcType="VARCHAR" />
+    <result column="CONTEXT_INVESTMENT" property="contextInvestment" jdbcType="VARCHAR" />
+    <result column="CONTEXT_OPERATE_CAPITAL" property="contextOperateCapital" jdbcType="VARCHAR" />
+    <result column="CONTEXT_KA_NUM" property="contextKaNum" jdbcType="VARCHAR" />
+    <result column="CONTEXT_BC_NUM" property="contextBcNum" jdbcType="VARCHAR" />
+    <result column="CONTEXT_WHOLESALERS_NUM" property="contextWholesalersNum" jdbcType="VARCHAR" />
+    <result column="CONTEXT_RETAIL_NUM" property="contextRetailNum" jdbcType="VARCHAR" />
+    <result column="CONTEXT_FARMERS_NUM" property="contextFarmersNum" jdbcType="VARCHAR" />
+    <result column="CONTEXT_RESTAURANT _NUM" property="contextRestaurantNum" jdbcType="VARCHAR" />
+    <result column="CONTEXT_OTHERS_NUM" property="contextOthersNum" jdbcType="VARCHAR" />
+    <result column="CONTEXT_SALESMAN_NUM" property="contextSalesmanNum" jdbcType="VARCHAR" />
+    <result column="CONTEXT_LOGISTICS_NUM" property="contextLogisticsNum" jdbcType="VARCHAR" />
+    <result column="CONTEXT_TRUCK_NUM" property="contextTruckNum" jdbcType="VARCHAR" />
+    <result column="CONTEXT_LORRY_NUM" property="contextLorryNum" jdbcType="VARCHAR" />
+    <result column="CONTEXT_DEPOT" property="contextDepot" jdbcType="VARCHAR" />
+    <result column="PROV_NAME" property="provName" jdbcType="VARCHAR" />
+    <result column="CITY_NAME" property="cityName" jdbcType="VARCHAR" />
+    <result column="COUNTY_NAME" property="countyName" jdbcType="VARCHAR" />
+    <result column="PLAN_AREA" property="planArea" jdbcType="VARCHAR" />
+    <result column="PLAN_BRAND" property="planBrand" jdbcType="VARCHAR" />
+    <result column="PLAN_CATEGORY" property="planCategory" jdbcType="VARCHAR" />
+    <result column="PROCESS_ID" property="processId" jdbcType="VARCHAR" />
+    <result column="CASH_AMT" property="cashAmt"  />
+  </resultMap>
+  
+  <select id="findCustBaseByPID" parameterType="java.util.Map" resultMap="CMerchCustBaseMap">
+  		SELECT
+			VIEWS.*
+		FROM
+		(
+			SELECT
+				CMCB.*, CMCA.CASH_AMT,
+				ROW_NUMBER () OVER (
+					PARTITION BY CMCB. ID
+					ORDER BY
+						CMCA.CASH_AMT DESC
+				) rn
+			FROM
+				C_MERCH_CUST_BASE cmcb
+				LEFT JOIN C_MERCH_CUST_ACCOUNT cmca ON cmcb. ID = cmca.MERCH_CUST_ID
+			WHERE
+				cmcb.PID=#{custPID}
+				AND  cmcb.states in ( '3' )
+				AND  cmcb.cust_type = '5'
+				<if test="name !=null and name != '' ">
+					AND  cmcb.name LIKE ${name}
+				</if>
+				<if test="phone != null and name != '' ">
+					AND  ( cmcb.tel LIKE ${phone}   or  cmcb.contact_tel LIKE ${phone} )
+				</if> 
+				<if test="consignee != null and consignee !=''">
+					AND cmcb.CONTACT_NAME LIKE ${consignee}
+				</if>
+		) VIEWS
+		WHERE
+			VIEWS.rn = 1 	
+  </select>
+  
+  
+  </mapper>

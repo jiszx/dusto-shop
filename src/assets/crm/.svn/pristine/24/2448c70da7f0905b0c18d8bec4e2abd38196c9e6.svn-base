@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.order.mapper.OrderCloseMapper">
+	
+	<resultMap type="com.hhnz.order.model.OrderSearchModel" id="OrderSearchResultMap">
+		<result column="orgname" property="orgname" jdbcType="VARCHAR" />
+		<result column="organization_id" property="orgid" jdbcType="VARCHAR" />
+		<result column="merch_cust_id" property="merchCustId" jdbcType="DECIMAL" />
+		<result column="custname" property="merchname"	jdbcType="VARCHAR" />
+		<result column="sap_customer_id" property="sapCustomerId" jdbcType="VARCHAR" />
+		<result column="create_ts" property="createTs" jdbcType="TIMESTAMP" />
+		<result column="salesman" property="salesman" jdbcType="VARCHAR" />
+		<result column="salesrep_id" property="salesrepId" jdbcType="DECIMAL" />
+		<result column="states" property="states" jdbcType="VARCHAR" />
+		<result column="order_amt" property="orderAmt" jdbcType="VARCHAR" />
+		<result column="station_id" property="stationId" jdbcType="DECIMAL" />
+		<result column="id" property="orderHeaderId" jdbcType="DECIMAL" />
+		<result column="stationname" property="stationname" jdbcType="VARCHAR" />
+		<result column="Sap_Order_Id" property="saporderid" jdbcType="VARCHAR" />
+		<result column="regionname" property="regionname" jdbcType="VARCHAR" />
+		<result column="region_id" property="regionid" jdbcType="VARCHAR" />
+		<result column="provname" property="provname" jdbcType="VARCHAR" />
+		<result column="provi_id" property="provid" jdbcType="VARCHAR" />
+		<result column="shipto" property="shipto" jdbcType="VARCHAR"/>
+		<result column="send_Amt" property="sendAmt" jdbcType="DECIMAL"/>
+		<result column="order_type" property="orderType" jdbcType="VARCHAR"/>
+		<result column="msg" property="msg" jdbcType="VARCHAR"/>
+	</resultMap>
+	<select id="closeList" resultMap="OrderSearchResultMap" parameterType="java.util.Map">
+		<include refid="OracleDialectPrefix" />
+  SELECT cso.name             as orgname,
+       cmcb.name            as custname,
+       cmcb.sap_customer_id,
+       ooh.organization_id,
+       ooh.merch_cust_id,
+       ooh.id,
+       ooh.create_ts,
+       te.name              as salesman,
+       ooh.order_amt order_amt,
+       <!-- (SELECT nvl(sum(oos.price*oodh.num),0)
+          FROM om_order_delivered_history oodh,
+               om_order_spilts            oos
+         where oodh.sap_order_id = ooh.sap_order_id
+           and ooh.id = oos.header_id
+           and oodh.sap_order_id= oos.sap_header_id
+           and ooh.merch_cust_id = oos.merch_cust_id
+           and oodh.orderitem_sap_no = oos.orderitem_sap_no) send_Amt, -->
+       (SELECT nvl(sum(oos.price*oodh.num),0)
+          FROM om_order_delivered_history oodh,
+               om_order_spilts            oos
+         where oodh.sap_order_id = ooh.sap_order_id
+           and ooh.id = oos.header_id
+           <!-- and oodh.sap_order_id= oos.sap_header_id -->
+           and ooh.merch_cust_id = oos.merch_cust_id
+           and oodh.orderitem_sap_no = oos.orderitem_sap_no) send_Amt,
+       ooh.states,
+       ooh.station_id,
+       ooh.salesrep_id,
+ 	   ooh.Sap_Order_Id,
+       ooh.region_id,
+       reg.name as regionname,
+       ooh.provi_id,
+       prv.name as provname,
+       cs.name as stationname,
+       ship.sap_customer_id||ship.name as shipname,
+       ooh.order_type，
+       ooh.attribute10 msg
+  FROM om_order_headers_all   ooh,
+       crm_sales_organization cso,
+       crm_sales_organization reg,
+       crm_sales_organization prv,
+       t_employee             te,
+       c_merch_cust_base      cmcb,
+       crm_station            cs,
+       c_merch_cust_base ship
+ where ooh.organization_id = cso.id
+   and ooh.salesrep_id = te.id(+)
+   and ooh.merch_cust_id = cmcb.id
+   and ooh.ship_id= ship.id(+)
+   and ooh.station_id = cs.id(+)
+   and ooh.region_id=reg.id(+)
+   and ooh.provi_id =prv.id(+)
+   and ooh.states in ('5','7')
+   and ooh.sap_order_id is not null
+   <if test="custname !=null and custmae !=''">
+   and cmcb.name like '%'||#{custname,jdbcType=VARCHAR}||'%'
+   </if> 
+   <if test="bdate !=null and bdate !=''">
+   and ooh.create_ts >= to_date(#{bdate,jdbcType=VARCHAR},'yyyy-MM-dd')
+   </if>	
+   <if test="edate !=null and edate !=''" >
+   and ooh.create_ts &lt;=  to_date(#{edate,jdbcType=VARCHAR},'yyyy-MM-dd')+0.99999
+   </if>
+    <if test="crmorderid !=null">
+    and ooh.id like #{crmorderid,jdbcType=DECIMAL}||'%'
+   </if>
+   <if test="saporderid !=null">
+    and ooh.SAP_ORDER_ID like #{saporderid,jdbcType=DECIMAL}||'%'
+   </if>
+   order by  id desc
+   <include refid="OracleDialectSuffix" />
+  </select>
+  <select id="countCloseList" parameterType="java.util.Map" resultType="java.lang.Integer" >
+  	SELECT count(*)
+  FROM om_order_headers_all   ooh,
+       crm_sales_organization cso,
+       crm_sales_organization reg,
+       crm_sales_organization prv,
+       t_employee             te,
+       c_merch_cust_base      cmcb,
+       crm_station            cs,
+       c_merch_cust_base cmcd
+ where ooh.organization_id = cso.id
+   and ooh.salesrep_id = te.id(+)
+   and ooh.merch_cust_id = cmcb.id
+   and ooh.ship_id= cmcd.id(+)
+   and ooh.station_id = cs.id(+)
+   and ooh.region_id=reg.id(+)
+   and ooh.provi_id =prv.id(+)
+   and ooh.states in ('5','7')
+   <if test="custname !=null and custmae !=''">
+   and cmcb.name like '%'||#{custname,jdbcType=VARCHAR}||'%'
+   </if> 
+   <if test="bdate !=null and bdate !=''">
+   and ooh.create_ts >= to_date(#{bdate,jdbcType=VARCHAR},'yyyy-MM-dd')
+   </if>	
+   <if test="edate !=null and edate !=''" >
+   and ooh.create_ts &lt;=  to_date(#{edate,jdbcType=VARCHAR},'yyyy-MM-dd')+0.99999
+   </if>
+  </select>
+  
+  <sql id="OracleDialectPrefix" >
+	  <if test="begin !=null">
+          select * from ( select row_.*, rownum rownum_ from ( 
+      </if>
+  	</sql>
+  	<sql id="OracleDialectSuffix" >
+  	   <if test="begin !=null">
+       		<![CDATA[ ) row_ ) where rownum_ > #{begin} and rownum_ <= #{end} ]]>
+       </if>
+    </sql>
+  <select id="getInvouceNum" resultType="decimal" parameterType="java.util.Map">
+  	SELECT nvl(sum(oii.num),0) FROM om_invoice_item oii
+		where 1=1
+		and  oii.order_id=#{orderid,jdbcType=DECIMAL}
+		and  oii.material_id=#{materialId,jdbcType=VARCHAR}
+		and  oii.order_item_id=#{itemNo,jdbcType=DECIMAL}
+  </select>
+  <select id="getDeliveredNum" resultType="decimal" parameterType="java.util.Map">
+    SELECT nvl(sum(ood.num),0) FROM om_order_delivered ood
+		where 1=1
+		and ood.sap_order_id=#{orderid,jdbcType=VARCHAR}
+		and ood.orderitem_sap_no=#{itemNo,jdbcType=VARCHAR}
+  </select>
+  <select id="closeTransferOrder" statementType="CALLABLE" parameterType="java.util.Map">
+     <![CDATA[
+    {call CRM_TRANSFER_ORDER_COLASE.main(#{p_order_id,mode=IN,jdbcType=DECIMAL},
+    #{p_result,mode=OUT,jdbcType=VARCHAR})}
+	]]>
+   </select>
+   
+   <select id="judgeDelivered" resultType="String" parameterType="java.lang.String">
+   	SELECT case when nvl(sum(ood.num), 0) =0 then
+       'E'
+       else
+         'S'
+       end  
+  FROM om_order_delivered ood
+ where ood.sap_order_id =#{sapOrderId}
+   </select>
+</mapper>

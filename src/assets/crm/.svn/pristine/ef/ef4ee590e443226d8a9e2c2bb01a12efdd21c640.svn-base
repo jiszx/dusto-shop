@@ -1,0 +1,53 @@
+/*
+*author hujia
+*2016-7-6
+*/
+/****************************��֯����**********************************************************************/
+.arrow-tt-node-icon-folderOpen {
+    background-image: none !important;
+}
+.arrow-tt-node-icon-folder {
+    background-image: none !important;
+}
+.arrow-tt-node-icon-leaf {
+    background-image: none;
+}
+.arrow-tt-node-icon {
+    width: 0px !important;
+    height: 18px;
+    float: left;
+    background: transparent no-repeat;
+}
+.arrow-tt-node-click-content{
+    float:none !important;
+}
+.content .row{
+    margin:0;
+}
+.tabletree4j-gird  .headerbg td {
+    text-align: center;
+    line-height: 30px;
+    height: 30px;
+}
+.arrow-tt-node-content{
+	width:100%;
+    text-align: center;
+    height:30px;
+    line-height:30px;
+}
+.operate-add{
+	width:100%;
+	padding:0 0 20px !important;
+}
+#editOrganization .form-control{
+    width:70%;
+    display: inline-block;
+}
+.error{
+    color:red;
+    font-size: 12px;
+    padding-left:20px;
+}
+.update,.del{
+	cursor: pointer;
+}

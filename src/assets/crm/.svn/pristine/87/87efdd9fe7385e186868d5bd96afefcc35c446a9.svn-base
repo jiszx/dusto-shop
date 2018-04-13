@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.customer.mapper.CMerchCustRetailMapper" >
+  <resultMap id="BaseResultMap" type="com.hhnz.customer.dto.CustomerRetailDTO" >
+    <result column="id" property="id" jdbcType="DECIMAL" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="pname" property="pname" jdbcType="VARCHAR" />
+    <result column="pid" property="pid" jdbcType="DECIMAL" />
+    <result column="sap_customer_id" property="sapCustomerId" jdbcType="VARCHAR" />
+    <result column="saleOrgName" property="saleOrgName" jdbcType="VARCHAR" />
+    <result column="states" property="states" jdbcType="VARCHAR" />
+    <result column="createTs" property="createTs" jdbcType="VARCHAR"/>
+  </resultMap>
+   <sql id="OracleDialectPrefix" >
+     <if test="bpage!=null">
+      select * from ( select row_.*, rownum rownum_ from ( 
+     </if>
+  </sql>
+  <sql id="OracleDialectSuffix" >
+    <if test="bpage!=null">
+      <![CDATA[ ) row_ ) where rownum_ > #{bpage} and rownum_ <= #{epage} ]]>
+    </if>
+  </sql>
+  
+  <select id="selectRetailCustomers" resultMap="BaseResultMap" parameterType="java.util.Map">
+  	<include refid="OracleDialectPrefix"/>
+  		SELECT cmcb.id,
+       cmcb.name,
+       pcmcb.id             pid,
+       pcmcb.name           pname,
+       cso.name             saleOrgName,
+       cmcb.sap_customer_id,
+       cmcb.states,
+       to_char(cmcb.create_Ts,'YYYY-MM-DD') createTs
+  FROM c_merch_cust_base      cmcb,
+       crm_sales_organization cso,
+       c_merch_cust_base      pcmcb,
+       c_merch_cust_station   cmcs
+ where 1 = 1
+   and cmcb.pid = pcmcb.id
+   and pcmcb.organization_id = cso.id
+   and pcmcb.id = cmcs.merch_cust_id
+   and cmcb.cust_type = '5'
+   <if test="custname !=null and custname !=''">
+   and cmcb.name like '%'||#{custname,jdbcType=VARCHAR}||'%'
+   </if>
+   <if test="orgid !=null and orgid !=''">
+   and cso.id = #{orgid,jdbcType=VARCHAR}
+   </if>
+   <if test="usertype ==1 and merchid !=null and merchid !=''">
+    and cmcb.pid =#{merchid,jdbcType=DECIMAL}
+   </if>
+   <if test="usertype !=1">
+   		<if test="stationids != null and stationids.size()>0">
+    	and cmcs.station_id in
+		<foreach item="item" index="index" collection="stationids"
+			open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		</if>
+   </if>
+   order by cmcb.id desc
+  	<include refid="OracleDialectSuffix"/>
+  </select>
+  
+  <select id="countRetailCustomers" resultType="int" parameterType="java.util.Map">
+  	SELECT count(1)
+  FROM c_merch_cust_base      cmcb,
+       crm_sales_organization cso,
+       c_merch_cust_base      pcmcb,
+       c_merch_cust_station   cmcs
+ where 1 = 1
+   and cmcb.pid = pcmcb.id
+   and pcmcb.organization_id = cso.id
+   and pcmcb.id = cmcs.merch_cust_id
+   and cmcb.cust_type = '5'
+   <if test="custname !=null and custname !=''">
+   and cmcb.name like '%'||#{custname,jdbcType=VARCHAR}||'%'
+   </if>
+   <if test="orgid !=null and orgid !=''">
+   and cso.id = #{orgid,jdbcType=VARCHAR}
+   </if>
+   <if test="usertype ==1 and merchid !=null and merchid !=''">
+    and cmcb.pid =#{merchid,jdbcType=DECIMAL}
+   </if>
+   <if test="usertype !=1">
+   		<if test="stationids != null and stationids.size()>0">
+    	and cmcs.station_id in
+		<foreach item="item" index="index" collection="stationids"
+			open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		</if>
+   </if>
+  </select>
+  
+  <select id="selectRetail4Export" resultType="com.hhnz.customer.model.CMerchCustBase" parameterType="java.util.Map">
+  		SELECT
+			cmcb. ID,
+			cmcb. NAME,
+			cmcb.ABBR_NAME abbrName,
+			ta1. NAME provName,
+			ta2. NAME cityName,
+			ta3. NAME countyName,
+			cmcb.CONTACT_NAME contactName,
+			cmcb.CONTACT_TEL contactTel,
+			cmcb.LP_NAME lpName,
+			cmcb.TEL,
+			cmcb.CHANNEL_ID channelId,
+			cmcb.OPENING_TYPE openingType,
+			cmcb.ADDRESS,
+			pcmcb. NAME pname,
+			DECODE (
+				cmcb.IS_INVOICE,
+				'1',
+				'不开票',
+				'2',
+				'开普票',
+				'3',
+				'开专票',
+				'其他'
+			) isInvoice,
+			cmcb.INVOICE_NAME invoiceName,
+			cmcb.INVOICE_TAX_NUM invoiceTaxNum,
+			cmcb.INVOICE_ADDRESS invoiceAddress,
+			cmcb.INVOICE_ACCOUNT invoiceAccount,
+			cmcb.INVOICE_TEL invoiceTel,
+			cmcb.INVOICE_BANK_NAME invoiceBankName,
+			cmcb.states
+		FROM
+			c_merch_cust_base cmcb,
+			crm_sales_organization cso,
+			c_merch_cust_base pcmcb,
+			c_merch_cust_station cmcs,
+			T_AREA ta1,
+			T_AREA ta2,
+			T_AREA ta3
+		WHERE
+			1 = 1
+		AND cmcb.PROV_ID = TA1. ID (+)
+		AND CMCB.CITY_ID = TA2. ID (+)
+		AND CMCB.COUNTY_ID = TA3. ID (+)
+		AND cmcb.pid = pcmcb. ID
+		AND pcmcb.organization_id = cso. ID
+		AND pcmcb. ID = cmcs.merch_cust_id
+		AND cmcb.cust_type = '5'
+   <if test="usertype ==1 and merchid !=null and merchid !=''">
+    and cmcb.pid =#{merchid,jdbcType=DECIMAL}
+   </if>
+   <if test="usertype !=1">
+   		<if test="stationids != null and stationids.size()>0">
+    	and cmcs.station_id in
+		<foreach item="item" index="index" collection="stationids"
+			open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		</if>
+   </if>
+  </select>
+  </mapper>

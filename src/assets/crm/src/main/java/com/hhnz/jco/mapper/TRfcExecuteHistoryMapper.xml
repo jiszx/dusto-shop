@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.jco.mapper.TRfcExecuteHistoryMapper" >
+  <resultMap id="BaseResultMap" type="com.hhnz.jco.model.TRfcExecuteHistory" >
+    <id column="SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+    <result column="EXECUTE_TYPE" property="executeType" jdbcType="VARCHAR" />
+    <result column="PARAMETERS" property="parameters" jdbcType="VARCHAR" />
+    <result column="STATUS" property="status" jdbcType="VARCHAR" />
+    <result column="FAILURE_TIMES" property="failureTimes" jdbcType="DECIMAL" />
+    <result column="RESULT" property="result" jdbcType="VARCHAR" />
+    <result column="CREATE_DATE" property="createDate" jdbcType="TIMESTAMP" />
+    <result column="CALLBACK_NAME" property="callbackName" jdbcType="VARCHAR" />
+    <result column="CLOB_PARAMETERS" property="clobParameters" jdbcType="CLOB" />
+  </resultMap>
+  <sql id="Example_Where_Clause" >
+    <where >
+      <foreach collection="oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause" >
+    <where >
+      <foreach collection="example.oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List" >
+    SERIAL_NO, EXECUTE_TYPE, PARAMETERS, STATUS, FAILURE_TIMES, RESULT, CREATE_DATE, 
+    CALLBACK_NAME
+  </sql>
+  <sql id="More_Column_List" >
+    SERIAL_NO, EXECUTE_TYPE, PARAMETERS, STATUS, FAILURE_TIMES, RESULT, CREATE_DATE, 
+    CALLBACK_NAME, CLOB_PARAMETERS
+  </sql>
+  <select id="selectByExample" resultMap="BaseResultMap" parameterType="com.hhnz.jco.model.TRfcExecuteHistoryExample" >
+    <include refid="OracleDialectPrefix" />
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from T_RFC_EXECUTE_HISTORY
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+    <include refid="OracleDialectSuffix" />
+  </select>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="More_Column_List" />
+    from T_RFC_EXECUTE_HISTORY
+    where SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String" >
+    delete from T_RFC_EXECUTE_HISTORY
+    where SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+  </delete>
+  <delete id="deleteByExample" parameterType="com.hhnz.jco.model.TRfcExecuteHistoryExample" >
+    delete from T_RFC_EXECUTE_HISTORY
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="com.hhnz.jco.model.TRfcExecuteHistory" >
+    insert into T_RFC_EXECUTE_HISTORY (SERIAL_NO, EXECUTE_TYPE, PARAMETERS, 
+      STATUS, FAILURE_TIMES, RESULT, 
+      CREATE_DATE, CALLBACK_NAME)
+    values (#{serialNo,jdbcType=VARCHAR}, #{executeType,jdbcType=VARCHAR}, #{parameters,jdbcType=VARCHAR}, 
+      #{status,jdbcType=VARCHAR}, #{failureTimes,jdbcType=DECIMAL}, #{result,jdbcType=VARCHAR}, 
+      #{createDate,jdbcType=TIMESTAMP}, #{callbackName,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.hhnz.jco.model.TRfcExecuteHistory" >
+    insert into T_RFC_EXECUTE_HISTORY
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="serialNo != null" >
+        SERIAL_NO,
+      </if>
+      <if test="executeType != null" >
+        EXECUTE_TYPE,
+      </if>
+      <if test="parameters != null" >
+        PARAMETERS,
+      </if>
+      <if test="status != null" >
+        STATUS,
+      </if>
+      <if test="failureTimes != null" >
+        FAILURE_TIMES,
+      </if>
+      <if test="result != null" >
+        RESULT,
+      </if>
+      <if test="createDate != null" >
+        CREATE_DATE,
+      </if>
+      <if test="callbackName != null" >
+        CALLBACK_NAME,
+      </if>
+      <if test="clobParameters != null" >
+        CLOB_PARAMETERS,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="serialNo != null" >
+        #{serialNo,jdbcType=VARCHAR},
+      </if>
+      <if test="executeType != null" >
+        #{executeType,jdbcType=VARCHAR},
+      </if>
+      <if test="parameters != null" >
+        #{parameters,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null" >
+        #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="failureTimes != null" >
+        #{failureTimes,jdbcType=DECIMAL},
+      </if>
+      <if test="result != null" >
+        #{result,jdbcType=VARCHAR},
+      </if>
+      <if test="createDate != null" >
+        #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="callbackName != null" >
+        #{callbackName,jdbcType=VARCHAR},
+      </if>
+      <if test="clobParameters != null" >
+        #{clobParameters,jdbcType=CLOB}, 
+      </if>
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="com.hhnz.jco.model.TRfcExecuteHistoryExample" resultType="java.lang.Integer" >
+    select count(*) from T_RFC_EXECUTE_HISTORY
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map" >
+    update T_RFC_EXECUTE_HISTORY
+    <set >
+      <if test="record.serialNo != null" >
+        SERIAL_NO = #{record.serialNo,jdbcType=VARCHAR},
+      </if>
+      <if test="record.executeType != null" >
+        EXECUTE_TYPE = #{record.executeType,jdbcType=VARCHAR},
+      </if>
+      <if test="record.parameters != null" >
+        PARAMETERS = #{record.parameters,jdbcType=VARCHAR},
+      </if>
+      <if test="record.status != null" >
+        STATUS = #{record.status,jdbcType=VARCHAR},
+      </if>
+      <if test="record.failureTimes != null" >
+        FAILURE_TIMES = #{record.failureTimes,jdbcType=DECIMAL},
+      </if>
+      <if test="record.result != null" >
+        RESULT = #{record.result,jdbcType=VARCHAR},
+      </if>
+      <if test="record.createDate != null" >
+        CREATE_DATE = #{record.createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="record.callbackName != null" >
+        CALLBACK_NAME = #{record.callbackName,jdbcType=VARCHAR},
+      </if>
+      <if test="record.clobParameters != null" >
+        CLOB_PARAMETERS = #{record.clobParameters,jdbcType=CLOB}, 
+      </if>
+    </set>
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map" >
+    update T_RFC_EXECUTE_HISTORY
+    set SERIAL_NO = #{record.serialNo,jdbcType=VARCHAR},
+      EXECUTE_TYPE = #{record.executeType,jdbcType=VARCHAR},
+      PARAMETERS = #{record.parameters,jdbcType=VARCHAR},
+      STATUS = #{record.status,jdbcType=VARCHAR},
+      FAILURE_TIMES = #{record.failureTimes,jdbcType=DECIMAL},
+      RESULT = #{record.result,jdbcType=VARCHAR},
+      CREATE_DATE = #{record.createDate,jdbcType=TIMESTAMP},
+      CALLBACK_NAME = #{record.callbackName,jdbcType=VARCHAR}
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="com.hhnz.jco.model.TRfcExecuteHistory" >
+    update T_RFC_EXECUTE_HISTORY
+    <set >
+      <if test="executeType != null" >
+        EXECUTE_TYPE = #{executeType,jdbcType=VARCHAR},
+      </if>
+      <if test="parameters != null" >
+        PARAMETERS = #{parameters,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null" >
+        STATUS = #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="failureTimes != null" >
+        FAILURE_TIMES = #{failureTimes,jdbcType=DECIMAL},
+      </if>
+      <if test="result != null" >
+        RESULT = #{result,jdbcType=VARCHAR},
+      </if>
+      <if test="createDate != null" >
+        CREATE_DATE = #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="callbackName != null" >
+        CALLBACK_NAME = #{callbackName,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.hhnz.jco.model.TRfcExecuteHistory" >
+    update T_RFC_EXECUTE_HISTORY
+    set EXECUTE_TYPE = #{executeType,jdbcType=VARCHAR},
+      PARAMETERS = #{parameters,jdbcType=VARCHAR},
+      STATUS = #{status,jdbcType=VARCHAR},
+      FAILURE_TIMES = #{failureTimes,jdbcType=DECIMAL},
+      RESULT = #{result,jdbcType=VARCHAR},
+      CREATE_DATE = #{createDate,jdbcType=TIMESTAMP},
+      CALLBACK_NAME = #{callbackName,jdbcType=VARCHAR}
+    where SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+  </update>
+  <sql id="OracleDialectPrefix" >
+    <if test="page != null" >
+      select * from ( select row_.*, rownum rownum_ from ( 
+    </if>
+  </sql>
+  <sql id="OracleDialectSuffix" >
+    <if test="page != null" >
+      <![CDATA[ ) row_ ) where rownum_ > #{page.begin} and rownum_ <= #{page.end} ]]>
+    </if>
+  </sql>
+</mapper>

@@ -1,0 +1,666 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.report.mapper.OrderDetailMapper">
+	<select id="findOrderDetails" resultType="com.hhnz.report.model.OrderDetailReport">
+		<if test="begin != null">
+			select * from ( select row_.*, rownum rownum_ from (
+		</if>
+		SELECT CSO. NAME orgname,
+       CSO2. NAME regin,
+       CSO3.NAME prov,
+       cmb.NAME merchname,
+       cmb.sap_customer_id merchsapid,
+       OOH.SAP_ORDER_ID ordersapid,
+       OOL.HEADER_ID ordercrmid,
+       tmb.sku sku,
+       tmb.ATTRIBUTE1 brand,
+ 	   (select cso5.name from CRM_SALES_ORGANIZATION cso5 where CSO5.id=substr(OOH.ORGANIZATION_ID, 0, 3)) department,
+       OOL.PRICE/100 price,
+       OOL.ORDER_PRICE/100 orderprice,
+       OOL.num,
+       tmb.unit,
+       case when tmb.unit ='TO' then
+        ool.num
+       else
+         round(ool.num*tmb.specifications/1000000,3)
+       end weigth,
+       OOL.HB_NUM hbnum,
+       case when ooh.order_type ='5' and cmb.cust_type='7' then
+        nvl((SELECT sum(cvwh.change_amt) FROM crm_virtual_warehouse_history cvwh
+			where cvwh.cust_type like 'Z9%'
+			and cvwh.material_id = ool.material_id
+			and cvwh.related_order_id=ooh.id),0)
+	   when ooh.order_type='5' and cmb.cust_type='70' then
+	     nvl((select sum(oodh.num) from 
+	     		om_order_delivered_history oodh,
+	     		om_order_headers_all ooha,
+	     		om_order_spilts oos
+	     	 where 1=1
+	     		and ooh.attribute13= ooha.id
+	     		and ooha.attribute13=ooh.id
+	     		and ooha.id= oos.header_id
+	     		and ooha.sap_order_id= oodh.sap_order_id 
+	     		and oodh.orderitem_sap_no=oos.orderitem_sap_no),0)
+	   else
+	     nvl((select sum(oodh.num) from 
+	     		om_order_delivered_history oodh,
+	     		om_order_spilts oos
+	     	 where 1=1
+	     		and ooh.id= oos.header_id
+	     		and ooh.sap_order_id= oodh.sap_order_id 
+	     		and oodh.orderitem_sap_no=oos.orderitem_sap_no),0)
+       end sendNum,
+       tmb.specifications,
+       OPH.DESCRIPTION,
+       OOL.AMT/100,
+       OOL.DISCOUNT_AMT/100 discount,
+       OOL.ORDER_AMT/100 orderamt,
+       OOL.CREATE_TS createtime,
+       TE. NAME salename,
+       ooh.order_type orderType,
+       (SELECT MAX(OOD.POST_TIME)
+          FROM OM_ORDER_DELIVERED ood, OM_ORDER_SPILTS oos
+         WHERE OOD.ORDERITEM_SAP_NO = OOS.ORDERITEM_SAP_NO(+)
+           AND OOD.SAP_ORDER_ID = OOS.SAP_HEADER_ID(+)
+           AND OOS.LINE_ID = OOL. ID) posttime,
+       nvl((SELECT SUM(OII.AMT)
+          FROM OM_INVOICE_ITEM oii, OM_ORDER_SPILTS oos
+         WHERE ooh.sap_order_id= OII.ORDER_ID
+           AND OOS.ORDERITEM_SAP_NO(+) = OII.ORDER_ITEM_ID
+           and oos.material_id= oii.material_id
+           and OOS.HEADER_ID = OOL.HEADER_ID
+           and OOS.LINE_ID = OOL.id),0) invoice,
+       nvl((SELECT SUM(tax)
+          FROM OM_INVOICE_ITEM oii, OM_ORDER_SPILTS oos
+         WHERE ooh.sap_order_id= OII.ORDER_ID
+           AND OOS.ORDERITEM_SAP_NO(+) = OII.ORDER_ITEM_ID
+           and OOS.HEADER_ID = OOL.HEADER_ID
+           and oos.material_id= oii.material_id
+           and OOS.LINE_ID = OOL.id),0) tax,
+       case when ooh.order_type ='5' or ooh.order_type='7' then
+         (select cmcd.name from c_merch_cust_distribution cmcd
+         where cmcd.id= ooh.ship_id)
+       else
+         (select a.name from c_merch_cust_base a
+         where a.id = ooh.ship_id)
+       end shipname,
+       cmb.cust_type custType
+       
+  FROM  OM_ORDER_LINES_ALL     ool,
+       (select * from OM_ORDER_HEADERS_ALL ooha
+       where 1=1
+       <if test="bdate !=null">
+   and ooha.create_ts >= to_date(#{bdate,jdbcType=VARCHAR},'yyyy-MM-dd')
+   </if>	
+   <if test="edate !=null" >
+   and ooha.create_ts &lt;=  to_date(#{edate,jdbcType=VARCHAR},'yyyy-MM-dd')+0.99999
+   </if>
+   <if test="stations !=null">
+    and ooha.station_id in
+  	 <foreach item="item" index="index" collection="stations" open="(" separator="," close=")">  
+ 		 #{item}  
+ 	</foreach> 
+   </if>
+   order by id desc
+       )   OOH,
+       CRM_SALES_ORGANIZATION cso,
+       CRM_SALES_ORGANIZATION cso2,
+       CRM_SALES_ORGANIZATION cso3,
+       C_MERCH_CUST_BASE      cmb,
+       T_EMPLOYEE             te,
+       T_MATERIAL_BASE        tmb,
+       OM_POLICY_HEADERS      oph
+ WHERE ool.header_id = ooh. ID(+)
+   AND OOH.ORGANIZATION_ID = CSO. ID(+)
+   AND ooh.region_id = cso2. ID(+)
+   AND ooh.provi_id = cso3. ID(+)
+   AND ooh.merch_cust_id = cmb. ID(+)
+   AND OOH.SALESREP_ID = TE. ID(+)
+   AND OOL.MATERIAL_ID = TMB.SAP_ID(+)
+   AND OOL.POLICY_HEADER_ID = oph. ID(+)
+   and ooh.states in ('2','5','7','8')
+   <if test="merchname !=null">
+   	and cmb.name like '%'||#{merchname}||'%'
+   </if>
+   <if test="bdate !=null">
+   and ooh.create_ts >= to_date(#{bdate,jdbcType=VARCHAR},'yyyy-MM-dd')
+   </if>	
+   <if test="edate !=null" >
+   and ooh.create_ts &lt;=  to_date(#{edate,jdbcType=VARCHAR},'yyyy-MM-dd')+0.99999
+   </if>
+   <if test="saler !=null" >
+   and te.name like '%'||#{saler}||'%'
+   </if>
+   <if test="materialid !=null" >
+   and ool.MATERIAL_ID = #{materialid}
+   </if>
+   <if test="orgid !=null" >
+   and cso.id = #{orgid}
+   </if>
+   <if test="reginid !=null" >
+   and cso2.id = #{reginid}
+   </if>
+   <if test="provid !=null" >
+   and cso3.id = #{provid}
+   </if>
+   <if test="stations !=null">
+    and ooh.station_id in
+  	 <foreach item="item" index="index" collection="stations" open="(" separator="," close=")">  
+ 		 #{item}  
+ 	</foreach> 
+   </if>
+   and rownum &lt;= #{end}
+ 	<!-- ORDER BY OOL.ID DESC -->
+		
+		<if test="begin != null">
+	      <![CDATA[ ) row_ ) where rownum_ > #{begin} and rownum_ <= #{end} ]]>
+		</if>
+	</select>
+
+	<select id="countOrderDetails" resultType="int">
+		SELECT count(1) FROM
+		OM_ORDER_LINES_ALL ool,
+		OM_ORDER_HEADERS_ALL OOH,
+		CRM_SALES_ORGANIZATION cso,
+		CRM_SALES_ORGANIZATION cso2,
+		CRM_SALES_ORGANIZATION cso3,
+		C_MERCH_CUST_BASE cmb,
+		T_EMPLOYEE te,
+		T_MATERIAL_BASE tmb,
+		OM_POLICY_HEADERS oph
+		WHERE
+		ool.header_id = ooh. ID(+)
+		AND OOH.ORGANIZATION_ID = CSO. ID (+)
+		AND ooh.region_id = cso2. ID(+)
+		AND ooh.provi_id = cso3. ID (+)
+		AND ooh.merch_cust_id = cmb. ID (+)
+		AND OOH.SALESREP_ID = TE. ID (+)
+		AND OOL.MATERIAL_ID = TMB.SAP_ID (+)
+		AND OOL.POLICY_HEADER_ID = oph. ID (+)
+		and ooh.states in ('2','5','7','8')
+		<if test="merchname !=null">
+	   	and cmb.name like '%'||#{merchname}||'%'
+ 	   </if>
+ 	   <if test="bdate !=null">
+ 	   and ooh.create_ts >= to_date(#{bdate,jdbcType=VARCHAR},'yyyy-MM-dd')
+ 	   </if>	
+ 	   <if test="edate !=null" >
+ 	   and ooh.create_ts &lt;=  to_date(#{edate,jdbcType=VARCHAR},'yyyy-MM-dd')+0.99999
+ 	   </if>
+ 	   <if test="saler !=null" >
+ 	   and te.name like '%'||#{saler}||'%'
+ 	   </if>
+ 	   <if test="materialid !=null" >
+ 	   and ool.MATERIAL_ID = #{materialid}
+ 	   </if>
+ 	   <if test="orgid !=null" >
+ 	   and cso.id = #{orgid}
+ 	   </if>
+ 	   <if test="reginid !=null" >
+ 	   and cso2.id = #{reginid}
+ 	   </if>
+ 	   <if test="provid !=null" >
+ 	   and cso3.id = #{provid}
+  	   </if>
+  	   <if test="stations !=null">
+	    and ooh.station_id in
+	  	 <foreach item="item" index="index" collection="stations" open="(" separator="," close=")">  
+	 		 #{item}  
+	 	</foreach> 
+	   </if>
+		ORDER BY OOL.ID DESC
+	</select>
+	<select id="findRetailOrderInvoices" resultType="com.hhnz.report.model.RetailOrderInvoice">
+		<if test="begin != null">
+			select * from ( select row_.*, rownum rownum_ from (
+		</if>
+		SELECT
+			TO_CHAR (ool.CREATE_TS, 'yyyy-mm-dd') createTime,
+			cso.name orgName,
+			ooh.id headerId,
+			cmb. NAME merchName,
+			cmb.INVOICE_TAX_NUM taxNum,
+			cmb.ADDRESS,
+			cmb.CONTACT_TEL phone,
+			cmb.INVOICE_BANK_NAME bankName,
+			cmb.INVOICE_ACCOUNT bankAccount,
+			tmb.sku,
+			tmb.SPECIFICATIONS,
+			DECODE (tmb.UNIT, 'TO', '吨', '箱') unit,
+			CASE
+		WHEN TMB.UNIT = 'TO' THEN
+			'1'
+		ELSE
+			NVL (tmb.attribute6, 1)
+		END AS amounts,
+		 ool.NUM,
+		 ool.ORDER_PRICE price,
+		 ool.ORDER_AMT amt,
+		 DECODE (
+			cmb.IS_INVOICE,
+			'1',
+			'不开票',
+			'2',
+			'普票',
+			'3',
+			'专票',
+			'其他'
+		) invoiceType,
+		 (
+			SELECT
+				SUM (OII.AMT)
+			FROM
+				OM_INVOICE_ITEM oii,
+				OM_ORDER_SPILTS oos
+			WHERE
+				OII.ORDER_ID = OOH.SAP_ORDER_ID
+			AND OOS.ORDERITEM_SAP_NO (+) = OII.ORDER_ITEM_ID
+			AND OOS.HEADER_ID = OOL.HEADER_ID
+			AND OOS.LINE_ID = OOL. ID
+		) invoice,
+		 (
+			SELECT
+				SUM (tax)
+			FROM
+				OM_INVOICE_ITEM oii,
+				OM_ORDER_SPILTS oos
+			WHERE
+				OII.ORDER_ID = OOH.SAP_ORDER_ID
+			AND OOS.ORDERITEM_SAP_NO (+) = OII.ORDER_ITEM_ID
+			AND OOS.HEADER_ID = OOL.HEADER_ID
+			AND OOS.LINE_ID = OOL. ID
+		) tax,
+		 (
+			SELECT
+				MAX (TAX_RATE)
+			FROM
+				OM_INVOICE_ITEM oii,
+				OM_ORDER_SPILTS oos
+			WHERE
+				OII.ORDER_ID = OOH.SAP_ORDER_ID
+			AND OOS.ORDERITEM_SAP_NO (+) = OII.ORDER_ITEM_ID
+			AND OOS.HEADER_ID = OOL.HEADER_ID
+			AND OOS.LINE_ID = OOL. ID
+		) taxRate
+		FROM
+			OM_ORDER_LINES_ALL ool,
+			OM_ORDER_HEADERS_ALL OOH,
+			CRM_SALES_ORGANIZATION cso,
+			CRM_SALES_ORGANIZATION cso2,
+			CRM_SALES_ORGANIZATION cso3,
+			C_MERCH_CUST_BASE cmb,
+			T_EMPLOYEE te,
+			T_MATERIAL_BASE tmb,
+			OM_POLICY_HEADERS oph
+		WHERE
+			ool.header_id = ooh. ID (+)
+		AND OOH.ORGANIZATION_ID = CSO. ID (+)
+		AND ooh.region_id = cso2. ID (+)
+		AND ooh.provi_id = cso3. ID (+)
+		AND ooh.merch_cust_id = cmb. ID (+)
+		AND OOH.SALESREP_ID = TE. ID (+)
+		AND OOL.MATERIAL_ID = TMB.SAP_ID (+)
+		AND OOL.POLICY_HEADER_ID = oph. ID (+)
+		AND OOH.ORDER_TYPE = '6'
+		AND EXISTS (select OII.AMT from OM_INVOICE_ITEM oii where OII.ORDER_ID = OOH.SAP_ORDER_ID)
+		ORDER BY OOL.HEADER_ID desc
+		<if test="begin != null">
+	      <![CDATA[ ) row_ ) where rownum_ > #{begin} and rownum_ <= #{end} ]]>
+		</if>
+	</select>
+	<select id="countRetailOrderInvoices" resultType="int">
+		select count(1) FROM
+			OM_ORDER_LINES_ALL ool,
+			OM_ORDER_HEADERS_ALL OOH,
+			CRM_SALES_ORGANIZATION cso,
+			CRM_SALES_ORGANIZATION cso2,
+			CRM_SALES_ORGANIZATION cso3,
+			C_MERCH_CUST_BASE cmb,
+			T_EMPLOYEE te,
+			T_MATERIAL_BASE tmb,
+			OM_POLICY_HEADERS oph
+		WHERE
+			ool.header_id = ooh. ID (+)
+		AND OOH.ORGANIZATION_ID = CSO. ID (+)
+		AND ooh.region_id = cso2. ID (+)
+		AND ooh.provi_id = cso3. ID (+)
+		AND ooh.merch_cust_id = cmb. ID (+)
+		AND OOH.SALESREP_ID = TE. ID (+)
+		AND OOL.MATERIAL_ID = TMB.SAP_ID (+)
+		AND OOL.POLICY_HEADER_ID = oph. ID (+)
+		AND OOH.ORDER_TYPE = '6'
+		AND EXISTS (select OII.AMT from OM_INVOICE_ITEM oii where OII.ORDER_ID = OOH.SAP_ORDER_ID)
+		ORDER BY OOL.HEADER_ID desc
+	</select>
+	<select id="findTransferOrderDetail" resultType="com.hhnz.report.model.TransferOrderDetailReport">
+		<if test="begin != null">
+			select * from ( select row_.*, rownum rownum_ from (
+		</if>
+		SELECT cmcb.name merch,
+	       cmcd.name 调入方,
+	       cmcd.address transferAddr,
+	       ooha.merch_cust_id 编号,
+	       cmcb.sap_customer_id merchSapId,
+	       ooha.id orderId,
+	       --ooha.sap_order_id,
+	       to_char(ooha.create_ts,'yyyy-mm-dd') createTime,
+	       te.name creator,
+	       cso.name orgname,
+	       regin.name region,
+	       prov.name prov,
+	       td.show_text rdc,
+	       decode(cmcb.cust_type,'7','仓储服务商','70','合作仓储服务商') custType,
+	       tmb.sap_id materialId,
+	       tmb.sku,
+	       oos.price / 100 unitPrice,
+	       oos.num,
+	       round((oos.price * oos.num) / 100, 2) amt,
+	       tmb.specifications specifications,
+	       tmb.unit unit,
+	       case
+	         when tmb.unit = 'TO' then
+	          oos.num
+	         else
+	          round(tmb.specifications * round(oos.num) / 1000000, 3)
+	       end weight,
+	       case
+	         when cmcb.cust_type = '7' then
+	          nvl((SELECT nvl(sum(cvwh.change_amt), 0)
+	                FROM crm_virtual_warehouse_history cvwh
+	               where 1 = 1
+	                 and cvwh.cust_type like 'Z9%'
+	                 and cvwh.related_order_id = ooha.id
+	                 and cvwh.material_id = oos.material_id),
+	              0)
+	         else
+	          nvl((SELECT nvl(sum(oodh.num), 0)
+	                FROM om_order_delivered_history oodh,
+	                     om_order_spilts            oos2,
+	                     om_order_headers_all       ooh
+	               where oodh.sap_order_id = ooh.sap_order_id
+	                 and ooh.id = ooha.attribute13
+	                 and ooh.id = oos2.header_id
+	                 and oos2.material_id = oos.material_id
+	                 and ooh.merch_cust_id = oos2.merch_cust_id
+	                 and oodh.orderitem_sap_no = oos2.orderitem_sap_no),
+	              0)
+	       end deliveryNum,
+	       case
+	         when tmb.unit = 'TO' then
+	          case
+	            when cmcb.cust_type = '7' then
+	             nvl((SELECT nvl(sum(cvwh.change_amt), 0)
+	                   FROM crm_virtual_warehouse_history cvwh
+	                  where 1 = 1
+	                    and cvwh.cust_type like 'Z9%'
+	                    and cvwh.related_order_id = ooha.id
+	                    and cvwh.material_id = oos.material_id),
+	                 0)
+	            else
+	             nvl((SELECT nvl(sum(oodh.num), 0)
+	                   FROM om_order_delivered_history oodh,
+	                        om_order_spilts            oos2,
+	                        om_order_headers_all       ooh
+	                  where oodh.sap_order_id = ooh.sap_order_id
+	                    and ooh.id = ooha.attribute13
+	                    and ooh.id = oos2.header_id
+	                    and oos2.material_id = oos.material_id
+	                    and ooh.merch_cust_id = oos2.merch_cust_id
+	                    and oodh.orderitem_sap_no = oos2.orderitem_sap_no),
+	                 0)
+	          end
+	         else
+	          case
+	            when cmcb.cust_type = '7' then
+	             round(nvl((SELECT nvl(sum(cvwh.change_amt), 0)
+	                         FROM crm_virtual_warehouse_history cvwh
+	                        where 1 = 1
+	                          and cvwh.cust_type like 'Z9%'
+	                          and cvwh.related_order_id = ooha.id
+	                          and cvwh.material_id = oos.material_id),
+	                       0) * tmb.specifications / 1000000,
+	                   3)
+	            else
+	             round(nvl((SELECT nvl(sum(oodh.num), 0)
+	                         FROM om_order_delivered_history oodh,
+	                              om_order_spilts            oos2,
+	                              om_order_headers_all       ooh
+	                        where oodh.sap_order_id = ooh.sap_order_id
+	                          and ooh.id = ooha.attribute13
+	                          and ooh.id = oos2.header_id
+	                          and oos2.material_id = oos.material_id
+	                          and ooh.merch_cust_id = oos2.merch_cust_id
+	                          and oodh.orderitem_sap_no = oos2.orderitem_sap_no),
+	                       0) * tmb.specifications / 1000000,
+	                   3)
+	          end
+	       end deliveryWeight,
+	       case
+	         when cmcb.cust_type = '7' then
+	          nvl((SELECT nvl(sum(nvl(cvwh.change_amt, 0) * nvl(oos.price, 0)), 0)
+	                FROM crm_virtual_warehouse_history cvwh
+	               where cvwh.related_order_id = oos.header_id
+	                 and oos.material_id = cvwh.material_id
+	                 and cvwh.cust_type like 'Z9%'),
+	              0) / 100
+	         else
+	          nvl((SELECT nvl(sum(oos.price * oodh.num), 0)
+	                FROM om_order_delivered_history oodh,
+	                     om_order_spilts            oos2,
+	                     om_order_headers_all       ooh
+	               where oodh.sap_order_id = ooh.sap_order_id
+	                 and ooh.id = ooha.attribute13
+	                 and ooh.id = oos2.header_id
+	                 and ooh.merch_cust_id = oos2.merch_cust_id
+	                 and oos.material_id = oos2.material_id
+	                 and oodh.orderitem_sap_no = oos2.orderitem_sap_no),
+	              0) / 100
+	       end deliveryAmt,
+	       orders.show_text states
+	  FROM om_order_headers_all      ooha,
+	       c_merch_cust_base         cmcb,
+	       t_employee                te,
+	       crm_sales_organization    regin,
+	       crm_sales_organization    cso,
+	       crm_sales_organization    prov,
+	       t_dict                    td,
+	       T_AREA_RDC                tar,
+	       om_order_spilts           oos,
+	       t_material_base           tmb,
+	       c_merch_cust_distribution cmcd,
+	       t_dict  orders
+	 where 1 = 1
+	   and ooha.merch_cust_id = cmcb.id
+	   and ooha.create_oid = te.id(+)
+	   and cmcb.organization_id = cso.id
+	   and ooha.region_id = regin.id(+)
+	   and ooha.provi_id = prov.id(+)
+	   and cmcb.city_id = tar.city_id
+	   and tar.rdc_code = td.choose_val
+	   and ooha.id = oos.header_id
+	   and oos.material_id = tmb.sap_id
+	   and ooha.ship_id = cmcd.id
+	   and td.col_name = 'VIRTUAL_WAREHOUSE_CODE'
+	   and ooha.order_type = '5'
+	   and ooha.states = orders.choose_val
+	   and orders.col_name='OM_ORDER_HEADER_TYPE'
+	   and ooha.states not in ('9','10')
+	   <if test="merch !=null">
+	   	and cmcb.name like '%'||#{merch}||'%'
+	   </if>
+	   <if test="bdate !=null">
+	   and ooha.create_ts >= to_date(#{bdate,jdbcType=VARCHAR},'yyyy-MM-dd')
+	   </if>	
+	   <if test="edate !=null" >
+	   and ooha.create_ts &lt;=  to_date(#{edate,jdbcType=VARCHAR},'yyyy-MM-dd')+0.99999
+	   </if>
+	   <if test="materialid !=null" >
+	   and oos.material_id = #{materialid}
+	   </if>
+	   <if test="custtype !=null" >
+	   and cmcb.cust_type = #{custtype}
+	   </if>
+	   <if test="stations !=null">
+	    and ooha.station_id in
+	  	 <foreach item="item" index="index" collection="stations" open="(" separator="," close=")">  
+	 		 #{item}  
+	 	</foreach> 
+	   </if>
+	   order by ooha.id desc
+	   <if test="begin != null">
+	      <![CDATA[ ) row_ ) where rownum_ > #{begin} and rownum_ <= #{end} ]]>
+		</if>
+	</select>
+	<select id="countTransferOrderDetail" resultType="int">
+		select count(1) from (SELECT cmcb.name merch,
+	       cmcd.name 调入方,
+	       cmcd.address transferAddr,
+	       ooha.merch_cust_id 编号,
+	       cmcb.sap_customer_id merchSapId,
+	       ooha.id orderId,
+	       --ooha.sap_order_id,
+	       ooha.create_ts createTime,
+	       te.name creator,
+	       cso.name orgname,
+	       regin.name region,
+	       prov.name prov,
+	       td.show_text rdc,
+	       decode(cmcb.cust_type,'7','仓储服务商','70','合作仓储服务商') custType,
+	       tmb.sap_id materialId,
+	       tmb.sku,
+	       oos.price / 100 unitPrice,
+	       oos.num,
+	       round((oos.price * oos.num) / 100, 2) amt,
+	       tmb.specifications specifications,
+	       tmb.unit unit,
+	       case
+	         when tmb.unit = 'TO' then
+	          oos.num
+	         else
+	          round(tmb.specifications * round(oos.num) / 1000000, 3)
+	       end weight,
+	       case
+	         when cmcb.cust_type = '7' then
+	          nvl((SELECT nvl(sum(cvwh.change_amt), 0)
+	                FROM crm_virtual_warehouse_history cvwh
+	               where 1 = 1
+	                 and cvwh.cust_type like 'Z9%'
+	                 and cvwh.related_order_id = ooha.id
+	                 and cvwh.material_id = oos.material_id),
+	              0)
+	         else
+	          nvl((SELECT nvl(sum(oodh.num), 0)
+	                FROM om_order_delivered_history oodh,
+	                     om_order_spilts            oos2,
+	                     om_order_headers_all       ooh
+	               where oodh.sap_order_id = ooh.sap_order_id
+	                 and ooh.id = ooha.attribute13
+	                 and ooh.id = oos2.header_id
+	                 and oos2.material_id = oos.material_id
+	                 and ooh.merch_cust_id = oos2.merch_cust_id
+	                 and oodh.orderitem_sap_no = oos2.orderitem_sap_no),
+	              0)
+	       end deliveryNum,
+	       case
+	         when tmb.unit = 'TO' then
+	          case
+	            when cmcb.cust_type = '7' then
+	             nvl((SELECT nvl(sum(cvwh.change_amt), 0)
+	                   FROM crm_virtual_warehouse_history cvwh
+	                  where 1 = 1
+	                    and cvwh.cust_type like 'Z9%'
+	                    and cvwh.related_order_id = ooha.id
+	                    and cvwh.material_id = oos.material_id),
+	                 0)
+	            else
+	             nvl((SELECT nvl(sum(oodh.num), 0)
+	                   FROM om_order_delivered_history oodh,
+	                        om_order_spilts            oos2,
+	                        om_order_headers_all       ooh
+	                  where oodh.sap_order_id = ooh.sap_order_id
+	                    and ooh.id = ooha.attribute13
+	                    and ooh.id = oos2.header_id
+	                    and oos2.material_id = oos.material_id
+	                    and ooh.merch_cust_id = oos2.merch_cust_id
+	                    and oodh.orderitem_sap_no = oos2.orderitem_sap_no),
+	                 0)
+	          end
+	         else
+	          case
+	            when cmcb.cust_type = '7' then
+	             round(nvl((SELECT nvl(sum(cvwh.change_amt), 0)
+	                         FROM crm_virtual_warehouse_history cvwh
+	                        where 1 = 1
+	                          and cvwh.cust_type like 'Z9%'
+	                          and cvwh.related_order_id = ooha.id
+	                          and cvwh.material_id = oos.material_id),
+	                       0) * tmb.specifications / 1000000,
+	                   3)
+	            else
+	             round(nvl((SELECT nvl(sum(oodh.num), 0)
+	                         FROM om_order_delivered_history oodh,
+	                              om_order_spilts            oos2,
+	                              om_order_headers_all       ooh
+	                        where oodh.sap_order_id = ooh.sap_order_id
+	                          and ooh.id = ooha.attribute13
+	                          and ooh.id = oos2.header_id
+	                          and oos2.material_id = oos.material_id
+	                          and ooh.merch_cust_id = oos2.merch_cust_id
+	                          and oodh.orderitem_sap_no = oos2.orderitem_sap_no),
+	                       0) * tmb.specifications / 1000000,
+	                   3)
+	          end
+	       end deliveryWeight,
+	       case
+	         when cmcb.cust_type = '7' then
+	          nvl((SELECT nvl(sum(nvl(cvwh.change_amt, 0) * nvl(oos.price, 0)), 0)
+	                FROM crm_virtual_warehouse_history cvwh
+	               where cvwh.related_order_id = oos.header_id
+	                 and oos.material_id = cvwh.material_id
+	                 and cvwh.cust_type like 'Z9%'),
+	              0) / 100
+	         else
+	          nvl((SELECT nvl(sum(oos.price * oodh.num), 0)
+	                FROM om_order_delivered_history oodh,
+	                     om_order_spilts            oos2,
+	                     om_order_headers_all       ooh
+	               where oodh.sap_order_id = ooh.sap_order_id
+	                 and ooh.id = ooha.attribute13
+	                 and ooh.id = oos2.header_id
+	                 and ooh.merch_cust_id = oos2.merch_cust_id
+	                 and oos.material_id = oos2.material_id
+	                 and oodh.orderitem_sap_no = oos2.orderitem_sap_no),
+	              0) / 100
+	       end deliveryAmt,
+	       orders.show_text states
+	  FROM om_order_headers_all      ooha,
+	       c_merch_cust_base         cmcb,
+	       t_employee                te,
+	       crm_sales_organization    regin,
+	       crm_sales_organization    cso,
+	       crm_sales_organization    prov,
+	       t_dict                    td,
+	       T_AREA_RDC                tar,
+	       om_order_spilts           oos,
+	       t_material_base           tmb,
+	       c_merch_cust_distribution cmcd,
+	       t_dict  orders
+	 where 1 = 1
+	   and ooha.merch_cust_id = cmcb.id
+	   and ooha.create_oid = te.id(+)
+	   and cmcb.organization_id = cso.id
+	   and ooha.region_id = regin.id(+)
+	   and ooha.provi_id = prov.id(+)
+	   and cmcb.city_id = tar.city_id
+	   and tar.rdc_code = td.choose_val
+	   and ooha.id = oos.header_id
+	   and oos.material_id = tmb.sap_id
+	   and ooha.ship_id = cmcd.id
+	   and td.col_name = 'VIRTUAL_WAREHOUSE_CODE'
+	   and ooha.order_type = '5'
+	   and ooha.states = orders.choose_val
+	   and orders.col_name='OM_ORDER_HEADER_TYPE'
+	   and ooha.states not in ('9','10')
+	   order by ooha.id desc)
+	</select>
+</mapper>

@@ -1,0 +1,29 @@
+CREATE OR REPLACE VIEW T_MATERIAL_BASE_V AS SELECT
+	CSO. ID orgid,
+	(select name from CRM_SALES_ORGANIZATION where id=SUBSTR(TF.ORGANIZATION_ID, 0, 3)) || '-' || CSO. NAME orgname,
+	tf. ID factoryid,
+	tf.ZIP_CODE zipcode,
+    tmb.category category,
+    tmb.brand brand,
+    tmb.series series,
+    tmb.category categoryid,
+    tmb.brand brandid,
+    tmb.series seriesid,
+	nvl((SELECT t.price
+             FROM t_material_price t
+            where 1 = 1
+              and t.organization_id = cso.sap_id
+              and t.edate > sysdate
+              and t.material_id = tmb.sap_id),
+           0) / 100 BASE_PRICE,
+	tmf.INV_NUM,
+	TMB.SAP_ID,TMB.SKU,TMB.MATERIAL_NAME,TMB.MATERIAL_TYPE,TMB.MATERIAL_GROUP,TMB.MATERIAL_GROUPNAME,TMB.UNIT,TMB.ORDER_UNIT,TMB.PRODUCT_GROUP,TMB.PRODUCT_GROUP_NAME,TMB.LEVELS,TMB.P_NAME,TMB.I_PACKAGE,TMB.O_PACKAGE,TMB.SPECIFICATIONS,TMB.SYMBOL,TMB.PROV_ID,TMB.CITY_ID,TMB.IODINE,TMB.UNLOOSE,TMB.ACCESSORIES,TMB.SALT,TMB.GRAIN,TMB.FLAVOR,TMB.PRODUCE_TYPE,TMB.ATTRIBUTE1,TMB.ATTRIBUTE2,TMB.ATTRIBUTE3,TMB.ATTRIBUTE4,TMB.ATTRIBUTE5,TMB.ATTRIBUTE6,TMB.ATTRIBUTE7,TMB.ATTRIBUTE8,TMB.ATTRIBUTE9,TMB.ATTRIBUTE10,TMB.INVLIMIT
+FROM
+	T_MATERIAL_FACTORY tmf,
+	T_FACTORY tf,
+	CRM_SALES_ORGANIZATION cso,
+	T_MATERIAL_BASE tmb
+WHERE TMF.FACOTRY_ID = TF. ID
+AND TMF.MATERIAL_ID = TMB.SAP_ID
+AND TF.ORGANIZATION_ID = CSO. ID
+and tmb.active='1';

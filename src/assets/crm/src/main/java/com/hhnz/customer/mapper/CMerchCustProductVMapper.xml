@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.customer.mapper.CMerchCustProductVMapper" >
+  <resultMap id="BaseResultMap" type="com.hhnz.customer.model.CMerchCustProductV" >
+    <result column="ORGNAME" property="orgname" jdbcType="VARCHAR" />
+    <result column="CUSTNAME" property="custname" jdbcType="VARCHAR" />
+    <result column="SKU" property="sku" jdbcType="VARCHAR" />
+    <result column="CATEGORY" property="category" jdbcType="VARCHAR" />
+    <result column="BRAND" property="brand" jdbcType="VARCHAR" />
+    <result column="SERIES" property="series" jdbcType="VARCHAR" />
+    <result column="I_PACKAGE" property="iPackage" jdbcType="VARCHAR" />
+    <result column="BASE_PRICE" property="basePrice" jdbcType="DECIMAL" />
+    <result column="CONTRACTSTATES" property="contractstates" jdbcType="VARCHAR" />
+    <result column="ID" property="id" jdbcType="DECIMAL" />
+    <result column="MERCH_CUST_ID" property="merchCustId" jdbcType="DECIMAL" />
+    <result column="MATERIAL_ID" property="materialId" jdbcType="VARCHAR" />
+    <result column="ORGANIZATION_ID" property="organizationId" jdbcType="VARCHAR" />
+    <result column="CONTRACT_ID" property="contractId" jdbcType="DECIMAL" />
+    <result column="CONTRACT_LINEID" property="contractLineid" jdbcType="DECIMAL" />
+    <result column="PRICE" property="price" jdbcType="DECIMAL" />
+    <result column="CREATE_TS" property="createTs" jdbcType="TIMESTAMP" />
+    <result column="CREATE_OID" property="createOid" jdbcType="DECIMAL" />
+    <result column="UPDATE_TS" property="updateTs" jdbcType="TIMESTAMP" />
+    <result column="UPDATE_OID" property="updateOid" jdbcType="DECIMAL" />
+    <result column="H_PRICE" property="hPrice" jdbcType="DECIMAL" />
+    <result column="cif_price" property="cifPrice" jdbcType="DECIMAL" />
+    <result column="STATES" property="states" jdbcType="VARCHAR" />
+    <result column="custType" property="custType" jdbcType="VARCHAR"/>
+    <result column="b_date" property="bDate" jdbcType="VARCHAR"/>
+    <result column="e_date" property="eDate" jdbcType="VARCHAR"/>
+    <result column="sap_customer_id" property="sapCustomerId" jdbcType="VARCHAR"/>
+  </resultMap>
+ 
+  <select id="selectMerchProduct" resultMap="BaseResultMap" parameterType="java.util.Map" >
+    with t_price as
+  (SELECT max(tmp.price+nvl(tmp.adjust_price,0)) keep(dense_rank first order by tmp.create_ts desc ) price,
+         tmp.organization_id,
+         tmp.material_id
+    FROM T_MATERIAL_PRICE tmp
+   where 1 = 1
+     and tmp.edate + 0.99999 > sysdate
+     and tmp.bdate + 0.00001 &lt; sysdate
+     and tmp.channel='10'
+   group by tmp.organization_id, tmp.material_id )
+    <include refid="OracleDialectPrefix" />
+    SELECT (select c.name from CRM_SALES_ORGANIZATION c where c.id = cso.pid )||'-'||CSO.NAME orgname,
+       CMB. NAME custname,
+       tmb.sku,
+       tmb.unit,
+       TMB.CATEGORY,
+       TMB.BRAND,
+       TMB.SERIES,
+       tmb.I_PACKAGE,
+       nvl((SELECT tmp.price
+             FROM t_price tmp
+            where 1 = 1
+              and tmp.material_id = cmp.material_id
+              and tmp.organization_id = cso.sap_id),
+           0) base_price,
+      ' ' contractstates,
+       CMP.ID,
+       CMP.MERCH_CUST_ID,
+       CMP.MATERIAL_ID,
+       CMP.ORGANIZATION_ID,
+       CMP.CONTRACT_ID,
+       CMP.CONTRACT_LINEID,
+       CMP.PRICE,
+       CMP.CREATE_TS,
+       CMP.CREATE_OID,
+       CMP.UPDATE_TS,
+       CMP.UPDATE_OID,
+       CMP.H_PRICE,
+       CMP.CIF_PRICE,
+       CMP.STATES,
+       to_char(CMP.B_DATE,'yyyy-mm-dd') b_date,
+       to_char(CMP.E_DATE,'yyyy-mm-dd') e_date,
+       rownum rownum_
+  FROM C_MERCH_CUST_PRODUCT   cmp,
+       CRM_SALES_ORGANIZATION cso,
+       C_MERCH_CUST_BASE      cmb,
+       T_MATERIAL_BASE        tmb
+ WHERE CMP.MATERIAL_ID = TMB.SAP_ID
+   AND CMP.ORGANIZATION_ID = CSO.ID(+)
+   AND CMP.MERCH_CUST_ID = CMB.ID
+   and cmp.states in ('4','6')
+   and cmb.cust_type !='1'
+   <if test="custType !=null and custType !=''">
+     and cmb.cust_type =#{custType,jdbcType=VARCHAR}
+   </if>
+   <if test="category !=null and category !=''">
+   	and tmb.category =#{category,jdcbType=VARCHAR}
+   </if>
+   <if test="iPackage !=null and iPackage !=''">
+   	and tmb.I_PACKAGE =#{iPackage,jdbcType=VARCHAR}
+   </if>
+   <if test="brand != null and brand !=''">
+   	and tmb.brand =#{brand，jdbcType =VARCHAR}
+   </if>
+   <if test="orgId !=null and orgId !=''">
+   	and cmp.organization_id =#{orgId,jdbcType=VARCHAR}
+   </if>
+   <if test="materialId !=null and materialId !=''">
+   and  cmp.material_id =#{materialId,jdbcType=VARCHAR}
+   </if>
+   <if test="custname !=null and  custname !=''">
+   	and cmb.name like #{custname,jdbcType=VARCHAR}||'%'
+   </if>
+   <if test="series !=null and series !=''">
+    and tmb.series =#{series,jdbcType=VARCHAR}
+   </if>
+    and rownum &lt; #{end,jdbcType=DECIMAL}
+    <include refid="OracleDialectSuffix" />
+  </select>
+  <select id="countMerchProduct" parameterType="java.util.Map" resultType="java.lang.Integer" >
+    SELECT count(1)
+  FROM C_MERCH_CUST_PRODUCT   cmp,
+       CRM_SALES_ORGANIZATION cso,
+       C_MERCH_CUST_BASE      cmb,
+       T_MATERIAL_BASE        tmb
+ WHERE CMP.MATERIAL_ID = TMB.SAP_ID
+   AND CMP.ORGANIZATION_ID = CSO.ID(+)
+   AND CMP.MERCH_CUST_ID = CMB.ID
+   and cmp.states in ('4','6')
+   <if test="custType !=null and custType !=''">
+     and cmb.cust_type =#{custType,jdbcType=VARCHAR}
+   </if>
+   <if test="category !=null and category !=''">
+   	and tmb.category =#{category,jdcbType=VARCHAR}
+   </if>
+   <if test="iPackage !=null and iPackage !=''">
+   	and tmb.I_PACKAGE =#{iPackage,jdbcType=VARCHAR}
+   </if>
+   <if test="brand != null and brand !=''">
+   	and tmb.brand =#{brand，jdbcType =VARCHAR}
+   </if>
+   <if test="orgId !=null and orgId !=''">
+   	and cmp.organization_id =#{orgId,jdbcType=VARCHAR}
+   </if>
+   <if test="materialId !=null and materialId !=''">
+   and  cmp.material_id =#{materialId,jdbcType=VARCHAR}
+   </if>
+   <if test="custname !=null and  custname !=''">
+   	and cmb.name like #{custname,jdbcType=VARCHAR}||'%'
+   </if>
+   <if test="series !=null and series !=''">
+    and tmb.series =#{series,jdbcType=VARCHAR}
+   </if>
+  </select>
+  <sql id="OracleDialectPrefix" >
+      select * from ( 
+  </sql>
+  <sql id="OracleDialectSuffix" >
+      <![CDATA[ )  where rownum_ > #{begin}]]>
+  </sql>
+  
+  <select id="upMaterial">
+  	 <![CDATA[
+    {call product ()}
+	]]>
+  </select>
+  <select id="updatePriceStates" parameterType="java.lang.Long">
+  	 <![CDATA[
+    {call crm_customer_contract_pkg.update_price_effective_time(#{id,mode=IN,jdbcType=DECIMAL})}
+	]]>
+  </select>
+  <update id="updateProductStates" parameterType="java.util.Map">
+  	update c_merch_cust_product cmcp set cmcp.states =#{states,jdbcType=VARCHAR}
+  	WHERE cmcp.merch_cust_id= #{merchCustId,jdbcType=DECIMAL}
+  	<if test="contractId !=null and contractId !=''">
+  	and cmcp.contract_id=#{contractId,jdbcType=DECIMAL}  	
+  	</if>
+  </update>
+  
+  <insert id="insertInv" parameterType="java.lang.Long">
+   INSERT INTO C_MERCH_CUST_PROUDCT_INV
+        (ID,
+         MERCH_CUST_ID,
+         ORGANIZATION_ID,
+         INV_NUM,
+         FROZEN_NUM,
+         CREATE_TS,
+         CREATE_OID,
+         CONTRACT_ID,
+         MATERIAL_ID)
+        (SELECT SEQ_MERCH_INV_ID.NEXTVAL,
+                CMCB.ID,
+                CMCB.ORGANIZATION_ID,
+                0,
+                0,
+                SYSDATE,
+                CMCC.CREATE_OID,
+                CMCC.ID,
+                CMCP.MATERIAL_ID
+           FROM C_MERCH_CUST_PRODUCT  CMCP,
+                C_MERCH_CUST_BASE     CMCB,
+                C_MERCH_CUST_CONTRACT CMCC
+          WHERE 1 = 1
+            AND CMCB.ID = CMCP.MERCH_CUST_ID
+            AND CMCC.MERCH_CUST_ID = CMCB.ID
+            AND CMCC.ID= CMCP.CONTRACT_ID
+            AND CMCC.STATES='4'
+            AND CMCB.STATES = '3'
+            AND CMCB.CUST_TYPE = '7'
+            AND CMCB.ID =#{id,jdbcType=DECIMAL}
+            AND NOT EXISTS
+          (SELECT 1
+                   FROM C_MERCH_CUST_PROUDCT_INV A
+                  WHERE 1 = 1
+                    AND A.MERCH_CUST_ID = CMCP.MERCH_CUST_ID
+                    AND A.MATERIAL_ID = CMCP.MATERIAL_ID))
+  	
+  </insert>
+  
+  <insert id="insertInvBalance" parameterType="java.lang.Long">
+  	INSERT INTO C_MERCH_CUST_PRODUCT_BALANCES
+        (ID,
+         PERIOD,
+         ORGANIZATION_ID,
+         YTD,
+         D_NUM,
+         C_NUM,
+         PTD,
+         MERCH_CUST_ID,
+         MATERIAL_ID)
+        (SELECT SEQ_MERCH_INV_BALANCE_ID.NEXTVAL,
+                TO_CHAR(SYSDATE, 'YYYY-MM'),
+                CMCB.ORGANIZATION_ID,
+                0,
+                0,
+                0,
+                0,
+                CMCP.MERCH_CUST_ID,
+                CMCP.MATERIAL_ID
+           FROM C_MERCH_CUST_PRODUCT CMCP, C_MERCH_CUST_BASE CMCB
+          WHERE 1 = 1
+            AND CMCB.ID = CMCP.MERCH_CUST_ID
+            AND CMCB.STATES = '3'
+            AND CMCB.CUST_TYPE = '7'
+            AND CMCB.ID =#{id,jdbcType=DECIMAL}
+            AND NOT EXISTS
+          (SELECT 1
+                   FROM C_MERCH_CUST_PRODUCT_BALANCES A
+                  WHERE 1 = 1
+                    AND A.MERCH_CUST_ID = CMCP.MERCH_CUST_ID
+                    AND A.MATERIAL_ID = CMCP.MATERIAL_ID
+                    AND A.PERIOD = TO_CHAR(SYSDATE, 'YYYY-MM')))
+  </insert>
+  
+  <select id="selectSaltPrice" resultMap="BaseResultMap" parameterType="java.util.Map">
+  	SELECT cmcb.id merchCustId,
+       cmcb.sap_customer_id sapCustomerId,
+       cmcb.name custname,
+       (SELECT c.name FROM crm_sales_organization c where c.id = cso.pid) || '-' ||
+       cso.name orgname,
+       cmcb.adjust_price hPrice
+  FROM c_merch_cust_base cmcb, crm_sales_organization cso
+ where cmcb.cust_type = '1'
+   and cmcb.organization_id = cso.id
+   and cmcb.states = '3'
+   and (cmcb.name like '%吉林省盐业集团有限公司%' or cmcb.sap_customer_id = '1421')
+  </select>
+  <select id="countSaltPrice" resultType="java.lang.Integer" parameterType="java.util.Map">
+  	SELECT count(1)
+  FROM c_merch_cust_base cmcb, crm_sales_organization cso
+ where cmcb.cust_type = '1'
+   and cmcb.organization_id = cso.id
+   and cmcb.states = '3'
+   and (cmcb.name like '%吉林省盐业集团有限公司%' or cmcb.sap_customer_id = '1421')
+  </select>
+</mapper>

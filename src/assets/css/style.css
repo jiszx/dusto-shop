@@ -1,0 +1,186 @@
+html{
+	font-size: 50px;
+}
+html,body,.page-app{
+	height: 100%;
+}
+body {
+    text-shadow: none;
+    font-size: 14px;
+    background: #fff;
+}
+em{
+	font-style: normal;
+}
+div, ul,a{
+	box-sizing: border-box;
+}
+/* 搜索 */
+.searchbar-result p{padding-left: 0.3rem;}
+/*--login---*/
+.login-box{width:100%;overflow:hidden;margin:0 auto;}
+.lg-title{width:100%;height:auto;overflow:hidden;font-size:22px;padding-left: 0.6rem; font-weight: 600; line-height:1.3rem; color:#000;}
+.lg-logo{width:100%;height:auto;overflow:hidden;text-align:center;}
+.lg-logo div{padding:0.56rem 1.2rem 0.6rem 1.2rem}
+.lg-logo div img{width: 2.6rem}
+.login-form{width:100%;height:auto; padding:0.2rem 0.6rem; box-sizing:border-box; -moz-box-sizing:border-box; -webkit-box-sizing:border-box; -o-box-sizing:border-box;}
+.common-div{width:100%;height:0.88rem;overflow:hidden;border-radius:0.08rem;-webkit-border-radius:0.08rem;margin-bottom:0.3rem; position:relative;}
+.login-user-name,.login-user-pasw{background-color:rgba(255,255,255,0.1);}
+.common-div >.common-icon{float:left;overflow:hidden;margin:0.2rem 0.2rem 0.2rem 0;}
+.common-div >input{width:100%;height:0.88rem; padding:0.12rem 0.2rem 0.12rem 1.56rem;background-color:transparent;border:none;outline:none;font-size:12px;color:#ccc; box-sizing:border-box; -moz-box-sizing:border-box; -webkit-box-sizing:border-box; -o-box-sizing:border-box; position:absolute; left:0; top:0; font-family:Helvetica,STHeiti STXihei, Microsoft JhengHei, Microsoft YaHei, Arial;}
+input:-webkit-autofill { box-shadow: 0 0 0px 20rem white inset !important;}
+.login-btn{background-color:#ea5361;color:#fff;font-size:0.32rem;text-align:center;line-height:0.88rem; display:block;}
+.forgets{width:100%;height:auto;margin:0 auto;padding-bottom: 0.9rem; box-sizing:border-box; -moz-box-sizing:border-box; -webkit-box-sizing:border-box; -o-box-sizing:border-box;}
+.forgets >a{color:#ea5361;font-size:0.28rem;}
+.forgets >a +a{float:right;}
+.forgets >a>span{padding-left: 0.06rem}
+.weui-agree__checkbox{border: 1px solid #ea5361;}
+.weui-agree__checkbox:checked:before{color:#ea5361;}
+.page__ft {position: absolute;bottom: 0.6rem;right: 0.6rem;}
+.page__ft a{color:#ea5361;}
+/* 忘记密码/绑定手机号*/
+.forgetPwd .weui-cell{padding: 0.22rem 0px;border-bottom: 1px solid #e5e5e5;}
+.weui-vcode-btn{color:#ea5361;font-size: 0.28rem;}
+.weui-cell_vcode{ padding-bottom: 0.9rem;}
+.forgetPwd .label{font-size: 12px;color: #000;}
+.forgetPwd .weui-input{font-size: 12px;color: #ccc;}
+.forgetPwd .login-btn{margin-top: 0.88rem;}
+.forgetPwd .weui-cell__ft{border: 0.02rem solid #ea5361;border-radius: 0.2rem;}
+.forgetPwd .weui-vcode-btn{border-left:none;padding: 0 0.24rem;margin-left: 0;}
+/* 修改密码 */
+.confirm__psd{ padding-bottom: 0.9rem;}
+.modify-btn{background-color: #C1C1C7}
+.weui-label{width: 1.7rem;}
+/* 注册会员 */
+.register-title{color:#ea5361;}
+.weui-vcode-btn{height: 0.44rem;line-height: 0.44rem;}
+.confirm__psd__reg{ padding-bottom: 0.3rem;}
+.agree{padding-bottom: 0.2rem; margin-top: 0.22rem;}
+.login-oth-btn{border:1px solid #e21323; color:#e21323;font-size:16px;text-align:center;line-height:0.88rem; display:block;}
+
+/* 搜索空白页 */
+.search-begin{font-size: 0.28rem;color: #000000;padding-left: 0.4rem;line-height: 1.12rem;}
+.weui-flex{padding: 0 0 0.2rem 0.4rem;}
+.placeholder{font-size: 0.24rem;color: #666;}
+/* 我的信息 */
+  .cameraModel p{text-align: center;height: 1rem;line-height: 1rem;font-size: 18px;color: #1a1a1a;border-bottom: 1px solid #e5e5e5;}
+  .cameraModel .partingLine{height: 0.2rem;background: #B2B2B2;}
+  .weui-cell {
+    padding: 0.2rem 0.3rem;
+    position: relative;
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    align-items: center;
+  }
+  .weui-cell:before{border-top:none;}
+
+  .myShoeCode{width:3.5rem;}
+  .notice{font-size:0.2rem;color: #b3b3b3;padding-left: 0.14rem;}
+  .star{color:#ea5361;}
+  .weui-media-box_appmsg .weui-media-box__bd {
+      -webkit-box-flex: 1;
+      -webkit-flex: 1;
+      flex: 1;
+      min-width: 0;
+  }
+  .weui-media-box__bd{
+      padding: 0 0.2rem;
+  }
+  .promotion-sku {
+      padding: 0.16rem 0 0.1rem 0;
+  }
+  .promotion-sku li {
+      float: left;
+      margin: 0 0.1rem 0.1rem 0;
+  }
+  .myHem ul li{
+    position: relative;
+    width: 20%;
+  }
+  .myHem ul li .van-cell{
+    padding: 10px 15px 20px 0;
+  }
+  .myHem ul li .van-field .van-cell__title{
+    top:0;
+  }
+  .myHem ul li input{
+    position: absolute;
+    left: 1rem;
+    top: 0.02rem;
+    border-bottom: 1px solid #e5e5e5;
+    width: 0.6rem;
+    text-align: center;
+    font-size: 0.24rem;
+  }
+  .myHem li{margin: 0 0.5rem 0.1rem 0.1rem;}
+  .myIncome li{margin: 0 0.9rem 0.1rem 0.1rem;}
+  .promotion-sku li a {
+      display: block;
+      min-width: 0.402rem;
+      padding: 0 0.2rem;
+      max-width: 100%;
+      text-align: center;
+      font-size: 0.24rem;
+      color: #999;
+      position: relative;
+  }
+  .myIncome li a{min-width: 70px;padding: 0 10px;}
+  .promotion-sku li.active a{
+    background:#ea5361;
+    color:#fff;
+  }
+  .myShoeCodeList{
+    padding:0 0.3rem;
+  }
+ /*  我的足型信息 */
+ .addInfo{
+    text-align: center;
+    height: 0.88rem;
+    line-height: 0.88rem;
+    font-size: 16px;
+    color: #ea5361;
+    background: #fff;
+    margin-top: -0.2rem;
+  }
+  .addIcon img{
+    width: 18px;
+    height: 18px;
+    vertical-align: sub;
+    margin: 1px 8px;
+  }
+  /* 新增收货地址/保存 */
+   .addAdress{
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+   }
+   
+   
+/*1px*/
+.line-one-px{
+	position: relative;
+}
+.line-one-px::after{
+  	content: "";
+  	position: absolute;
+  	bottom: 0;
+  	left: 0;
+  	right: 0;
+  	height: 0;
+  	border-top: 1px #e5e5e5 solid;
+  	transform: scaleY(0.5);
+}
+/*更多右箭头*/
+.more-icon{
+	margin-left: 0.2rem;
+	display: inline-block;
+	width: 0.1rem;
+	height: 0.2rem;
+	
+	background: url(../images/icon/icon-right.png) no-repeat center;
+	background-size: 100%;
+}
+    

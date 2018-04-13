@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hhnz.order.mapper.OmOrderLogisticsMapper">
+  <resultMap id="BaseResultMap" type="com.hhnz.order.model.OmOrderLogistics">
+    <id column="ID" jdbcType="DECIMAL" property="id" />
+    <result column="SAP_DELIVERY_NO" jdbcType="VARCHAR" property="sapDeliveryNo" />
+    <result column="SITE" jdbcType="VARCHAR" property="site" />
+    <result column="LOGISTICS_NO" jdbcType="VARCHAR" property="logisticsNo" />
+    <result column="REMARK" jdbcType="VARCHAR" property="remark" />
+    <result column="CREATE_TS" jdbcType="TIMESTAMP" property="createTs" />
+    <result column="CREATE_OID" jdbcType="DECIMAL" property="createOid" />
+    <result column="LOGISTICS" jdbcType="VARCHAR" property="logistics" />
+    <result column="DELIVERY_TS" jdbcType="TIMESTAMP" property="deliveryTs" />
+    <result column="LOGISTICS_COST" jdbcType="DECIMAL" property="logisticsCost" />
+    <result column="DRIVER_NAME" jdbcType="VARCHAR" property="driverName" />
+    <result column="DRIVER_TEL" jdbcType="VARCHAR" property="driverTel" />
+    <result column="PLATE_NO" jdbcType="VARCHAR" property="plateNo" />
+  </resultMap>
+  <sql id="Example_Where_Clause">
+    <where>
+      <foreach collection="oredCriteria" item="criteria" separator="or">
+        <if test="criteria.valid">
+          <trim prefix="(" prefixOverrides="and" suffix=")">
+            <foreach collection="criteria.criteria" item="criterion">
+              <choose>
+                <when test="criterion.noValue">
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue">
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue">
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue">
+                  and ${criterion.condition}
+                  <foreach close=")" collection="criterion.value" item="listItem" open="(" separator=",">
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause">
+    <where>
+      <foreach collection="example.oredCriteria" item="criteria" separator="or">
+        <if test="criteria.valid">
+          <trim prefix="(" prefixOverrides="and" suffix=")">
+            <foreach collection="criteria.criteria" item="criterion">
+              <choose>
+                <when test="criterion.noValue">
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue">
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue">
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue">
+                  and ${criterion.condition}
+                  <foreach close=")" collection="criterion.value" item="listItem" open="(" separator=",">
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List">
+    ID, SAP_DELIVERY_NO, SITE, LOGISTICS_NO, REMARK, CREATE_TS, CREATE_OID, LOGISTICS, 
+    DELIVERY_TS, LOGISTICS_COST, DRIVER_NAME, DRIVER_TEL, PLATE_NO
+  </sql>
+  <select id="selectByExample" parameterType="com.hhnz.order.model.OmOrderLogisticsExample" resultMap="BaseResultMap">
+    <include refid="OracleDialectPrefix" />
+    select
+    <if test="distinct">
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from OM_ORDER_LOGISTICS
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null">
+      order by ${orderByClause}
+    </if>
+    <include refid="OracleDialectSuffix" />
+  </select>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from OM_ORDER_LOGISTICS
+    where ID = #{id,jdbcType=DECIMAL}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
+    delete from OM_ORDER_LOGISTICS
+    where ID = #{id,jdbcType=DECIMAL}
+  </delete>
+  <delete id="deleteByExample" parameterType="com.hhnz.order.model.OmOrderLogisticsExample">
+    delete from OM_ORDER_LOGISTICS
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="com.hhnz.order.model.OmOrderLogistics">
+    <selectKey keyProperty="id" order="BEFORE" resultType="java.lang.Long">
+      select SEQ_ORDER_LOGISTICS_ID.nextval from dual
+    </selectKey>
+    insert into OM_ORDER_LOGISTICS (ID, SAP_DELIVERY_NO, SITE, 
+      LOGISTICS_NO, REMARK, CREATE_TS, 
+      CREATE_OID, LOGISTICS, DELIVERY_TS, 
+      LOGISTICS_COST, DRIVER_NAME, DRIVER_TEL, 
+      PLATE_NO)
+    values (#{id,jdbcType=DECIMAL}, #{sapDeliveryNo,jdbcType=VARCHAR}, #{site,jdbcType=VARCHAR}, 
+      #{logisticsNo,jdbcType=VARCHAR}, #{remark,jdbcType=VARCHAR}, #{createTs,jdbcType=TIMESTAMP}, 
+      #{createOid,jdbcType=DECIMAL}, #{logistics,jdbcType=VARCHAR}, #{deliveryTs,jdbcType=TIMESTAMP}, 
+      #{logisticsCost,jdbcType=DECIMAL}, #{driverName,jdbcType=VARCHAR}, #{driverTel,jdbcType=VARCHAR}, 
+      #{plateNo,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.hhnz.order.model.OmOrderLogistics">
+    <selectKey keyProperty="id" order="BEFORE" resultType="java.lang.Long">
+      select SEQ_ORDER_LOGISTICS_ID.nextval from dual
+    </selectKey>
+    insert into OM_ORDER_LOGISTICS
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      ID,
+      <if test="sapDeliveryNo != null">
+        SAP_DELIVERY_NO,
+      </if>
+      <if test="site != null">
+        SITE,
+      </if>
+      <if test="logisticsNo != null">
+        LOGISTICS_NO,
+      </if>
+      <if test="remark != null">
+        REMARK,
+      </if>
+      <if test="createTs != null">
+        CREATE_TS,
+      </if>
+      <if test="createOid != null">
+        CREATE_OID,
+      </if>
+      <if test="logistics != null">
+        LOGISTICS,
+      </if>
+      <if test="deliveryTs != null">
+        DELIVERY_TS,
+      </if>
+      <if test="logisticsCost != null">
+        LOGISTICS_COST,
+      </if>
+      <if test="driverName != null">
+        DRIVER_NAME,
+      </if>
+      <if test="driverTel != null">
+        DRIVER_TEL,
+      </if>
+      <if test="plateNo != null">
+        PLATE_NO,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      #{id,jdbcType=DECIMAL},
+      <if test="sapDeliveryNo != null">
+        #{sapDeliveryNo,jdbcType=VARCHAR},
+      </if>
+      <if test="site != null">
+        #{site,jdbcType=VARCHAR},
+      </if>
+      <if test="logisticsNo != null">
+        #{logisticsNo,jdbcType=VARCHAR},
+      </if>
+      <if test="remark != null">
+        #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="createTs != null">
+        #{createTs,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createOid != null">
+        #{createOid,jdbcType=DECIMAL},
+      </if>
+      <if test="logistics != null">
+        #{logistics,jdbcType=VARCHAR},
+      </if>
+      <if test="deliveryTs != null">
+        #{deliveryTs,jdbcType=TIMESTAMP},
+      </if>
+      <if test="logisticsCost != null">
+        #{logisticsCost,jdbcType=DECIMAL},
+      </if>
+      <if test="driverName != null">
+        #{driverName,jdbcType=VARCHAR},
+      </if>
+      <if test="driverTel != null">
+        #{driverTel,jdbcType=VARCHAR},
+      </if>
+      <if test="plateNo != null">
+        #{plateNo,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="com.hhnz.order.model.OmOrderLogisticsExample" resultType="java.lang.Integer">
+    select count(*) from OM_ORDER_LOGISTICS
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map">
+    update OM_ORDER_LOGISTICS
+    <set>
+      <if test="record.id != null">
+        ID = #{record.id,jdbcType=DECIMAL},
+      </if>
+      <if test="record.sapDeliveryNo != null">
+        SAP_DELIVERY_NO = #{record.sapDeliveryNo,jdbcType=VARCHAR},
+      </if>
+      <if test="record.site != null">
+        SITE = #{record.site,jdbcType=VARCHAR},
+      </if>
+      <if test="record.logisticsNo != null">
+        LOGISTICS_NO = #{record.logisticsNo,jdbcType=VARCHAR},
+      </if>
+      <if test="record.remark != null">
+        REMARK = #{record.remark,jdbcType=VARCHAR},
+      </if>
+      <if test="record.createTs != null">
+        CREATE_TS = #{record.createTs,jdbcType=TIMESTAMP},
+      </if>
+      <if test="record.createOid != null">
+        CREATE_OID = #{record.createOid,jdbcType=DECIMAL},
+      </if>
+      <if test="record.logistics != null">
+        LOGISTICS = #{record.logistics,jdbcType=VARCHAR},
+      </if>
+      <if test="record.deliveryTs != null">
+        DELIVERY_TS = #{record.deliveryTs,jdbcType=TIMESTAMP},
+      </if>
+      <if test="record.logisticsCost != null">
+        LOGISTICS_COST = #{record.logisticsCost,jdbcType=DECIMAL},
+      </if>
+      <if test="record.driverName != null">
+        DRIVER_NAME = #{record.driverName,jdbcType=VARCHAR},
+      </if>
+      <if test="record.driverTel != null">
+        DRIVER_TEL = #{record.driverTel,jdbcType=VARCHAR},
+      </if>
+      <if test="record.plateNo != null">
+        PLATE_NO = #{record.plateNo,jdbcType=VARCHAR},
+      </if>
+    </set>
+    <if test="_parameter != null">
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map">
+    update OM_ORDER_LOGISTICS
+    set ID = #{record.id,jdbcType=DECIMAL},
+      SAP_DELIVERY_NO = #{record.sapDeliveryNo,jdbcType=VARCHAR},
+      SITE = #{record.site,jdbcType=VARCHAR},
+      LOGISTICS_NO = #{record.logisticsNo,jdbcType=VARCHAR},
+      REMARK = #{record.remark,jdbcType=VARCHAR},
+      CREATE_TS = #{record.createTs,jdbcType=TIMESTAMP},
+      CREATE_OID = #{record.createOid,jdbcType=DECIMAL},
+      LOGISTICS = #{record.logistics,jdbcType=VARCHAR},
+      DELIVERY_TS = #{record.deliveryTs,jdbcType=TIMESTAMP},
+      LOGISTICS_COST = #{record.logisticsCost,jdbcType=DECIMAL},
+      DRIVER_NAME = #{record.driverName,jdbcType=VARCHAR},
+      DRIVER_TEL = #{record.driverTel,jdbcType=VARCHAR},
+      PLATE_NO = #{record.plateNo,jdbcType=VARCHAR}
+    <if test="_parameter != null">
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="com.hhnz.order.model.OmOrderLogistics">
+    update OM_ORDER_LOGISTICS
+    <set>
+      <if test="sapDeliveryNo != null">
+        SAP_DELIVERY_NO = #{sapDeliveryNo,jdbcType=VARCHAR},
+      </if>
+      <if test="site != null">
+        SITE = #{site,jdbcType=VARCHAR},
+      </if>
+      <if test="logisticsNo != null">
+        LOGISTICS_NO = #{logisticsNo,jdbcType=VARCHAR},
+      </if>
+      <if test="remark != null">
+        REMARK = #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="createTs != null">
+        CREATE_TS = #{createTs,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createOid != null">
+        CREATE_OID = #{createOid,jdbcType=DECIMAL},
+      </if>
+      <if test="logistics != null">
+        LOGISTICS = #{logistics,jdbcType=VARCHAR},
+      </if>
+      <if test="deliveryTs != null">
+        DELIVERY_TS = #{deliveryTs,jdbcType=TIMESTAMP},
+      </if>
+      <if test="logisticsCost != null">
+        LOGISTICS_COST = #{logisticsCost,jdbcType=DECIMAL},
+      </if>
+      <if test="driverName != null">
+        DRIVER_NAME = #{driverName,jdbcType=VARCHAR},
+      </if>
+      <if test="driverTel != null">
+        DRIVER_TEL = #{driverTel,jdbcType=VARCHAR},
+      </if>
+      <if test="plateNo != null">
+        PLATE_NO = #{plateNo,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=DECIMAL}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.hhnz.order.model.OmOrderLogistics">
+    update OM_ORDER_LOGISTICS
+    set SAP_DELIVERY_NO = #{sapDeliveryNo,jdbcType=VARCHAR},
+      SITE = #{site,jdbcType=VARCHAR},
+      LOGISTICS_NO = #{logisticsNo,jdbcType=VARCHAR},
+      REMARK = #{remark,jdbcType=VARCHAR},
+      CREATE_TS = #{createTs,jdbcType=TIMESTAMP},
+      CREATE_OID = #{createOid,jdbcType=DECIMAL},
+      LOGISTICS = #{logistics,jdbcType=VARCHAR},
+      DELIVERY_TS = #{deliveryTs,jdbcType=TIMESTAMP},
+      LOGISTICS_COST = #{logisticsCost,jdbcType=DECIMAL},
+      DRIVER_NAME = #{driverName,jdbcType=VARCHAR},
+      DRIVER_TEL = #{driverTel,jdbcType=VARCHAR},
+      PLATE_NO = #{plateNo,jdbcType=VARCHAR}
+    where ID = #{id,jdbcType=DECIMAL}
+  </update>
+  <sql id="OracleDialectPrefix">
+    <if test="page != null">
+      select * from ( select row_.*, rownum rownum_ from ( 
+    </if>
+  </sql>
+  <sql id="OracleDialectSuffix">
+    <if test="page != null">
+      <![CDATA[ ) row_ ) where rownum_ > #{page.begin} and rownum_ <= #{page.end} ]]>
+    </if>
+  </sql>
+</mapper>

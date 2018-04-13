@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.logistics.mapper.LogisticsRdcAreaMapper" >	
+	<resultMap type="com.hhnz.logistics.dto.LogisticsRdcAreaDTO" id="LogisticsRdcAreaResultMap">
+		<result column="username" property="username" jdbcType="VARCHAR"/>
+		<result column="user_Id" property="userId" jdbcType="DECIMAL"/>
+		<result column="rdc_Code" property="rdcCode" jdbcType="VARCHAR"/>
+		<result column="rdc_Name" property="rdcName" jdbcType="VARCHAR"/>
+		<result column="area_Id" property="areaId" jdbcType="VARCHAR"/>
+		<result column="area_Name" property="areaName" jdbcType="VARCHAR"/>
+		<result column="logisticsRdcId" property="logisticsRdcId" jdbcType="DECIMAL"/>
+	</resultMap>
+	
+	<select id="selectUserRdcList" resultMap="LogisticsRdcAreaResultMap" parameterType="java.util.Map">
+		SELECT te.name username,td.show_text rdc_Name,tlr.rdc_code,tlr.id logisticsRdcId
+  			FROM t_logistics_rdc tlr, t_employee te, t_dict td
+ 		where 1 = 1
+   			and tlr.user_id = te.id
+   			and tlr.rdc_code = td.choose_val
+   			and td.col_name = 'VIRTUAL_WAREHOUSE_CODE'
+   			<if test="username !=null and username !=''">
+   			and te.name like #{username,jdbcType=VARCHAR}||'%'
+   			</if>
+   			 <![CDATA[ and rownum > #{begin} and rownum <= #{end} ]]>
+	</select>
+	<select id="countUserRdcList" resultType="int" parameterType="java.util.Map">
+		SELECT count(1)
+  			FROM t_logistics_rdc tlr, t_employee te, t_dict td
+ 		where 1 = 1
+   			and tlr.user_id = te.id
+   			and tlr.rdc_code = td.choose_val
+   			and td.col_name = 'VIRTUAL_WAREHOUSE_CODE'
+   			<if test="username !=null and username !=''">
+   			and te.name like #{username,jdbcType=VARCHAR}||'%'
+   			</if>
+	</select>
+	<select id="getexportExl" resultMap="LogisticsRdcAreaResultMap" parameterType="java.util.Map">
+		SELECT te.name username,tlr.rdc_code,td.show_text rdc_Name,ta.name area_Name
+  FROM t_logistics_area tla,
+       t_logistics_rdc  tlr,
+       t_employee       te,
+       t_dict           td,
+       t_area           ta
+ where 1 = 1
+  and tla.logistics_rdc_id= tlr.id
+  and tlr.user_id= te.id
+  and tlr.rdc_code= td.choose_val
+  and tla.area_id= ta.id
+  and ta.area_level='1'
+  and td.col_name='VIRTUAL_WAREHOUSE_CODE'
+  <if test="username !=null and username !=''">
+   			and te.name like #{username,jdbcType=VARCHAR}||'%'
+   			</if>
+   			 <![CDATA[ and rownum > #{begin} and rownum <= #{end} ]]>
+	</select>
+</mapper>

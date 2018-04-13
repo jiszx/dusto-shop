@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.customerInv.mapper.CustomerInvAdjustMapper" >
+  <resultMap id="adjustMerchResultMap" type="com.hhnz.customer.model.CMerchCustBase" >
+    <id column="ID" property="id" jdbcType="DECIMAL" />
+    <result column="NAME" property="name" jdbcType="VARCHAR" />
+    <result column="SAP_CUSTOMER_ID" property="sapCustomerId" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <select id="selectAdjustMerch" resultMap="adjustMerchResultMap" parameterType="java.util.Map">
+SELECT distinct cmcb.id, cmcb.name, nvl(cmcb.sap_customer_id, 0) sap_customer_id
+  FROM c_merch_cust_base cmcb, c_merch_cust_contract cmcc
+ where cmcb.id = cmcc.merch_cust_id
+   and cmcb.organization_id = cmcc.organization_id
+   and cmcb.states = '3'
+   and cmcc.states = '4'
+   <if test="invValidate ==1">
+   	and exists (SELECT 1
+          FROM c_merch_cust_proudct_inv cmcpi
+         where 1 = 1
+           and cmcpi.merch_cust_id = cmcb.id
+           and cmcpi.inv_num > 0)
+   </if>
+   and exists (SELECT 1
+          FROM c_merch_cust_balances cmcb2
+         where 1 = 1
+           and cmcb2.merch_cust_id = cmcb.id
+           and cmcb2.period = to_char(sysdate, 'yyyy-MM'))
+   and exists (SELECT 1
+          FROM c_merch_cust_account cmca
+         where 1 = 1
+           and cmca.merch_cust_id = cmcb.id
+           and (cmca.credit_amt > 0
+            or cmca.cash_amt > 0))
+   and cmcb.organization_id =#{orgid,jdbcType=VARCHAR}  	
+  </select>
+  
+  <resultMap type="com.hhnz.customerInv.dto.AdjustMaterialDTO" id="adjustMaterialResultMap">
+  	<result column="material_id" property="materialId" jdbcType="VARCHAR"/>
+  	<result column="sku" property="sku" jdbcType="VARCHAR"/>
+  	<result column="inv_num" property="invNum" jdbcType="DECIMAL"/>
+  	<result column="price" property="price" jdbcType="DECIMAL"/>
+  	<result column="amounts" property="amounts" jdbcType="DECIMAL"/>
+  	<result column="unit" property="unit" jdbcType="VARCHAR"/>
+  	<result column="specifications" property="specifications" jdbcType="VARCHAR"/>
+  </resultMap>
+  <select id="selectAdjustMaterials" resultMap="adjustMaterialResultMap" parameterType="java.util.Map">
+  	SELECT distinct  cmcpi.material_id,
+       tmb.sku,
+       cmcpi.inv_num,
+       tmb.specifications,
+       tmb.unit,
+       nvl(tmb.attribute6, 1) amounts,
+       nvl((SELECT nvl(cmcp.h_price, 0)
+             FROM c_merch_cust_product cmcp
+            where cmcp.merch_cust_id = cmcpi.merch_cust_id
+              and cmcp.material_id = cmcpi.material_id
+              and cmcp.states = '4'),
+           0) + nvl((SELECT max(tmp.price) keep(dense_rank first order by tmp.bdate desc)
+                       FROM t_material_price tmp
+                      where tmp.material_id = cmcpi.material_id
+                        and tmp.bdate + 0.00001 &lt; sysdate
+                        and tmp.edate + 0.99999 > sysdate),0) price
+  FROM c_merch_cust_proudct_inv      cmcpi,
+       t_material_base               tmb,
+       c_merch_cust_balances         cmcb,
+       c_merch_cust_product_balances cmcpb
+ where 1 = 1
+   and cmcpi.merch_cust_id = cmcb.merch_cust_id
+   and cmcpi.merch_cust_id = cmcpb.merch_cust_id
+   and cmcpi.material_id = cmcpb.material_id
+   and cmcpi.material_id = tmb.sap_id
+   and cmcpb.period = to_char(sysdate, 'yyyy-mm')
+   and cmcb.period = to_char(sysdate, 'yyyy-mm')
+   and cmcpi.inv_num >0 
+   and cmcpi.merch_cust_id =#{merchId,jdbcType=DECIMAL}
+  </select>
+  
+  <select id="selectInvNum" resultType="String" parameterType="java.util.Map">
+  	SELECT nvl(cmcpi.inv_num,0) FROM c_merch_cust_proudct_inv cmcpi
+where cmcpi.merch_cust_id= #{merchId,jdbcType=DECIMAL}
+	and cmcpi.material_id=#{materialId,jdbcType=VARCHAR}
+    and cmcpi.inv_num>0
+  </select>
+  <resultMap type="com.hhnz.customerInv.dto.CMerchCustInvAdjustDTO" id="adjustListResultMap">
+  	<result column="orgname" property="orgname" jdbcType="VARCHAR"/>
+  	<result column="organization_id" property="organizationId" jdbcType="VARCHAR"/>
+  	<result column="merch_cust_id" property="merchCustId" jdbcType="DECIMAL"/>
+  	<result column="custname" property="custname" jdbcType="VARCHAR"/>
+  	<result column="sap_customer_id" property="sapCustomerId" jdbcType="VARCHAR"/>
+  	<result column="material_id" property="materialId" jdbcType="VARCHAR"/>
+  	<result column="sku" property="sku" jdbcType="VARCHAR"/>
+  	<result column="unit" property="unit" jdbcType="VARCHAR"/>
+  	<result column="amounts" property="amounts" jdbcType="DECIMAL"/>
+  	<result column="create_ts" property="createTs" jdbcType="TIMESTAMP"/>
+  	<result column="creater" property="creater" jdbcType="VARCHAR"/>
+  	<result column="id" property="id" jdbcType="DECIMAL"/>
+  	<result column="type" property="type" jdbcType="VARCHAR"/>
+  	<result column="adjust_price" property="adjustPrice" jdbcType="DECIMAL"/>
+  	<result column="adjust_num" property="adjustNum" jdbcType="DECIMAL"/>
+  	<result column="adjust_amt" property="adjustAmt" jdbcType="DECIMAL"/>
+  	<result column="cust_type" property="custType" jdbcType="VARCHAR"/>
+  	<result column="states" property="states" jdbcType="VARCHAR"/>
+  	<result column="reason" property="reason" jdbcType="VARCHAR"/>
+  	<result column="remark" property="remark" jdbcType="VARCHAR"/>
+  	<result column="specifications" property="specifications" jdbcType="VARCHAR"/>
+  	<result column="othercustname" property="othercustname" jdbcType="VARCHAR"/>
+
+  </resultMap>
+  <select id="selectAdjustList" resultMap="adjustListResultMap" parameterType="java.util.Map">
+  select * from ( select rec.*,rownum rownum_  from ( SELECT (SELECT a.name FROM crm_sales_organization a where a.id = cso.pid) || '-' ||
+       cso.name orgname,
+       cmcb.name custname,
+       cmcb.sap_customer_id,
+       cmcpa.material_id,
+       tmb.unit,
+       tmb.sku,
+       nvl(cmcpa.attribute1, 1) amounts,
+       cmcpa.adjust_price,
+       cmcpa.adjust_num,
+       cmcpa.adjust_amt,
+       te.name creater,
+       cmcpa.create_ts,
+       cmcpa.states,
+       cmcpa.reason,
+       cmcpa.remark,
+       cmcb.cust_type,
+       cmcb.organization_id,
+       cmcpa.merch_cust_id,
+       cmcpa.id,
+       cmcpa.type,
+       tmb.specifications,
+       decode(cmcpa.type,'1','',(select c.name from c_merch_cust_base c where c.id= cmcpa.other_merch_cust_id)) othercustname
+  FROM (select * from c_merch_cust_product_adjust 
+  		where 1=1
+  		<if test="merchid !=null and merchid !=''">
+  			and merch_cust_id =#{merchid,jdbcType=VARCHAR} 
+  		</if>
+  		<if test="materialId !=null and materialId !=''">
+  			and material_id =#{materialId,jdbcType=VARCHAR}
+  		</if>
+  		<if test="orgid !=null and orgid !=''">
+  			and organization_id like #{orgid,jdbcType=VARCHAR}||'%'
+  		</if>
+  		order by create_ts desc
+        ) cmcpa,
+       c_merch_cust_base           cmcb,
+       crm_sales_organization      cso,
+       t_employee                  te,
+       (select * from  c_merch_cust_station  
+       	where 1=1
+       	<if test="stationids !=null and stationids.size()>0">
+       		and station_id in 
+       		<foreach item="item" index="index" collection="stationids" open="(" separator="," close=")">  
+ 		 		#{item}  
+ 			</foreach>
+       	</if>
+        )    cmcs,
+       t_material_base             tmb
+ where 1 = 1
+   and cmcpa.merch_cust_id = cmcb.id
+   and cmcb.organization_id = cso.id
+   and cmcpa.create_oid = te.id(+)
+   and cmcb.id = cmcs.merch_cust_id
+   and cmcpa.material_id = tmb.sap_id
+   <if test="custname !=null and custname !=''">
+   	and cmcb.name like #{custname,jdbcType=VARCHAR}
+   </if>
+   <if test="sku !=null and sku !=''">
+     and tmb.sku like #{sku,jdbcType=VARCHAR}
+   </if>
+   <if test="adjustId !=null and adjustId !=''">
+   	and cmcpa.id =#{adjustId,jdbcType=DECIMAL}
+   </if>
+    order by cmcpa.create_ts desc) rec)
+   <![CDATA[ where 1=1  and rownum_ > #{begin} and rownum_  <= #{end} ]]>
+  
+  </select>
+  
+  <select id="countAdjustList" resultType="int" parameterType="java.util.Map">
+  	SELECT count(1)
+  FROM (select * from c_merch_cust_product_adjust 
+  		where 1=1
+  		<if test="merchid !=null and merchid !=''">
+  			and merch_cust_id =#{merchid,jdbcType=VARCHAR} 
+  		</if>
+  		<if test="materialId !=null and materialId !=''">
+  			and material_id =#{materialId,jdbcType=VARCHAR}
+  		</if>
+  		<if test="orgid !=null and orgid !=''">
+  			and organization_id like #{orgid,jdbcType=VARCHAR}||'%'
+  		</if>
+  		order by create_ts desc
+        ) cmcpa,
+       c_merch_cust_base           cmcb,
+       crm_sales_organization      cso,
+       t_employee                  te,
+       (select * from  c_merch_cust_station  
+       	where 1=1
+       	<if test="stationids !=null and stationids.size()>0">
+       		and station_id in 
+       		<foreach item="item" index="index" collection="stationids" open="(" separator="," close=")">  
+ 		 		#{item}  
+ 			</foreach>
+       	</if>
+        )    cmcs,
+       t_material_base             tmb
+ where 1 = 1
+   and cmcpa.merch_cust_id = cmcb.id
+   and cmcb.organization_id = cso.id
+   and cmcpa.create_oid = te.id(+)
+   and cmcb.id = cmcs.merch_cust_id
+   and cmcpa.material_id = tmb.sap_id
+   <if test="custname !=null and custname !=''">
+   	and cmcb.name like #{custname,jdbcType=VARCHAR}
+   </if>
+   <if test="sku !=null and sku !=''">
+     and tmb.sku like #{sku,jdbcType=VARCHAR}
+   </if>
+   <if test="adjustId !=null and adjustId !=''">
+   		and cmcpa.id =#{adjustId,jdbcType=DECIMAL}
+   </if>
+  </select>
+</mapper>

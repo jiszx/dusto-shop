@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.customer.mapper.CMerchCustPriceMaintainDtoMapper" >
+	<select id="selectBatchMaintainList" resultType="com.hhnz.customer.dto.CMerchCustPriceMaintenanceDTO" parameterType="java.util.Map">
+		SELECT cmcpm.id,
+       cmcpm.org_id orgId,
+       (select c.name from crm_sales_organization c where c.id= cso.pid)||'-'||cso.name orgName,
+       cmcpm.merch_cust_id merchCustId,
+       cmcpm.name custname,
+       cmcpm.material_id materialId,
+       tmb.sku,
+       ta.name areaName,
+       cmcpm.area_id areaId,
+       cmcpm.regin_id reginId,
+       regin.name reginName,
+       cmcpm.type,
+       cmcpm.price,
+       cmcpm.brand,
+       to_char(cmcpm.create_ts,'yyyy-mm-dd HH24:mm') createTs,
+       te.name creater,
+       to_char(cmcpm.b_date,'yyyy-MM-dd') bDate,
+       to_char(cmcpm.e_date,'yyyy-MM-dd') eDate,
+       cmcpm.states,
+       cmcpm.adjust_Direction adjustDirection
+  FROM (select rec.*,rownum rownum_ from
+  			 (select c.*,cmcb.name from  c_merch_cust_price_maintenance c,
+  						c_merch_cust_base cmcb 
+  	    where 1=1
+  	    and c.merch_cust_id = cmcb.id(+)
+  	    <if test="brand !=null and brand !=''">
+  	    	and c.brand =#{brand,jdbcType=VARCHAR}
+  	    </if>
+  	    <if test="id != null and id !=''">
+  	    	and c.id =#{id,jdbcType=DECIMAL}
+  	    </if>
+  	    <if test="orgId !=null and orgId !=''">
+  	    	and c.org_id =#{orgId,jdbcType=VARCHAR}
+  	    </if>
+  	    <if test="materialId !=null and materialId !=''">
+  	    	and c.material_id =#{materialId,jdbcType=VARCHAR}
+  	    </if>
+  	    <if test="custname !=null and custname !=''">
+  	    	and cmcb.name like #{custname,jdbcType=VARCHAR}||'%'
+  	    </if>
+  	    <if test="reginId !=null and reginId !=''">
+  	    	and c.regin_id =#{reginId,jdbcType=VARCHAR}
+  	    </if>
+  	    <if test="areaId !=null and areaId !=''">
+  	    	and c.area_id =#{areaId,jdbcType=VARCHAR}
+  	    </if>
+  	    order by c.create_ts desc
+       ) rec )cmcpm,
+       crm_sales_organization         cso,
+       t_material_base                tmb,
+       t_employee                     te,
+       crm_sales_organization         regin,
+       t_area                         ta
+ where 1 = 1
+   and cmcpm.org_id = cso.id(+)
+   and cmcpm.area_id = ta.id(+)
+   and cmcpm.regin_id = regin.id(+)
+   and cmcpm.material_id = tmb.sap_id(+)
+   and cmcpm.create_oid= te.id(+)
+   <if test="begin !=null and end !=null">
+     <![CDATA[ and cmcpm.rownum_ > #{begin} and cmcpm.rownum_ <= #{end} ]]>
+   </if>
+   order by cmcpm.create_ts desc
+	</select>
+	<select id="countBatchMaintainList" resultType="int" parameterType="java.util.Map">
+select count(1) from  c_merch_cust_price_maintenance c,
+  						c_merch_cust_base cmcb 
+  	    where 1=1
+  	    and c.merch_cust_id = cmcb.id(+)
+  	    <if test="brand !=null and brand !=''">
+  	    	and c.brand =#{brand,jdbcType=VARCHAR}
+  	    </if>
+  	    <if test="id != null and id !=''">
+  	    	and c.id =#{id,jdbcType=DECIMAL}
+  	    </if>
+  	    <if test="orgId !=null and orgId !=''">
+  	    	and c.org_id =#{orgId,jdbcType=VARCHAR}
+  	    </if>
+  	    <if test="materialId !=null and materialId !=''">
+  	    	and c.material_id =#{materialId,jdbcType=VARCHAR}
+  	    </if>
+  	    <if test="custname !=null and custname !=''">
+  	    	and cmcb.name like #{custname,jdbcType=VARCHAR}||'%'
+  	    </if>
+  	    <if test="reginId !=null and reginId !=''">
+  	    	and c.regin_id =#{reginId,jdbcType=VARCHAR}
+  	    </if>
+  	    <if test="areaId !=null and areaId !=''">
+  	    	and c.area_id =#{areaId,jdbcType=VARCHAR}
+  	    </if>
+  	    
+	</select>
+	
+	<select id="selectBatchMaintainMaterialsByMaterialId" resultType="com.hhnz.customer.dto.CMerchCustPriceMaintenanceDTO" parameterType="java.util.Map">
+		SELECT cmcpm.material_id materialId,
+		tmb.sku,
+       cmcpm.price,
+       cmcb.id merchCustId,
+       cmcb.name custname,
+       (SELECT cmcp.id
+          FROM c_merch_cust_product cmcp
+         where cmcp.merch_cust_id = cmcb.id
+           and cmcp.material_id = cmcpm.material_id
+           and cmcp.states = '4') oldPriceId,
+        (SELECT nvl(max(tmp.price+nvl(tmp.adjust_price,0)) keep(dense_rank first order by tmp.create_ts desc ) ,0)
+          FROM t_material_price tmp, crm_sales_organization cso
+         where 1 = 1
+           and tmp.channel = '10'
+           and tmp.bdate + 0.00001 &lt; sysdate
+           and tmp.edate + 0.9999 > sysdate
+           and tmp.material_id = tmb.sap_id
+           and tmp.organization_id = cso.sap_id
+           and cso.id = cmcb.organization_id
+           ) basePrice,
+        cmcpm.b_date bDate,
+        cmcpm.e_date eDate,
+        cmcpm.type,
+        cmcpm.adjust_direction adjustDirection,
+        cmcpm.create_oid createOid,
+        cmcc.id contractId,
+        cmcb.organization_id orgid,
+        1 contractLineId,
+        tmb.unit
+ FROM c_merch_cust_base            cmcb,
+       c_merch_cust_price_maintenance cmcpm,
+       c_merch_cust_contract          cmcc,
+       t_material_base                tmb
+ where 1 = 1
+   and cmcb.id = nvl(cmcpm.merch_cust_id, cmcb.id)
+   and cmcb.organization_id = nvl(cmcpm.org_id, cmcb.organization_id)
+   <!-- and cmcb.SALES_AREA_ID = nvl(cmcpm.regin_id, cmcb.sales_Area_id) -->
+   and cmcb.PROV_ID = nvl(cmcpm.area_id, cmcb.PROV_ID)
+   and cmcpm.material_id = tmb.sap_id
+   and cmcb.STATES = '3'
+   and cmcc.merch_cust_id = cmcb.id
+   and cmcc.states = '4'
+   and cmcpm.id =#{id,jdbcType=DECIMAL}
+   <if test="begin !=null and end !=null">
+     <![CDATA[ and rownum > #{begin} and  rownum <= #{end} ]]>
+   	 </if>
+	</select>
+	<select id="selectBatchMaintainMaterialsByBrand" resultType="com.hhnz.customer.dto.CMerchCustPriceMaintenanceDTO" parameterType="java.util.Map">
+		SELECT tmb.sap_id materialId,
+		tmb.sku,
+       cmcpm.price,
+       cmcb.id merchCustId,
+       cmcb.name custname,
+       (SELECT cmcp.id
+          FROM c_merch_cust_product cmcp
+         where cmcp.merch_cust_id = cmcb.id
+           and cmcp.material_id = tmb.sap_id
+           and cmcp.states = '4') oldPriceId,
+       (SELECT nvl(max(tmp.price+nvl(tmp.adjust_price,0)) keep(dense_rank first order by tmp.create_ts desc ) ,0)
+          FROM t_material_price tmp, crm_sales_organization cso
+         where 1 = 1
+           and tmp.channel = '10'
+           and tmp.bdate + 0.00001 &lt; sysdate
+           and tmp.edate + 0.9999 > sysdate
+           and tmp.material_id = tmb.sap_id
+           and tmp.organization_id = cso.sap_id
+           and cso.id = cmcb.organization_id
+           ) basePrice,
+       cmcpm.b_date bDate,
+       cmcpm.e_date eDate,
+       cmcpm.type ,
+       cmcpm.adjust_direction adjustDirection,
+       cmcpm.create_oid createOid,
+       cmcc.id contractId,
+       cmcb.organization_id orgid,
+       cmccl.id contractLineId,
+       tmb.unit
+  FROM c_merch_cust_base            cmcb,
+       c_merch_cust_price_maintenance cmcpm,
+       c_merch_cust_contract          cmcc,
+       c_merch_cust_contract_lines    cmccl,
+       t_material_base                tmb
+ where 1 = 1
+   and cmcb.id = nvl(cmcpm.merch_cust_id, cmcb.id)
+   and cmcb.organization_id = nvl(cmcpm.org_id, cmcb.organization_id)
+   <!-- and cmcb.SALES_AREA_ID = nvl(cmcpm.regin_id, cmcb.sales_Area_id) -->
+   and cmcb.PROV_ID = nvl(cmcpm.area_id, cmcb.PROV_ID)
+   and cmcpm.brand= tmb.attribute1
+   and cmcc.id = cmccl.contract_id
+   and cmccl.agent_id = tmb.attribute1
+   and cmcb.STATES = '3'
+   and cmcc.merch_cust_id = cmcb.id
+   and cmcc.states = '4'
+    and cmcpm.id =#{id,jdbcType=DECIMAL}
+    <if test="begin !=null and end !=null">
+     <![CDATA[ and rownum > #{begin} and  rownum <= #{end} ]]>
+   	 </if>
+	</select>
+	<select id="selectBatchMaintainMaterialsByMerchInfo" resultType="com.hhnz.customer.dto.CMerchCustPriceMaintenanceDTO" parameterType="java.util.Map">
+		SELECT tmb.sap_id materialId,
+		tmb.sku,
+       cmcpm.price,
+       cmcb.id merchCustId,
+       cmcb.name custname,
+       (SELECT cmcp.id
+          FROM c_merch_cust_product cmcp
+         where cmcp.merch_cust_id = cmcb.id
+           and cmcp.material_id = tmb.sap_id
+           and cmcp.states = '4') oldPriceId,
+       (SELECT nvl(max(tmp.price+nvl(tmp.adjust_price,0)) keep(dense_rank first order by tmp.create_ts desc ) ,0)
+          FROM t_material_price tmp, crm_sales_organization cso
+         where 1 = 1
+           and tmp.channel = '10'
+           and tmp.bdate + 0.00001 &lt; sysdate
+           and tmp.edate + 0.9999 > sysdate
+           and tmp.material_id = tmb.sap_id
+           and tmp.organization_id = cso.sap_id
+           and cso.id = cmcb.organization_id
+           ) basePrice,
+       cmcpm.b_date bDate,
+       cmcpm.e_date eDate,
+       cmcpm.type,
+       cmcpm.adjust_direction adjustDirection,
+       cmcpm.create_oid createOid,
+       cmcc.id contractId,
+       cmcb.organization_id orgid,
+       cmccl.id contractLineId,
+       tmb.unit
+  FROM c_merch_cust_base_v           cmcb,
+       c_merch_cust_price_maintenance cmcpm,
+       c_merch_cust_contract          cmcc,
+       c_merch_cust_contract_lines    cmccl,
+       t_material_base                tmb
+ where 1 = 1
+   and cmcb.id = nvl(cmcpm.merch_cust_id, cmcb.id)
+   and cmcb.organization_id = nvl(cmcpm.org_id, cmcb.organization_id)
+   and cmcb.SALES_AREA_ID = nvl(cmcpm.regin_id, cmcb.sales_Area_id)
+   and cmcb.PROV_ID = nvl(cmcpm.area_id, cmcb.PROV_ID)
+   and cmcc.merch_cust_id = cmcb.id
+   and cmcc.id = cmccl.contract_id
+   and cmccl.agent_id = tmb.attribute1
+   and cmcb.STATES = '3'
+   and cmcc.states = '4'
+   and cmcpm.id =#{id,jdbcType=DECIMAL}
+   <if test="begin !=null and end !=null">
+     <![CDATA[ and rownum > #{begin} and  rownum <= #{end} ]]>
+   	 </if>
+	</select>
+	<select id="selectBatchMaintainMaterialsByImport" resultType="com.hhnz.customer.dto.CMerchCustPriceMaintenanceDTO" parameterType="java.lang.Long">
+	SELECT ccpi.cust_merch_id merchCustId,
+       ccpi.cust_name custname,
+       ccpi.material_id materialId,
+       tmb.sku,
+       ccpi.price,
+       (SELECT cmcp.id
+          FROM c_merch_cust_product cmcp
+         where cmcp.merch_cust_id =ccpi.cust_merch_id
+           and cmcp.material_id = tmb.sap_id
+           and cmcp.states = '4') oldPriceId,
+       (SELECT nvl(max(tmp.price+nvl(tmp.adjust_price,0)) keep(dense_rank first order by tmp.create_ts desc ) ,0)
+          FROM t_material_price tmp, crm_sales_organization cso
+         where 1 = 1
+           and tmp.channel = '10'
+           and tmp.bdate + 0.00001 &lt; sysdate
+           and tmp.edate + 0.9999 > sysdate
+           and tmp.material_id = tmb.sap_id
+           and tmp.organization_id = cso.sap_id
+           and cso.id = cmcb.organization_id
+           ) basePrice,
+       ccpm.b_date bDate,
+       ccpm.e_date eDate,
+       ccpm.type,
+       ccpm.adjust_direction adjustDirection,
+       ccpm.create_oid createOid,
+       cmcc.id contractId,
+       1 contractLineId,
+       tmb.unit,
+       cmcb.organization_id orgid
+  FROM c_merch_cust_price_maintenance ccpm,
+       c_merch_cust_price_import      ccpi,
+       t_material_base                tmb,
+       c_merch_cust_contract          cmcc,
+       c_merch_cust_base              cmcb
+ where 1 = 1
+   and ccpm.id = ccpi.maintenance_id
+   and cmcb.id= ccpi.cust_merch_id
+   and cmcb.name= ccpi.cust_name
+   and ccpi.material_id = tmb.sap_id
+   and ccpi.cust_merch_id = cmcc.merch_cust_id
+   and ccpm.id =#{batchMaintainId,jdbcType=DECIMAL}	
+	</select>
+	<select id="selectImportCustPrice" resultType="com.hhnz.customer.dto.CMerchCustPriceMaintenanceDTO" parameterType="java.util.Map">
+		SELECT ccpi.cust_merch_id merchCustId,
+       ccpi.cust_name custname,
+       ccpi.material_id materialId,
+       tmb.sku,
+       tmb.unit,
+       ccpi.price,
+       ccpi.remark
+  FROM c_merch_cust_price_maintenance ccpm,
+       c_merch_cust_price_import      ccpi,
+       t_material_base                tmb
+ where 1 = 1
+   and ccpm.id = ccpi.maintenance_id
+   and ccpi.material_id = tmb.sap_id(+)
+	and ccpm.id =#{id,jdbcType=DECIMAL}
+	 <if test="begin !=null and end !=null">
+     <![CDATA[ and rownum > #{begin} and  rownum <= #{end} ]]>
+   	 </if>
+	</select>
+	<select id="updateProductStates" parameterType="java.lang.Long">
+  	 <![CDATA[
+    {call crm_customer_contract_pkg.update_price_effective_time(#{id,mode=IN,jdbcType=DECIMAL})}
+	]]>
+	</select>
+</mapper>

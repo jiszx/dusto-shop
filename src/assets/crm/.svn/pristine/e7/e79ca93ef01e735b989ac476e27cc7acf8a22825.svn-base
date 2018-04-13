@@ -1,0 +1,471 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.combination.mapper.CombinationUtilMapper">
+	<resultMap type="com.hhnz.combination.dto.CombinationProductDTO"
+		id="productResultMap">
+		<result column="materialId" property="materialId" jdbcType="VARCHAR" />
+		<result column="sku" property="sku" jdbcType="VARCHAR" />
+		<result column="price" property="price" jdbcType="DECIMAL" />
+		<result column="brand" property="brand" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<select id="selectProduct" resultMap="productResultMap" parameterType="java.util.Map">
+		<include refid="OracleDialectPrefix" />
+	 SELECT tmb.sap_id materialId,
+			tmb.sku,
+			tmb.attribute1 brand
+		FROM t_material_base tmb,
+			crm_business_model cbu
+		where 1=1
+			and cbu.brand = tmb.attribute1
+			and cbu.model_id =#{modelType,jdbcType=VARCHAR}
+			<if test="materialId !=null">
+			and tmb.sap_id =#{materialId,jdbcType=VARCHAR}
+			</if>
+			<if test="search !=null">
+			and (tmb.sap_id=#{search,jdbcType=VARCHAR} or tmb.sku like '%'||#{search,jdbcType=VARCHAR}||'%' 
+			or tmb.attribute1 like '%'||#{search,jdbcType=VARCHAR}||'%')
+			</if>
+		<include refid="OracleDialectSuffix" />
+	</select>
+	<select id="countProduct" resultType="int" parameterType="java.util.Map">
+		SELECT count(1)
+		FROM t_material_base tmb,
+			crm_business_model cbu
+		where 1=1
+			and cbu.brand = tmb.attribute1
+			and cbu.model_id =#{modelType,jdbcType=VARCHAR}
+			<if test="materialId !=null">
+			and tmb.sap_id =#{materialId,jdbcType=VARCHAR}
+			</if>
+			<if test="search !=null">
+			and (tmb.sap_id=#{search,jdbcType=VARCHAR} or tmb.sku like '%'||#{search,jdbcType=VARCHAR}||'%' 
+			or tmb.attribute1 like '%'||#{search,jdbcType=VARCHAR}||'%')
+			</if>
+	</select>
+	<sql id="OracleDialectPrefix">
+			select * from ( select row_.*, rownum rownum_ from (
+	</sql>
+	<sql id="OracleDialectSuffix">
+      <![CDATA[ ) row_ ) where rownum_ > #{bpage} and rownum_ <= #{epage} ]]>
+	</sql>
+	<resultMap type="com.hhnz.combination.dto.CombinationLinesDTO" id="LinedsResultMap">
+		<result column="ID" property="id" jdbcType="DECIMAL" />
+    	<result column="HEADER_ID" property="headerId" jdbcType="DECIMAL" />
+    	<result column="MATERIAL_ID" property="materialId" jdbcType="VARCHAR" />
+    	<result column="NUM" property="num" jdbcType="DECIMAL" />
+    	<result column="PRICE" property="price" jdbcType="DECIMAL" />
+    	<result column="SKU" property="sku" jdbcType="VARCHAR"/>
+	</resultMap>
+	<select id="selectLinesByHeaderId" resultMap="LinedsResultMap" parameterType="java.lang.Long">
+		SELECT cmpl.id,cmpl.header_id,cmpl.material_id,cmpl.num,cmpl.price/100 price,tmb.sku
+  	FROM crm_material_package_lines cmpl, t_material_base tmb
+ 	where cmpl.material_id = tmb.sap_id
+ 	  and cmpl.header_id =#{headerId,jdbcType=DECIMAL}
+	</select>
+	<select id="countLinesByHeaderId" resultType="int" parameterType="java.lang.Long">
+		SELECT count(1)
+  	FROM crm_material_package_lines cmpl, t_material_base tmb
+ 	where cmpl.material_id = tmb.sap_id
+ 	  and cmpl.header_id =#{headerId,jdbcType=DECIMAL}
+	</select>
+	
+	<resultMap type="com.hhnz.combination.dto.CombinationApplyListDTO" id="applyResultMap">
+		<result column="name" property="name" jdbcType="VARCHAR"/>
+		<result column="code" property="code" jdbcType="VARCHAR"/>
+		<result column="creater" property="creater" jdbcType="VARCHAR"/>
+		<result column="weight" property="weight" jdbcType="VARCHAR"/>
+		<result column="price" property="price" jdbcType="DECIMAL"/>
+		<result column="model_type" property="modelType" jdbcType="VARCHAR"/>
+		<result column="states" property="states" jdbcType="VARCHAR"/>
+		<result column="id" property="id" jdbcType="DECIMAL"/>
+		<result column="range" property="range" jdbcType="VARCHAR"/>
+		<result column="b_date" property="bDate" jdbcType="VARCHAR"/>
+		<result column="e_date" property="eDate" jdbcType="VARCHAR"/>
+		<result column="organization_id" property="organizationId" jdbcType="VARCHAR"/>
+		<result column="orgname" property="orgname" jdbcType="VARCHAR"/>
+		<result column="package_id" property="packageId" jdbcType="DECIMAL"/>
+	</resultMap>
+	<select id="selectApplyList" resultMap="applyResultMap" parameterType="java.util.Map">
+		<include refid="OracleDialectPrefix" />
+		SELECT cmph.name,
+       cmph.code,
+       te.name creater,
+       cmph.weight,
+       cmph.price/100 price,
+       cmph.model_type,
+       cmpa.states,
+       cmpa.id,
+       cmpa.package_id,
+       cmpa.range,
+       to_char(cmph.b_date,'yyyy-MM-dd') b_date,
+       to_char(cmph.e_date,'yyyy-MM-dd') e_date,
+       cmpa.organization_id,
+       cso.name orgname
+  FROM crm_material_package_apply  cmpa,
+       crm_material_package_header cmph,
+       t_employee                  te,
+       crm_sales_organization	   cso
+ where cmpa.package_id = cmph.id
+   and cmpa.create_oid= te.id(+)
+   and cmpa.organization_id= cso.id
+   <include refid="OracleDialectSuffix" />
+	</select>
+	<select id="countApplyList" resultType="int" parameterType="java.util.Map">
+		SELECT count(1)
+  FROM crm_material_package_apply  cmpa,
+       crm_material_package_header cmph,
+       t_employee                  te
+ where cmpa.package_id = cmph.id
+   and cmpa.create_oid= te.id(+)
+	</select>
+	
+	<resultMap type="com.hhnz.organization.model.CrmSalesOrganization" id="rangeAreaResultMap">
+  	<result column="id" property="id" jdbcType="VARCHAR"/>
+  	<result column="name" property="name" jdbcType="VARCHAR"/>
+  </resultMap>
+  <select id="selectRangeArea" resultMap="rangeAreaResultMap" parameterType="java.lang.Long">
+  	SELECT cso.id, cso.name
+  FROM crm_sales_organization cso,
+       (SELECT ltrim(rtrim(column_value)) as orgid
+  FROM (select *
+          from table(splitstr((select t.range
+                                from crm_material_package_apply t
+                               where t.id = #{applyId,jdbcType=DECIMAL}),
+                              ',')))) rec
+ where rec.orgid = cso.id
+  </select>
+  
+  <insert id="updateMerchProduct" parameterType="java.lang.Long">
+  	insert into c_merch_cust_product
+  (id,
+   merch_cust_id,
+   material_id,
+   organization_id,
+   contract_id,
+   contract_lineid,
+   create_ts,
+   create_oid,
+   states)
+  (SELECT seq_merch_product_id.nextval,
+          cmcb.id,
+          cmph.code,
+          cmcb.organization_id,
+          cmcc.id,
+          cmpa.id,
+          sysdate,
+          1,
+          '4'
+     FROM (SELECT c.id
+             FROM crm_sales_organization c
+            where 1 = 1
+              and c.levels = '4'
+            start with c.id in
+                       (SELECT ltrim(rtrim(column_value)) as orgid
+                          FROM (select *
+                                  from table(splitstr((select t.range
+                                                        from crm_material_package_apply t
+                                                       where t.id = #{id,jdbcType=DECIMAL}),
+                                                      ','))))
+           connect by prior c.id = c.pid) cso,
+          crm_station crs,
+          c_merch_cust_station cmcs,
+          c_merch_cust_base cmcb,
+          c_merch_cust_contract cmcc,
+          crm_material_package_apply cmpa,
+          crm_material_package_header cmph
+    where cso.id = crs.organization_id
+      and crs.id = cmcs.station_id
+      and cmcs.merch_cust_id = cmcb.id
+      and cmcb.id = cmcc.merch_cust_id
+      and cmcb.organization_id = cmcc.organization_id
+      and cmpa.model_type = cmcc.agent_type
+      and cmpa.organization_id= cmcc.organization_id
+      and cmph.id = cmpa.package_id
+      and cmcc.states = '4'
+      and cmcb.states = '3'
+      and not exists (SELECT 1
+             FROM c_merch_cust_product cmcp
+            where cmcp.merch_cust_id = cmcb.id
+              and cmcp.contract_id = cmcc.id
+              and cmcp.contract_lineid= cmpa.id
+              and cmcp.material_id = cmph.code)
+      and cmpa.id = #{id,jdbcType=DECIMAL})
+  </insert>
+  
+  <resultMap type="com.hhnz.combination.dto.CombinationMerchDTO" id="merchResultMap">
+  	<result column="merch_name" property="merchName" jdbcType="VARCHAR"/>
+  	<result column="sap_customer_id" property="sapCustomerId" jdbcType="VARCHAR"/>
+  	<result column="regin_name" property="reginName" jdbcType="VARCHAR"/>
+  	<result column="prov_name" property="provName" jdbcType="VARCHAR"/>
+  	<result column="price" property="price" jdbcType="DECIMAL"/>
+  	<result column="merch_cust_id" property="merchCustId" jdbcType="DECIMAL"/>
+  	<result column="productId" property="productId" jdbcType="DECIMAL"/>
+  </resultMap>
+  <select id="selectCombinationMerch" resultMap="merchResultMap" parameterType="java.util.Map">
+  	<include refid="OracleDialectPrefix" /> 
+  	 SELECT cmcb.name            merch_name,
+       cmcb.sap_customer_id,
+       regin.name           regin_name,
+       prov.name            prov_name,
+       combination_price(cmph.id,cso.sap_id)/100 price,
+       cmcp.id productId,
+       cmcp.merch_cust_id
+  FROM c_merch_cust_product   cmcp,
+       c_merch_cust_base      cmcb,
+       c_merch_cust_station   cmcs,
+       crm_station            crs,
+       crm_sales_organization regin,
+       crm_sales_organization prov,
+       crm_sales_organization cso,
+       crm_material_package_apply cmpa,
+       crm_material_package_header cmph
+ where 1 = 1
+   and cmcp.merch_cust_id = cmcb.id
+   and cmcb.id = cmcs.merch_cust_id
+   and cmcs.station_id = crs.id
+   and crs.organization_id = prov.id
+   and cmpa.package_id= cmph.id
+   and cmcp.material_id= cmph.code
+   and cmcp.contract_lineid = cmpa.id
+   and cmcp.organization_id= cso.id
+   and cmcp.states='4'
+   and substr(crs.organization_id, 0, 7) = regin.id
+		and cmcp.contract_lineid =#{id,jdbcType=DECIMAL}
+ 	<include refid="OracleDialectSuffix" />
+  </select>
+  <select id="countCombinationMerch" resultType="int"  parameterType="java.util.Map">
+  	SELECT count(1)
+  	 FROM c_merch_cust_product   cmcp,
+       c_merch_cust_base      cmcb,
+       c_merch_cust_station   cmcs,
+       crm_station            crs,
+       crm_sales_organization regin,
+       crm_sales_organization prov,
+       crm_sales_organization cso,
+       crm_material_package_apply cmpa,
+       crm_material_package_header cmph
+ where 1 = 1
+   and cmcp.merch_cust_id = cmcb.id
+   and cmcb.id = cmcs.merch_cust_id
+   and cmcs.station_id = crs.id
+   and crs.organization_id = prov.id
+   and cmpa.package_id= cmph.id
+   and cmcp.material_id= cmph.code
+   and cmcp.contract_lineid = cmpa.id
+   and cmcp.organization_id= cso.id
+   and cmcp.states='4'
+   and substr(crs.organization_id, 0, 7) = regin.id
+		and cmcp.contract_lineid =#{id,jdbcType=DECIMAL}
+  </select>
+  
+  <select id="selectMerchs" resultMap="merchResultMap" parameterType="java.util.Map">
+  <include refid="OracleDialectPrefix" /> 
+  	SELECT cmcb.name merch_name,
+  		cmcb.sap_customer_id,
+  		regin.name           regin_name,
+       	prov.name            prov_name,
+       	combination_price(cmph.id, cso2.sap_id) / 100 price,
+       	cmcb.id merch_cust_id
+  FROM (SELECT c.id
+          FROM crm_sales_organization c
+         where 1 = 1
+           and c.levels = '4'
+         start with c.id in
+                    (SELECT ltrim(rtrim(column_value)) as orgid
+                       FROM (select *
+                               from table(splitstr((select t.range
+                                                     from crm_material_package_apply t
+                                                    where t.id = #{id,jdbcType=DECIMAL}),
+                                                   ','))))
+        connect by prior c.id = c.pid) cso,
+       crm_station crs,
+       c_merch_cust_station cmcs,
+       c_merch_cust_base cmcb,
+       c_merch_cust_contract cmcc,
+       crm_sales_organization regin,
+       crm_sales_organization prov,
+       crm_sales_organization cso2,
+       crm_material_package_apply cmpa,
+       crm_material_package_header cmph
+ where 1 = 1
+   and cso.id = crs.organization_id
+   and crs.id = cmcs.station_id
+   and cmcb.organization_id= cso2.id
+   and crs.organization_id = prov.id
+   and substr(crs.organization_id, 0, 7) = regin.id
+   and cmcs.merch_cust_id = cmcb.id
+   and cmcb.id = cmcc.merch_cust_id
+   and cmpa.model_type = cmcc.agent_type
+   and cmpa.organization_id= cmcc.organization_id
+   and cmph.id = cmpa.package_id
+   and cmcb.organization_id = cmcc.organization_id
+   and cmcc.states = '4'
+   and cmcb.states = '3'
+   and not exists (SELECT 1
+          FROM c_merch_cust_product        cmcp,
+               crm_material_package_apply  cmpa,
+               crm_material_package_header cmph
+         where 1 = 1
+           and cmcb.id = cmcp.merch_cust_id
+           and cmcp.material_id = cmph.code
+           and cmpa.package_id = cmph.id
+           and cmcp.states='4'
+           and cmpa.id=#{id,jdbcType=DECIMAL})
+    and cmpa.id=#{id,jdbcType=DECIMAL}
+     <include refid="OracleDialectSuffix" />
+  </select>
+  
+  <select id="countMerchs" resultType="int" parameterType="java.util.Map">
+  	SELECT count(1)
+  FROM (SELECT c.id
+          FROM crm_sales_organization c
+         where 1 = 1
+           and c.levels = '4'
+         start with c.id in
+                    (SELECT ltrim(rtrim(column_value)) as orgid
+                       FROM (select *
+                               from table(splitstr((select t.range
+                                                     from crm_material_package_apply t
+                                                    where t.id = #{id,jdbcType=DECIMAL}),
+                                                   ','))))
+        connect by prior c.id = c.pid) cso,
+       crm_station crs,
+       c_merch_cust_station cmcs,
+       c_merch_cust_base cmcb,
+       c_merch_cust_contract cmcc,
+       crm_sales_organization regin,
+       crm_sales_organization prov,
+       crm_sales_organization cso2,
+       crm_material_package_apply cmpa,
+       crm_material_package_header cmph
+ where 1 = 1
+   and cso.id = crs.organization_id
+   and crs.id = cmcs.station_id
+   and cmcb.organization_id= cso2.id
+   and crs.organization_id = prov.id
+   and substr(crs.organization_id, 0, 7) = regin.id
+   and cmcs.merch_cust_id = cmcb.id
+   and cmcb.id = cmcc.merch_cust_id
+   and cmpa.model_type = cmcc.agent_type
+   and cmpa.organization_id= cmcc.organization_id
+   and cmph.id = cmpa.package_id
+   and cmcb.organization_id = cmcc.organization_id
+   and cmcc.states = '4'
+   and cmcb.states = '3'
+   and cmpa.id=#{id,jdbcType=DECIMAL}
+   and not exists (SELECT 1
+          FROM c_merch_cust_product        cmcp,
+               crm_material_package_apply  cmpa,
+               crm_material_package_header cmph
+         where 1 = 1
+           and cmcb.id = cmcp.merch_cust_id
+           and cmcp.material_id = cmph.code
+           and cmpa.package_id = cmph.id
+           and cmcp.states='4'
+           and cmpa.id=#{id,jdbcType=DECIMAL})
+  </select>
+  
+  <insert id="insertIntoProduct" parameterType="java.util.Map">
+  	insert into c_merch_cust_product
+  (id,
+   merch_cust_id,
+   material_id,
+   organization_id,
+   contract_id,
+   contract_lineid,
+   create_ts,
+   create_oid,
+   states)
+  (SELECT seq_merch_product_id.nextval,
+          cmcb.id,
+          cmph.code,
+          cmcb.organization_id,
+          cmcc.id,
+          cmpa.id,
+          sysdate,
+          1,
+          '4'
+     FROM 
+          c_merch_cust_base cmcb,
+          c_merch_cust_contract cmcc,
+          crm_material_package_apply cmpa,
+          crm_material_package_header cmph
+    where 1=1
+      and cmcb.id = cmcc.merch_cust_id
+      and cmcb.organization_id = cmcc.organization_id
+      and cmpa.model_type = cmcc.agent_type
+      and cmpa.organization_id = cmcc.organization_id
+      and cmph.id = cmpa.package_id
+      and cmcc.states = '4'
+      and cmcb.states = '3'
+      and cmcb.id in 
+       <foreach item="item" index="index" collection="ids" open="(" separator="," close=")">  
+ 		 #{item}  
+ 	  </foreach> 
+      and not exists (SELECT 1
+             FROM c_merch_cust_product cmcp
+            where cmcp.merch_cust_id = cmcb.id
+              and cmcp.contract_id = cmcc.id
+              and cmcp.material_id = cmph.code
+              and cmcp.contract_lineid = cmpa.id)
+      and cmpa.id = #{applyId, jdbcType = DECIMAL})
+  </insert>
+  
+  <update id="updateProduct" parameterType="java.util.Map">
+  	update c_merch_cust_product cmcp
+   set cmcp.states = '4'
+ where 1 = 1
+   and exists (SELECT 1
+          FROM crm_material_package_apply  cmpa,
+               crm_material_package_header cmph,
+               c_merch_cust_contract cmcc
+         where 1 = 1
+           and cmcp.contract_lineid = cmpa.id
+           and cmcp.material_id = cmph.code
+           and cmcp.contract_id= cmcc.id
+           and cmcp.organization_id= cmcc.organization_id
+           and cmcp.merch_cust_id= cmcc.merch_cust_id
+           and cmcc.states='4'
+           and cmpa.model_type= cmcc.agent_type
+           and cmpa.package_id= cmph.id
+           and cmpa.id=#{applyId, jdbcType = DECIMAL}
+           and cmcp.states != '4')
+   and cmcp.merch_cust_id in 
+    <foreach item="item" index="index" collection="ids" open="(" separator="," close=")">  
+ 		 #{item}  
+ 	  </foreach>
+  </update>
+   <resultMap id="packageResultMap" type="com.hhnz.combination.model.CrmMaterialPackageHeader" >
+    <id column="ID" property="id" jdbcType="DECIMAL" />
+    <result column="NAME" property="name" jdbcType="VARCHAR" />
+    <result column="CODE" property="code" jdbcType="VARCHAR" />
+    <result column="B_DATE" property="bDate" jdbcType="TIMESTAMP" />
+    <result column="E_DATE" property="eDate" jdbcType="TIMESTAMP" />
+    <result column="CREATE_TS" property="createTs" jdbcType="TIMESTAMP" />
+    <result column="CREATE_OID" property="createOid" jdbcType="DECIMAL" />
+    <result column="UPDATE_TS" property="updateTs" jdbcType="TIMESTAMP" />
+    <result column="UPDATE_OID" property="updateOid" jdbcType="DECIMAL" />
+    <result column="MODEL_TYPE" property="modelType" jdbcType="VARCHAR" />
+    <result column="STATES" property="states" jdbcType="VARCHAR" />
+    <result column="ATTRIBUTE1" property="attribute1" jdbcType="VARCHAR" />
+    <result column="ATTRIBUTE2" property="attribute2" jdbcType="VARCHAR" />
+    <result column="ATTRIBUTE3" property="attribute3" jdbcType="VARCHAR" />
+    <result column="ATTRIBUTE4" property="attribute4" jdbcType="VARCHAR" />
+    <result column="ATTRIBUTE5" property="attribute5" jdbcType="VARCHAR" />
+    <result column="PRICE" property="price" jdbcType="DECIMAL" />
+    <result column="WEIGHT" property="weight" jdbcType="VARCHAR" />
+  </resultMap>
+  <select id="selectPackage" resultMap="packageResultMap" parameterType="java.util.Map">
+  		select cmph.*
+  from CRM_MATERIAL_PACKAGE_HEADER cmph
+ WHERE 1=1
+ and cmph.states='2'
+ and cmph.model_type =#{modelType,jdbcType=VARCHAR}
+ and not exists (SELECT * FROM crm_material_package_apply cmpa
+ where 1=1
+ and cmpa.package_id= cmph.id
+ and cmpa.model_type=#{modelType,jdbcType=VARCHAR}
+ and cmpa.organization_id=#{orgid,jdbcType=VARCHAR})
+  </select>
+</mapper>

@@ -1,0 +1,361 @@
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%
+    String path = request.getContextPath();
+    String basePath = request.getScheme() + "://"
+            + request.getServerName() + ":" + request.getServerPort()
+            + path + "/";
+%>
+<!DOCTYPE html>
+<html>
+<head>
+    <base href="<%=basePath%>">
+    <title>管理系统-产品分组管理</title>
+    <jsp:include page="/common/head.jsp"></jsp:include>
+    <%--<link href="static/table/bootstrap-table.min.css" rel="stylesheet">--%>
+    <style>
+        ul , li{
+            list-style: none;
+        }
+        .bootstrap-table .table{
+            border-bottom: none;
+            border-radius: 0;
+        }
+        .bootstrap-table .fixed-table-container{
+
+            border-radius: 0;
+        }
+        .crm-box{
+            border-radius: 0;
+            border:1px solid hsla(255,0%,85%,1);
+
+        }
+        .crm-box thead{
+            background-color: hsla(255,0%,95%,1);
+
+        }
+        .crm-box tbody{
+            background-color: #FFF;
+
+        }
+        .crm-box td{
+            font-size: 12px;
+            text-align: center;
+            vertical-align: middle;
+
+        }
+        .crm-box th{
+            font-size: 16px;
+            width: 33.33%;
+            text-align: center;
+
+        }
+        .crm-virtical-link{
+            padding: 10px 15% 0 15%;
+        }
+        .crm-virtical-link>li{
+            margin-bottom: 15px;
+        }
+        .crm-virtical-link>li:before{
+            content: '';
+            background-color: transparent;
+            position: absolute;
+            display: block;
+            width: 25px;
+            height:53px;
+            margin-left: -25px;
+            margin-top: 19px;
+            border-top:1px solid hsla(255,0%,85%,1);
+            border-left:1px solid hsla(255,0%,85%,1);
+        }
+        .crm-virtical-link>li:nth-last-child(2):before{
+            content: '';
+            position: absolute;
+            display: block;
+            width: 25px;
+            height:53px;
+            margin-left: -25px;
+            margin-top: -32.5px;
+            border-top:none;
+            border-left:1px solid hsla(255,0%,85%,1);
+            border-bottom:1px solid hsla(255,0%,85%,1);
+        }
+        .crm-virtical-link>li:last-child:before{
+            content: '';
+            position: absolute;
+            display: none;
+            border-top:none;
+            border-left:none;
+        }
+        .btn-crm{
+            border-radius: 0;
+            border:1px solid hsla(255,0%,85%,1);;
+            width: 100%;
+            padding: 8px 0;
+            background-color: hsla(255,0%,95%,1);
+            color:hsla(255,0%,25%,1);
+            transition: 0.2s;
+        }
+        .btn-edit{
+            border-radius: 0;
+            width: 100%;
+            padding: 8px 0;
+            color:hsla(255,0%,25%,1);
+            transition: 0.2s;
+            border:1px solid hsla(255,0%,90%,1);
+            background-color: hsla(255,0%,100%,1);
+            cursor: text;
+        }
+        .btn-crm:hover{
+            border:1px solid hsla(255,0%,75%,1);
+            background-color: hsla(255,0%,90%,1);
+        }
+        .crm-virtical-link{
+        }
+        .crm-virtical-link>li{
+            z-index: 1200;
+            position: relative;
+        }
+        .crm-virtical-link>li.btn-crm-active:after{
+            content: '';
+            background-color: transparent;
+            position: absolute;
+            width: 25px;
+            height:0;
+            right: -25px;
+            margin-top: 19px;
+            border-top:1px solid hsla(255,0%,85%,1);
+            z-index: 119;
+        }
+        .crm-virtical-link>li.btn-crm-active>a{
+            font-family: 'FontAwesome';
+            display: inline-block;
+            border:1px solid #eb871d;
+            background-color: #fd9527;
+            color: #fff;
+        }
+        .crm-virtical-link>li.btn-crm-active>a:after{
+            content: "\f0da";
+            color: #fff;
+            position: relative;
+            margin-top:0;
+            margin-left: 0;
+            float: right;
+            right: 10px;
+        }
+        .dropdown ul{
+            width: 100%;
+            padding: 0;
+            max-height: 260px;
+            overflow: auto;
+        }
+        .dropdown ul li{
+            text-align: center;
+        }
+        .dropdown ul li a{
+            padding: 5px 0;
+            color:hsla(255,0%,25%,1);
+            transition: 0.2s;
+        }
+        .dropdown ul li a:hover{
+            color:  hsla(255,0%,25%,1);
+            background-color: hsla(255,0%,90%,1);
+        }
+        .dropdown a.btn span.caret{
+            position: absolute;
+            margin-top:8px;
+            right: 10px;
+        }
+        .item-edit-box{
+            position: absolute;
+            right: 0;
+            /*top:0;*/
+            top:-26px;
+            transition: 0.2s;
+        }
+        .item-edit-box>a{
+            display: inline-block;
+            width: 25px;
+            line-height: 25px;
+            color: hsla(255,0%,45%,1);
+            background-color: #fff;
+            border-top: 1px solid hsla(255,0%,85%,1);
+            border-left: 1px solid hsla(255,0%,85%,1);
+            border-right: 1px solid hsla(255,0%,85%,1);
+            text-align: center;
+            transition: 0.2s;
+        }
+        .item-edit-box>a:hover{
+            background-color:hsla(255,0%,95%,1);
+            border-color:hsla(255,0%,80%,1);
+            color:hsla(255,0%,25%,1);
+        }
+    </style>
+</head>
+<body class="container-fluid content">
+<section class="content-header">
+    <h1>产品分组管理<small>产品分组查询</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="icon icon-home"></i> 首页</a></li>
+        <li><a href="#"> 数据管理</a></li>
+        <li class="active">产品组信息</li>
+    </ol>
+</section>
+<div class="col-md-12" style="padding:10px 15px;">
+    <table class=" table  crm-box">
+        <thead>
+        <tr>
+            <th>产品组分类</th>
+            <th>品牌</th>
+            <th>系列</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>
+                <%-- 产品组分类组 --%>
+                <ul class="crm-virtical-link" id="box-group">
+                    <li class="link-list btn-crm-active"><a href="javascript:;" class="btn btn-crm">调味品</a></li>
+                    <li class="link-list">
+                        <div class="item-edit-box">
+                            <a href="javascript:;"><i class="icon icon-edit"></i></a>
+                            <a href="javascript:;"><i class="icon icon-trash"></i></a>
+                        </div>
+                        <a href="javascript:;" class="btn btn-crm">食用盐</a>
+                    </li>
+                    <%-- 新增产品组 --%>
+                    <div>
+                        <button class="btn btn-default  btn-crm" type="button" id="addGroup">
+                            <i class="icon icon-plus"></i>&nbsp;
+                            添加产品组分类
+                            <%--<span class="caret pull-right" ></span>--%>
+                        </button>
+
+                    </div>
+                </ul>
+            </td>
+            <td>
+                <%-- 产品品牌 --%>
+                <ul class="crm-virtical-link" id="box-band" >
+                    <li class="link-list"><a href="javascript:;" class="btn btn-crm">王老吉</a></li>
+                    <li class="link-list"><a href="javascript:;" class="btn btn-crm">哇哈哈</a></li>
+                    <li class="link-list"><a href="javascript:;" class="btn btn-crm">老干妈</a></li>
+                    <li class="link-list"><a href="javascript:;" class="btn btn-crm">豪吉</a></li>
+                    <%-- 新增产品品牌 --%>
+                    <div>
+                        <button class="btn btn-default  btn-crm" type="button" id="addBand">
+                            <i class="icon icon-plus"></i>&nbsp;
+                            添加产品品牌
+                            <%--<span class="caret pull-right" ></span>--%>
+                        </button>
+                    </div>
+                </ul>
+            </td>
+            <td>
+                <%-- 产品系列 --%>
+                <ul class="crm-virtical-link" id="box-kind">
+                    <li class="link-list"><a href="javascript:;" class="btn btn-crm" contenteditable="">绿色环保型</a></li>
+                    <li class="link-list"><a href="javascript:;" class="btn btn-crm">营养保健型</a></li>
+                    <%-- 新增产品品牌 --%>
+                    <div>
+                        <button class="btn btn-default  btn-crm" type="button" id="addKind">
+                            <i class="icon icon-plus"></i>&nbsp;
+                            添加产品系列
+                            <%--<span class="caret pull-right" ></span>--%>
+                        </button>
+                    </div>
+                </ul>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<jsp:include page="/common/footjs.jsp"></jsp:include>
+<%--<script type="text/javascript" src="static/table/bootstrap-table.min.js"></script>--%>
+<%--<script type="text/javascript" src="static/table/locale/bootstrap-table-zh-CN.min.js"></script>--%>
+<%--<script type="text/javascript" src="static/js/sapData/group.js"></script>--%>
+<script type="text/javascript">
+    $(function(){
+
+
+        $("ul#box-group").on("click","li.link-list", function() {
+            $("ul#box-group>li.link-list").removeClass("btn-crm-active")
+            $(this).addClass("btn-crm-active");
+        });
+
+        $("ul#box-band").on("click","li.link-list", function() {
+            $("ul#box-band>li.link-list").removeClass("btn-crm-active")
+            $(this).addClass("btn-crm-active");
+        });
+
+//        $("ul#box-kind>li>a.btn-crm").click(function(){
+//            $("ul#box-kind>li>a.btn-crm").removeClass("btn-crm-active")
+//            $(this).addClass("btn-crm-active");
+//        });
+        //新增组
+        $("#addGroup").click(function(){
+            var item='<li>'+
+                            '<div class="input-group">'+
+                                '<input type="text" class="form-control" placeholder="输入内容"> '+
+                                '<span class="input-group-btn">'+
+                                '<a class="btn btn-default commit-add-item" type="button">确定</a>'+
+                                '</span>'+
+                            '</div>'+
+                     '</li>';
+
+            $("ul#box-group>div:last-child").before(item);
+        });
+
+        $("ul#box-group").on("click","a.commit-add-item",function(){
+
+            var value=$(this).parent().parent().children("input").val();
+            var item='<a href="javascript:;" class="btn btn-crm">'+value+'</a>'
+            if (value!=""){
+                $(this).parent().parent().parent().addClass("link-list");
+                $(this).parent().parent().parent().html(item);
+            }else{
+                $(this).parent().parent().parent().remove();
+            }
+        });
+
+        //新增品牌
+        $("#addBand").click(function(){
+            var item='<li>'+
+                    '<div class="input-group">'+
+                    '<input type="text" class="form-control" placeholder="输入内容"> '+
+                    '<span class="input-group-btn">'+
+                    '<a class="btn btn-default commit-add-item" type="button">确定</a>'+
+                    '</span>'+
+                    '</div>'+
+                    '</li>';
+
+            $("ul#box-band>div:last-child").before(item);
+        });
+
+        $("ul#box-band").on("click","a.commit-add-item",function(){
+
+            var value=$(this).parent().parent().children("input").val();
+            var item='<a href="javascript:;" class="btn btn-crm">'+value+'</a>'
+            if (value!=""){
+                $(this).parent().parent().parent().addClass("link-list");
+                $(this).parent().parent().parent().html(item);
+            }else{
+                $(this).parent().parent().parent().remove();
+            }
+        });
+//        $("ul#add-band-item>li>a").click(function(){
+//            var item=   '<li><a href="javascript:;" class="btn btn-crm">'+
+//                    $(this).text() +
+//                    '</a></li>';
+//            $("ul#box-band>li:last-child").before(item);
+//        });
+//        $("ul#add-kind-item>li>a").click(function(){
+//            var item=   '<li><a href="javascript:;" class="btn btn-crm">'+
+//                    $(this).text() +
+//                    '</a></li>';
+//            $("ul#box-kind>li:last-child").before(item);
+//        });
+    });
+</script>
+</body>
+</html>

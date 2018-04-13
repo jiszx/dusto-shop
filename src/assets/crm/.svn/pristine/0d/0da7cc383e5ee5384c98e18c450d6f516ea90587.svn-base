@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.config.mapper.TScheduleJobMapper" >
+  <resultMap id="BaseResultMap" type="com.hhnz.config.model.TScheduleJob" >
+    <id column="JID" property="jid" jdbcType="DECIMAL" />
+    <result column="JOB_NAME" property="jobName" jdbcType="VARCHAR" />
+    <result column="JOB_TYPE" property="jobType" jdbcType="VARCHAR" />
+    <result column="JOB_DESC" property="jobDesc" jdbcType="VARCHAR" />
+    <result column="CRON" property="cron" jdbcType="VARCHAR" />
+    <result column="SPRINGID" property="springid" jdbcType="VARCHAR" />
+    <result column="METHOD_NAME" property="methodName" jdbcType="VARCHAR" />
+    <result column="STATUS" property="status" jdbcType="VARCHAR" />
+    <result column="CREATE_TS" property="createTs" jdbcType="TIMESTAMP" />
+    <result column="UPDATE_TS" property="updateTs" jdbcType="TIMESTAMP" />
+  </resultMap>
+  <sql id="Example_Where_Clause" >
+    <where >
+      <foreach collection="oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause" >
+    <where >
+      <foreach collection="example.oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List" >
+    JID, JOB_NAME, JOB_TYPE, JOB_DESC, CRON, SPRINGID, METHOD_NAME, STATUS, CREATE_TS, 
+    UPDATE_TS
+  </sql>
+  <select id="selectByExample" resultMap="BaseResultMap" parameterType="com.hhnz.config.model.TScheduleJobExample" >
+    <include refid="OracleDialectPrefix" />
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from T_SCHEDULE_JOB
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+    <include refid="OracleDialectSuffix" />
+  </select>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Long" >
+    select 
+    <include refid="Base_Column_List" />
+    from T_SCHEDULE_JOB
+    where JID = #{jid,jdbcType=DECIMAL}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long" >
+    delete from T_SCHEDULE_JOB
+    where JID = #{jid,jdbcType=DECIMAL}
+  </delete>
+  <delete id="deleteByExample" parameterType="com.hhnz.config.model.TScheduleJobExample" >
+    delete from T_SCHEDULE_JOB
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="com.hhnz.config.model.TScheduleJob" >
+    insert into T_SCHEDULE_JOB (JID, JOB_NAME, JOB_TYPE, 
+      JOB_DESC, CRON, SPRINGID, 
+      METHOD_NAME, STATUS, CREATE_TS, 
+      UPDATE_TS)
+    values (#{jid,jdbcType=DECIMAL}, #{jobName,jdbcType=VARCHAR}, #{jobType,jdbcType=VARCHAR}, 
+      #{jobDesc,jdbcType=VARCHAR}, #{cron,jdbcType=VARCHAR}, #{springid,jdbcType=VARCHAR}, 
+      #{methodName,jdbcType=VARCHAR}, #{status,jdbcType=VARCHAR}, #{createTs,jdbcType=TIMESTAMP}, 
+      #{updateTs,jdbcType=TIMESTAMP})
+  </insert>
+  <insert id="insertSelective" parameterType="com.hhnz.config.model.TScheduleJob" >
+    insert into T_SCHEDULE_JOB
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="jid != null" >
+        JID,
+      </if>
+      <if test="jobName != null" >
+        JOB_NAME,
+      </if>
+      <if test="jobType != null" >
+        JOB_TYPE,
+      </if>
+      <if test="jobDesc != null" >
+        JOB_DESC,
+      </if>
+      <if test="cron != null" >
+        CRON,
+      </if>
+      <if test="springid != null" >
+        SPRINGID,
+      </if>
+      <if test="methodName != null" >
+        METHOD_NAME,
+      </if>
+      <if test="status != null" >
+        STATUS,
+      </if>
+      <if test="createTs != null" >
+        CREATE_TS,
+      </if>
+      <if test="updateTs != null" >
+        UPDATE_TS,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="jid != null" >
+        #{jid,jdbcType=DECIMAL},
+      </if>
+      <if test="jobName != null" >
+        #{jobName,jdbcType=VARCHAR},
+      </if>
+      <if test="jobType != null" >
+        #{jobType,jdbcType=VARCHAR},
+      </if>
+      <if test="jobDesc != null" >
+        #{jobDesc,jdbcType=VARCHAR},
+      </if>
+      <if test="cron != null" >
+        #{cron,jdbcType=VARCHAR},
+      </if>
+      <if test="springid != null" >
+        #{springid,jdbcType=VARCHAR},
+      </if>
+      <if test="methodName != null" >
+        #{methodName,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null" >
+        #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="createTs != null" >
+        #{createTs,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateTs != null" >
+        #{updateTs,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="com.hhnz.config.model.TScheduleJobExample" resultType="java.lang.Integer" >
+    select count(*) from T_SCHEDULE_JOB
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map" >
+    update T_SCHEDULE_JOB
+    <set >
+      <if test="record.jid != null" >
+        JID = #{record.jid,jdbcType=DECIMAL},
+      </if>
+      <if test="record.jobName != null" >
+        JOB_NAME = #{record.jobName,jdbcType=VARCHAR},
+      </if>
+      <if test="record.jobType != null" >
+        JOB_TYPE = #{record.jobType,jdbcType=VARCHAR},
+      </if>
+      <if test="record.jobDesc != null" >
+        JOB_DESC = #{record.jobDesc,jdbcType=VARCHAR},
+      </if>
+      <if test="record.cron != null" >
+        CRON = #{record.cron,jdbcType=VARCHAR},
+      </if>
+      <if test="record.springid != null" >
+        SPRINGID = #{record.springid,jdbcType=VARCHAR},
+      </if>
+      <if test="record.methodName != null" >
+        METHOD_NAME = #{record.methodName,jdbcType=VARCHAR},
+      </if>
+      <if test="record.status != null" >
+        STATUS = #{record.status,jdbcType=VARCHAR},
+      </if>
+      <if test="record.createTs != null" >
+        CREATE_TS = #{record.createTs,jdbcType=TIMESTAMP},
+      </if>
+      <if test="record.updateTs != null" >
+        UPDATE_TS = #{record.updateTs,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map" >
+    update T_SCHEDULE_JOB
+    set JID = #{record.jid,jdbcType=DECIMAL},
+      JOB_NAME = #{record.jobName,jdbcType=VARCHAR},
+      JOB_TYPE = #{record.jobType,jdbcType=VARCHAR},
+      JOB_DESC = #{record.jobDesc,jdbcType=VARCHAR},
+      CRON = #{record.cron,jdbcType=VARCHAR},
+      SPRINGID = #{record.springid,jdbcType=VARCHAR},
+      METHOD_NAME = #{record.methodName,jdbcType=VARCHAR},
+      STATUS = #{record.status,jdbcType=VARCHAR},
+      CREATE_TS = #{record.createTs,jdbcType=TIMESTAMP},
+      UPDATE_TS = #{record.updateTs,jdbcType=TIMESTAMP}
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="com.hhnz.config.model.TScheduleJob" >
+    update T_SCHEDULE_JOB
+    <set >
+      <if test="jobName != null" >
+        JOB_NAME = #{jobName,jdbcType=VARCHAR},
+      </if>
+      <if test="jobType != null" >
+        JOB_TYPE = #{jobType,jdbcType=VARCHAR},
+      </if>
+      <if test="jobDesc != null" >
+        JOB_DESC = #{jobDesc,jdbcType=VARCHAR},
+      </if>
+      <if test="cron != null" >
+        CRON = #{cron,jdbcType=VARCHAR},
+      </if>
+      <if test="springid != null" >
+        SPRINGID = #{springid,jdbcType=VARCHAR},
+      </if>
+      <if test="methodName != null" >
+        METHOD_NAME = #{methodName,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null" >
+        STATUS = #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="createTs != null" >
+        CREATE_TS = #{createTs,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateTs != null" >
+        UPDATE_TS = #{updateTs,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where JID = #{jid,jdbcType=DECIMAL}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.hhnz.config.model.TScheduleJob" >
+    update T_SCHEDULE_JOB
+    set JOB_NAME = #{jobName,jdbcType=VARCHAR},
+      JOB_TYPE = #{jobType,jdbcType=VARCHAR},
+      JOB_DESC = #{jobDesc,jdbcType=VARCHAR},
+      CRON = #{cron,jdbcType=VARCHAR},
+      SPRINGID = #{springid,jdbcType=VARCHAR},
+      METHOD_NAME = #{methodName,jdbcType=VARCHAR},
+      STATUS = #{status,jdbcType=VARCHAR},
+      CREATE_TS = #{createTs,jdbcType=TIMESTAMP},
+      UPDATE_TS = #{updateTs,jdbcType=TIMESTAMP}
+    where JID = #{jid,jdbcType=DECIMAL}
+  </update>
+  <sql id="OracleDialectPrefix" >
+    <if test="page != null" >
+      select * from ( select row_.*, rownum rownum_ from ( 
+    </if>
+  </sql>
+  <sql id="OracleDialectSuffix" >
+    <if test="page != null" >
+      <![CDATA[ ) row_ ) where rownum_ > #{page.begin} and rownum_ <= #{page.end} ]]>
+    </if>
+  </sql>
+</mapper>

@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hhnz.receivable.mapper.AccountReceivableMapper" >
+	<resultMap type="com.hhnz.receivable.dto.AccountReceivableDTO" id="AccountReceivableResultMap">
+		<result column="custname" property="custname" jdbcType="VARCHAR"/>
+		<result column="period" property="period" jdbcType="VARCHAR"/>
+		<result column="sap_customer_id" property="sapCustomerId" jdbcType="VARCHAR"/>
+		<result column="merch_cust_id" property="merchCustId" jdbcType="DECIMAL"/>
+		<result column="ytd" property="ytd" jdbcType="DECIMAL"/>
+		<result column="d_amt" property="dAmt" jdbcType="DECIMAL"/>
+		<result column="c_amt" property="cAmt" jdbcType="DECIMAL"/>
+		<result column="ptd" property="ptd" jdbcType="DECIMAL"/>
+		<result column="organization_Id" property="organizationId" jdbcType="VARCHAR"/>
+		<result column="orgname" property="orgname" jdbcType="VARCHAR"/>
+		<result column="id" property="id" jdbcType="DECIMAL"/>
+		<result column="sapAmt" property="sapAmt" jdbcType="DECIMAL"/>
+		<result column="cust_type" property="custType" jdbcType="VARCHAR"/>
+	</resultMap>
+	<select id="selectArBalancesList" resultMap="AccountReceivableResultMap" parameterType="java.util.Map">
+	SELECT cmab.id,
+		cmab.merch_cust_id,
+		cmab.organization_id,
+		cso.name orgname,
+		cmab.period,
+		cmab.ytd ytd,
+		case when cmab.period = to_char(sysdate,'yyyy-mm') then
+		nvl((SELECT sum(oi.total_price + oi.total_tax)
+				FROM om_invoice oi
+			 where 1 = 1
+				and to_char(oi.customer_id) = cmcb.sap_customer_id
+				and to_char(to_date(oi.period, 'yyyy-mm'), 'yyyy-mm') =	cmab.period),
+			0)+nvl((SELECT sum(cmcal.c_amt)
+				FROM c_merch_cust_account_log cmcal
+			 where cmcal.type = '3'
+			 	and cmcal.account_type='1'
+				and cmcal.period = cmab.period
+				and cmcal.merch_cust_id = cmab.merch_cust_id
+				and cmcal.states='S'),
+			0)/100
+	    else
+	     cmab.d_amt
+	    end d_amt,
+	    case when cmab.period = to_char(sysdate,'yyyy-mm') then
+		nvl((SELECT sum(cmcal.d_amt)
+				FROM c_merch_cust_account_log cmcal
+			 where 1=1
+			    and ((1=1 and cmcal.type='1') or (cmcal.type='3' and cmcal.account_type='1'))
+				and cmcal.period = cmab.period
+				and cmcal.merch_cust_id = cmab.merch_cust_id
+				and cmcal.states='S'),
+			0)/100
+	    else
+	      cmab.c_amt
+	    end c_amt,
+		cmab.ptd,
+		cmcb.name custname,
+		cmcb.sap_customer_id,
+		nvl((SELECT sum(oii.amt + oii.tax)
+             FROM om_invoice        oi,
+                  om_invoice_item   oii,
+                  c_merch_cust_base cmcb
+            where oi.invoice_no = oii.invoice_no
+              and cmcb.sap_customer_id = to_char(oi.customer_id)
+              and oi.period = replace(cmab.period,'-','')
+              and cmcb.id = cmab.merch_cust_id
+              and not exists
+            (SELECT 1
+                     FROM om_order_headers_all ooha
+                    where 1 = 1
+                      and ooha.merch_cust_id = cmcb.id
+                      and oii.order_id = ooha.sap_order_id)),
+           0) sapAmt,
+          cmcb.cust_type
+	 FROM (SELECT * FROM  c_merch_ar_balance order by period desc) cmab, 
+	 		c_merch_cust_base cmcb,
+	 		crm_sales_organization cso
+	where 1 = 1
+		and cmab.merch_cust_id = cmcb.id
+		and cmab.organization_id= cmcb.organization_id
+		and cmcb.organization_id= cso.id
+	<if test="custname !=null and custname !=''">
+		and cmcb.name like '%'||#{custname,jdbcType=VARCHAR}||'%'
+	</if>
+	<if test="sapCustomerId !=null and sapCustomerId !=''">
+		and cmcb.sap_customer_id like '%'||#{sapCustomerId,jdbcType=VARCHAR}||'%'
+	</if>
+	<if test="period !=null and period !=''">
+		and cmab.period =#{period,jdbcType=VARCHAR}
+	</if>
+	<if test="organizationId !=null and organizationId !=''">
+		and cmab.organization_id like #{organizationId,jdbcType=VARCHAR}||'%'
+	</if>
+	<if test="custType !=null and custType !=''">
+		and cmcb.cust_Type  =#{custType,jdbcType=VARCHAR}
+	</if>
+	   <![CDATA[ and rownum > #{begin} and rownum <= #{end} ]]>
+	</select>
+	
+	<select id="countArBalancesList" resultType="int" parameterType="java.util.Map">
+	SELECT count(1)
+		FROM c_merch_ar_balance cmab, c_merch_cust_base cmcb,crm_sales_organization cso
+	where 1 = 1
+		and cmab.merch_cust_id = cmcb.id
+		and cmab.organization_id= cmcb.organization_id
+		and cmcb.organization_id= cso.id
+	<if test="custname !=null and custname !=''">
+		and cmcb.name like '%'||#{custname,jdbcType=VARCHAR}||'%'
+	</if>
+	<if test="sapCustomerId !=null and sapCustomerId !=''">
+		and cmcb.sap_customer_id like '%'||#{sapCustomerId,jdbcType=VARCHAR}||'%'
+	</if>
+	<if test="period !=null and period !=''">
+		and cmab.period =#{period,jdbcType=VARCHAR}
+	</if>
+	<if test="organizationId !=null and organizationId !=''">
+		and cmab.organization_id like #{organizationId,jdbcType=VARCHAR}||'%'
+	</if>
+	<if test="custType !=null and custType !=''">
+		and cmcb.cust_Type  =#{custType,jdbcType=VARCHAR}
+	</if>
+	</select>
+	<resultMap type="com.hhnz.receivable.dto.AccountReceivableDetailsDTO" id="detialsReusltMap">
+		<result column="type" property="type" jdbcType="VARCHAR"/>
+		<result column="invoiceNo" property="invoiceNo" jdbcType="VARCHAR"/>
+		<result column="sapid" property="sapid" jdbcType="VARCHAR"/>
+		<result column="crmid" property="crmid" jdbcType="VARCHAR"/>
+		<result column="amt" property="amt" jdbcType="DECIMAL"/>
+		<result column="drawDate" property="drawDate" jdbcType="VARCHAR"/>
+		<result column="remark" property="remark" jdbcType="VARCHAR"/>
+	</resultMap>
+	<select id="selectArDetailsList" resultMap="detialsReusltMap" parameterType="java.util.Map">
+	<include refid="OracleDialectPrefix"/>
+	SELECT sum(oii.amt + oii.tax) amt,
+			to_char(oii.invoice_no) invoiceNo,
+			to_char(ooha.id) crmid,
+			to_char(oii.order_id) sapid,
+			to_char(oi.draw_date, 'yyyy-mm-dd') drawDate,
+			decode(oi.writeoff_invoice,'','','冲销发票编号' || oi.writeoff_invoice) remark,
+			1
+		FROM om_invoice_item oii,
+			om_order_headers_all ooha,
+			om_invoice oi,
+			c_merch_ar_balance cmab,
+			c_merch_cust_base cmcb
+	where oii.order_id = ooha.sap_order_id(+)
+		and oii.invoice_no = oi.invoice_no
+		and cmab.merch_cust_id= cmcb.id
+		and cmcb.sap_customer_id= oi.customer_id
+		and replace(cmab.period,'-')= oi.period
+		and cmab.id =#{id,jdbcType=DECIMAL}
+		group by oii.invoice_no,
+			ooha.id,
+			oii.order_id,
+			oi.draw_date,
+		oi.writeoff_invoice
+	union all
+	SELECT cmcal.d_amt/100 d_amt,
+			to_char(cmcal.sap_voucher_id),
+			to_char(cmcal.order_id),
+			'',
+			to_char(cmcal.create_ts, 'yyyy-mm-dd'),
+			cmcal.attribute5,
+			2
+		FROM c_merch_cust_account_log cmcal,
+			c_merch_ar_balance cmab
+	where cmcal.type = '1'
+		and cmcal.merch_cust_id= cmab.merch_cust_id
+		and cmcal.organization_id= cmab.organization_id
+		and cmab.period= cmcal.period
+		and cmab.id =#{id,jdbcType=DECIMAL}
+	<include refid="OracleDialectSuffix"/>
+	</select>
+	
+	<select id="countArDetials" resultType="int" parameterType="java.util.Map">
+	select sum(num) from ( SELECT count(1) num
+		FROM om_invoice_item oii,
+			om_order_headers_all ooha,
+			om_invoice oi,
+			c_merch_ar_balance cmab,
+			c_merch_cust_base cmcb
+	where oii.order_id = ooha.sap_order_id(+)
+		and oii.invoice_no = oi.invoice_no
+		and cmab.merch_cust_id= cmcb.id
+		and cmcb.sap_customer_id= oi.customer_id
+		and replace(cmab.period,'-')= oi.period
+		and cmab.id =#{id,jdbcType=DECIMAL}
+		group by oii.invoice_no,
+			ooha.id,
+			oii.order_id,
+			oi.draw_date,
+		oi.writeoff_invoice
+	union all
+	SELECT count(1) num
+		FROM c_merch_cust_account_log cmcal,
+			c_merch_ar_balance cmab
+	where cmcal.type = '1'
+		and cmcal.merch_cust_id= cmab.merch_cust_id
+		and cmcal.organization_id= cmab.organization_id
+		and cmab.period= cmcal.period
+		and cmab.id =#{id,jdbcType=DECIMAL} )
+	</select>
+	
+	<select id="selectMaxPeriod" resultType="String">
+		select nvl(max(period),'-') from c_merch_ar_balance
+	</select>
+	
+	<select id="updateByMerchId" statementType="CALLABLE" parameterType="java.util.Map">
+     <![CDATA[
+    {call crm_ar_balance_pkg.update_merch(#{p_merch_cust_id,mode=IN,jdbcType=VARCHAR},
+    #{p_result,mode=OUT,jdbcType=VARCHAR})}
+	]]>
+   </select>
+   
+   <select id="updateByPeriod" statementType="CALLABLE" parameterType="java.util.Map">
+     <![CDATA[
+    {call crm_ar_balance_pkg.ar_period(#{p_period,mode=IN,jdbcType=VARCHAR},
+    #{p_result,mode=OUT,jdbcType=VARCHAR})}
+	]]>
+   </select>
+   
+	<sql id="OracleDialectPrefix">
+			select * from ( select row_.*, rownum rownum_ from (
+	</sql>
+	<sql id="OracleDialectSuffix">
+      <![CDATA[ ) row_ ) where rownum_ > #{begin} and rownum_ <= #{end} ]]>
+	</sql>
+</mapper>

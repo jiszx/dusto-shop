@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:activiti="http://activiti.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath" targetNamespace="http://www.activiti.org/test">
+  <process id="cost_adjust" name="费用池费用调整" isExecutable="true" activiti:candidateStarterUsers="startUser">
+    <extensionElements>
+      <activiti:executionListener event="start" delegateExpression="#{processStartListerner}"></activiti:executionListener>
+      <activiti:executionListener event="end" delegateExpression="#{processEndListerner}"></activiti:executionListener>
+    </extensionElements>
+    <startEvent id="COST_START" name="提交费用调整记录" activiti:initiator="${startUser}"></startEvent>
+    <endEvent id="COST_END" name="费用调整结束"></endEvent>
+    <userTask id="COST_CW" name="财务审批" activiti:assignee="财务"></userTask>
+    <serviceTask id="COST_ADJUST_SERVICE" name="费用池调整" activiti:delegateExpression="#{costAdjustTask}"></serviceTask>
+    <sequenceFlow id="flow1" sourceRef="COST_START" targetRef="COST_CW"></sequenceFlow>
+    <sequenceFlow id="FLOW_PASS" name="通过" sourceRef="COST_CW" targetRef="COST_ADJUST_SERVICE">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${FLAG==1}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flow4" sourceRef="COST_ADJUST_SERVICE" targetRef="servicetask1"></sequenceFlow>
+    <sequenceFlow id="FLOW_BACK" name="驳回" sourceRef="COST_CW" targetRef="servicetask1">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${FLAG==0}]]></conditionExpression>
+    </sequenceFlow>
+    <serviceTask id="servicetask1" name="系统处理" activiti:delegateExpression="#{costStateTask}"></serviceTask>
+    <sequenceFlow id="flow5" sourceRef="servicetask1" targetRef="COST_END"></sequenceFlow>
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_cost_adjust">
+    <bpmndi:BPMNPlane bpmnElement="cost_adjust" id="BPMNPlane_cost_adjust">
+      <bpmndi:BPMNShape bpmnElement="COST_START" id="BPMNShape_COST_START">
+        <omgdc:Bounds height="35.0" width="35.0" x="150.0" y="40.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="COST_END" id="BPMNShape_COST_END">
+        <omgdc:Bounds height="35.0" width="35.0" x="150.0" y="340.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="COST_CW" id="BPMNShape_COST_CW">
+        <omgdc:Bounds height="55.0" width="105.0" x="115.0" y="100.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="COST_ADJUST_SERVICE" id="BPMNShape_COST_ADJUST_SERVICE">
+        <omgdc:Bounds height="55.0" width="105.0" x="290.0" y="100.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="servicetask1" id="BPMNShape_servicetask1">
+        <omgdc:Bounds height="55.0" width="105.0" x="115.0" y="220.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="flow1" id="BPMNEdge_flow1">
+        <omgdi:waypoint x="167.0" y="75.0"></omgdi:waypoint>
+        <omgdi:waypoint x="167.0" y="100.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="FLOW_PASS" id="BPMNEdge_FLOW_PASS">
+        <omgdi:waypoint x="220.0" y="127.0"></omgdi:waypoint>
+        <omgdi:waypoint x="290.0" y="127.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="24.0" x="225.0" y="127.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow4" id="BPMNEdge_flow4">
+        <omgdi:waypoint x="342.0" y="155.0"></omgdi:waypoint>
+        <omgdi:waypoint x="342.0" y="247.0"></omgdi:waypoint>
+        <omgdi:waypoint x="220.0" y="247.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="FLOW_BACK" id="BPMNEdge_FLOW_BACK">
+        <omgdi:waypoint x="167.0" y="155.0"></omgdi:waypoint>
+        <omgdi:waypoint x="167.0" y="220.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="24.0" x="167.0" y="174.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow5" id="BPMNEdge_flow5">
+        <omgdi:waypoint x="167.0" y="275.0"></omgdi:waypoint>
+        <omgdi:waypoint x="167.0" y="340.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

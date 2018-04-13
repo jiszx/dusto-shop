@@ -1,0 +1,41 @@
+#\u63A7\u5236\u53F0\u65E5\u5FD7
+log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+log4j.appender.stdout.Target=System.out
+log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+log4j.appender.stdout.Encoding = UTF-8
+log4j.appender.stdout.layout.ConversionPattern=TIME:%d{MM-dd HH:mm:ss} LEVEL:%5p CLASS:%c{1}:%L - Information:%m%n
+#### \u65E5\u5FD7\u6587\u4EF6 #####
+
+log4j.rootLogger=info,stdout,log_file
+log4j.logger.com.hhnz=DEBUG
+log4j.logger.java.sql.Connection=DEBUG
+log4j.logger.java.sql.Statement=DEBUG
+log4j.logger.java.sql.PreparedStatement=DEBUG   
+
+
+#\u7CFB\u7EDF\u65e5\u5fd7\u6587\u4ef6 
+log4j.appender.log_file = org.apache.log4j.DailyRollingFileAppender  
+log4j.appender.log_file.File = /logs/crm/crm.log
+log4j.appender.log_file.Append = true
+log4j.appender.log_file.Threshold = INFO
+log4j.appender.log_file.Encoding = UTF-8
+log4j.appender.log_file.layout = org.apache.log4j.PatternLayout
+log4j.appender.log_file.layout.ConversionPattern = [%-5p] %d{MM-dd HH:mm:ss}(%r) [%t] %l -: %m %x %n
+
+#SAP\u65e5\u5fd7\u6587\u4ef6 
+log4j.appender.rfc_log_file = org.apache.log4j.DailyRollingFileAppender  
+log4j.appender.rfc_log_file.File = /logs/interface/rfc/rfc.log
+log4j.appender.rfc_log_file.Append = true
+log4j.appender.rfc_log_file.Threshold = DEBUG
+log4j.appender.rfc_log_file.Encoding = UTF-8
+log4j.appender.rfc_log_file.layout = org.apache.log4j.PatternLayout
+log4j.appender.rfc_log_file.layout.ConversionPattern = [%-5p -RFC] %d{MM-dd HH:mm:ss}(%r) [%t] %l -: %m %x %n
+
+log4j.logger.com.hhnz.jco=DEBUG,stdout,rfc_log_file
+
+#log4j.logger.java.sql.PreparedStatement=DEBUG,file
+#log4j.logger.java.sql.ResultSet=DEBUG,file
+#og4j.logger.com.ibatis=DEBUG,file
+#log4j.logger.com.ibatis.common.jdbc.SimpleDataSource=DEBUG  
+#log4j.logger.com.ibatis.common.jdbc.ScriptRunner=DEBUG ,file
+#log4j.logger.com.ibatis.sqlmap.engine.impl.SqlMapClientDelegate=DEBUG 

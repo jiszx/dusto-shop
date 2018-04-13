@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:activiti="http://activiti.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath" targetNamespace="http://www.activiti.org/test">
+  <process id="LKASaleOrder" name="LKA销售订单" isExecutable="true" activiti:candidateStarterUsers="startUser">
+    <extensionElements>
+      <activiti:executionListener event="end" delegateExpression="#{processEndListerner}"></activiti:executionListener>
+      <activiti:executionListener event="start" delegateExpression="#{processStartListerner}"></activiti:executionListener>
+    </extensionElements>
+    <startEvent id="startOrder" name="开始销售订单"></startEvent>
+    <endEvent id="endOrder" name="订单完成"></endEvent>
+    <serviceTask id="SEND_SAP" name="通知SAP" activiti:delegateExpression="#{sendSAPTask}"></serviceTask>
+    <userTask id="SALE_MAKESURE" name="发货确认" activiti:assignee="${startUser}"></userTask>
+    <sequenceFlow id="flow23" sourceRef="startOrder" targetRef="order_info_init"></sequenceFlow>
+    <serviceTask id="STATE_TASK" name="系统处理" activiti:delegateExpression="#{orderStateTask}"></serviceTask>
+    <sequenceFlow id="flow34" sourceRef="STATE_TASK" targetRef="endOrder"></sequenceFlow>
+    <serviceTask id="REDUCE_DEPOT" name="扣减库存" activiti:delegateExpression="#{reduceKaOrderDepo}"></serviceTask>
+    <sequenceFlow id="flow43" sourceRef="servicetask2" targetRef="SEND_SAP"></sequenceFlow>
+    <serviceTask id="servicetask1" name="通知物流商" activiti:delegateExpression="#{orderNoticeMailService}"></serviceTask>
+    <sequenceFlow id="flow90" sourceRef="servicetask1" targetRef="reduceaccount"></sequenceFlow>
+    <sequenceFlow id="flow91" sourceRef="SEND_SAP" targetRef="STATE_TASK"></sequenceFlow>
+    <serviceTask id="order_info_init" name="订单信息初始化" activiti:delegateExpression="#{orderInitService}"></serviceTask>
+    <sequenceFlow id="flow92" name="无超期" sourceRef="servicetask3" targetRef="servicetask1">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${CKECK==0}]]></conditionExpression>
+    </sequenceFlow>
+    <serviceTask id="reduceaccount" name="扣减资金" activiti:delegateExpression="#{reduceMerchAccountTask}"></serviceTask>
+    <sequenceFlow id="flow94" sourceRef="reduceaccount" targetRef="SALE_MAKESURE">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${REDUCE_FLAG == 1}]]></conditionExpression>
+    </sequenceFlow>
+    <serviceTask id="servicetask2" name="授信恢复" activiti:delegateExpression="#{restoreCredit}"></serviceTask>
+    <userTask id="CHECK_PERIOD" name="超账期提示" activiti:assignee="财务"></userTask>
+    <serviceTask id="servicetask3" name="账期检查" activiti:delegateExpression="#{orderCheckPeriod}"></serviceTask>
+    <sequenceFlow id="flow97" sourceRef="order_info_init" targetRef="servicetask3"></sequenceFlow>
+    <sequenceFlow id="flow98" name="超账期" sourceRef="servicetask3" targetRef="CHECK_PERIOD">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${CKECK==1}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flow99" name="财务通过" sourceRef="CHECK_PERIOD" targetRef="servicetask1">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${FLAG==1}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flow100" name="财务驳回" sourceRef="CHECK_PERIOD" targetRef="STATE_TASK">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${FLAG==0}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flow101" sourceRef="SALE_MAKESURE" targetRef="REDUCE_DEPOT"></sequenceFlow>
+    <sequenceFlow id="flow102" sourceRef="REDUCE_DEPOT" targetRef="servicetask2"></sequenceFlow>
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_LKASaleOrder">
+    <bpmndi:BPMNPlane bpmnElement="LKASaleOrder" id="BPMNPlane_LKASaleOrder">
+      <bpmndi:BPMNShape bpmnElement="startOrder" id="BPMNShape_startOrder">
+        <omgdc:Bounds height="35.0" width="35.0" x="105.0" y="0.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="endOrder" id="BPMNShape_endOrder">
+        <omgdc:Bounds height="35.0" width="35.0" x="105.0" y="490.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="SEND_SAP" id="BPMNShape_SEND_SAP">
+        <omgdc:Bounds height="55.0" width="105.0" x="245.0" y="401.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="SALE_MAKESURE" id="BPMNShape_SALE_MAKESURE">
+        <omgdc:Bounds height="55.0" width="105.0" x="419.0" y="233.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="STATE_TASK" id="BPMNShape_STATE_TASK">
+        <omgdc:Bounds height="55.0" width="105.0" x="70.0" y="401.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="REDUCE_DEPOT" id="BPMNShape_REDUCE_DEPOT">
+        <omgdc:Bounds height="55.0" width="105.0" x="419.0" y="317.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="servicetask1" id="BPMNShape_servicetask1">
+        <omgdc:Bounds height="55.0" width="105.0" x="250.0" y="160.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="order_info_init" id="BPMNShape_order_info_init">
+        <omgdc:Bounds height="55.0" width="105.0" x="70.0" y="80.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="reduceaccount" id="BPMNShape_reduceaccount">
+        <omgdc:Bounds height="55.0" width="105.0" x="419.0" y="160.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="servicetask2" id="BPMNShape_servicetask2">
+        <omgdc:Bounds height="55.0" width="105.0" x="419.0" y="401.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="CHECK_PERIOD" id="BPMNShape_CHECK_PERIOD">
+        <omgdc:Bounds height="55.0" width="105.0" x="70.0" y="280.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="servicetask3" id="BPMNShape_servicetask3">
+        <omgdc:Bounds height="55.0" width="105.0" x="70.0" y="160.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="flow23" id="BPMNEdge_flow23">
+        <omgdi:waypoint x="122.0" y="35.0"></omgdi:waypoint>
+        <omgdi:waypoint x="122.0" y="80.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow34" id="BPMNEdge_flow34">
+        <omgdi:waypoint x="122.0" y="456.0"></omgdi:waypoint>
+        <omgdi:waypoint x="122.0" y="490.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow43" id="BPMNEdge_flow43">
+        <omgdi:waypoint x="419.0" y="428.0"></omgdi:waypoint>
+        <omgdi:waypoint x="350.0" y="428.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow90" id="BPMNEdge_flow90">
+        <omgdi:waypoint x="355.0" y="187.0"></omgdi:waypoint>
+        <omgdi:waypoint x="419.0" y="187.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow91" id="BPMNEdge_flow91">
+        <omgdi:waypoint x="245.0" y="428.0"></omgdi:waypoint>
+        <omgdi:waypoint x="175.0" y="428.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow92" id="BPMNEdge_flow92">
+        <omgdi:waypoint x="175.0" y="187.0"></omgdi:waypoint>
+        <omgdi:waypoint x="250.0" y="187.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="100.0" x="189.0" y="190.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow94" id="BPMNEdge_flow94">
+        <omgdi:waypoint x="471.0" y="215.0"></omgdi:waypoint>
+        <omgdi:waypoint x="471.0" y="233.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow97" id="BPMNEdge_flow97">
+        <omgdi:waypoint x="122.0" y="135.0"></omgdi:waypoint>
+        <omgdi:waypoint x="122.0" y="160.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow98" id="BPMNEdge_flow98">
+        <omgdi:waypoint x="122.0" y="215.0"></omgdi:waypoint>
+        <omgdi:waypoint x="122.0" y="280.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="100.0" x="127.0" y="219.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow99" id="BPMNEdge_flow99">
+        <omgdi:waypoint x="175.0" y="307.0"></omgdi:waypoint>
+        <omgdi:waypoint x="302.0" y="307.0"></omgdi:waypoint>
+        <omgdi:waypoint x="302.0" y="215.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="100.0" x="209.0" y="311.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow100" id="BPMNEdge_flow100">
+        <omgdi:waypoint x="122.0" y="335.0"></omgdi:waypoint>
+        <omgdi:waypoint x="122.0" y="401.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="100.0" x="127.0" y="350.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow101" id="BPMNEdge_flow101">
+        <omgdi:waypoint x="471.0" y="288.0"></omgdi:waypoint>
+        <omgdi:waypoint x="471.0" y="317.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow102" id="BPMNEdge_flow102">
+        <omgdi:waypoint x="471.0" y="372.0"></omgdi:waypoint>
+        <omgdi:waypoint x="471.0" y="401.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>
